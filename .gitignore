@@ -2,3 +2,9 @@
 BlockedAPSP.vcx.proj.user
 UpgradeLog.htm
 x64/
+
+*.out
+
+BlockedAPSP.vcx.proj.user
+BlockedAPSP.vcxproj
+BlockedAPSP.sln
