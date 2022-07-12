@@ -9,3 +9,5 @@ x64/
 *.vcxproj
 *.sln
 *.vcxproj.user
+
+graphs_istances/
