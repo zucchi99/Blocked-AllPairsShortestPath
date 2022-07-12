@@ -7,7 +7,7 @@
 
 #define INF __INT16_MAX__
 
-#define DENSITY 45 //%
+#define DENSITY 60 //%
 #define MIN_COST 1
 #define MAX_COST 20
 
@@ -146,13 +146,22 @@ void floyd_warshall_blocked(int **matrix, int n, int B) {
 
 void execute_round(int **matrix, int n, int t, int row, int col, int B) {
     //foreach k: t*B <= t < t+B
-    for (int k = t * B; k < (t+1) * B; k++) {
+    int block_start = t * B;
+    int block_end = (t+1) * B;
+    int row_start = row * B;
+    int row_end = (row+1) * B;
+    int col_start = col * B;
+    int col_end = (col+1) * B;
+    for (int k = block_start; k < block_end; k++) {
         //foreach i,j in the self-dependent block
-        for (int i = t * B; i < (t+1) * B; i++) {
-            for (int j = t * B; j < (t+1) * B; j++) {
+        for (int i = row_start; i < row_end; i++) {
+            for (int j = col_start; j < col_end; j++) {
                 int a = matrix[i][j];
+                int x1 = matrix[i][k];
+                int x2 =  matrix[k][j];
                 int b = sum_if_not_infinite(matrix[i][k], matrix[k][j], INF);
                 matrix[i][j] = min(a, b);
+                //print_matrix(matrix, n, n);
             }
         }
     }
