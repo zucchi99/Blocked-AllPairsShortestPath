@@ -9,4 +9,3 @@
 
 * v. naive con mem. globale
 * provare ad usare la shared memory
-
