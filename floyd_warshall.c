@@ -43,17 +43,25 @@ int main() {
 
     //matrix initialization
     generate_graph(rand_matrix, n, rand_seed);
+
+    //matrix print
     printf("input adjacency matrix %lux%lu:\n", n, n);
     print_matrix(rand_matrix, n, n);
+
+    //floyd_warshall execution
     floyd_warshall(rand_matrix, n);
+
+    //print floyd_warshall output
     printf("output adjacency matrix classic %lux%lu:\n", n, n);
     print_matrix(rand_matrix, n, n);
 
-    //matrix initialization
+    //matrix initialization with same seed
     generate_graph(rand_matrix, n, rand_seed);
-    //printf("input adjacency matrix %lux%lu:\n", n, n);
-    //print_matrix(rand_matrix, n, n);
+    
+    //floyd_warshall_blocked execution
     floyd_warshall_blocked(rand_matrix, n, BLOCKING_FACTOR);
+    
+    //print floyd_warshall_blocked output
     printf("output adjacency matrix blocked %lux%lu:\n", n, n);
     print_matrix(rand_matrix, n, n);
 
