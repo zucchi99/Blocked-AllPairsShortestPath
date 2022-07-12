@@ -20,6 +20,7 @@ void floyd_warshall_blocked(int **matrix, int n, int B);
 int sum_if_not_infinite(int a, int b, int infinity);
 void execute_round(int **matrix, int n, int t, int row, int col, int B);
 void generate_graph(int **matrix, int n, int seed);
+bool same_matrix(int **matrix_1, int **matrix_2, int m, int n);
 
 int main() {
 
@@ -32,42 +33,63 @@ int main() {
     int BLOCKING_FACTOR = 2;
 
     //memory allocation 
-    int **rand_matrix = (int **) malloc(sizeof(int *) * n);
+    int **rand_matrix_1 = (int **) malloc(sizeof(int *) * n);
     for (int i = 0; i < n; i++) {
-        rand_matrix[i] = (int *) malloc(sizeof(int) * n);
+        rand_matrix_1[i] = (int *) malloc(sizeof(int) * n);
+    }
+    int **rand_matrix_2 = (int **) malloc(sizeof(int *) * n);
+    for (int i = 0; i < n; i++) {
+        rand_matrix_2[i] = (int *) malloc(sizeof(int) * n);
     }
 
     //random seed
     int rand_seed = time(NULL);
+    printf("seed: %d\n", rand_seed);
     srand(rand_seed);
 
     //matrix initialization
-    generate_graph(rand_matrix, n, rand_seed);
+    generate_graph(rand_matrix_1, n, rand_seed);
 
     //matrix print
     printf("input adjacency matrix %lux%lu:\n", n, n);
-    print_matrix(rand_matrix, n, n);
+    print_matrix(rand_matrix_1, n, n);
 
     //floyd_warshall execution
-    floyd_warshall(rand_matrix, n);
+    floyd_warshall(rand_matrix_1, n);
 
     //print floyd_warshall output
     printf("output adjacency matrix classic %lux%lu:\n", n, n);
-    print_matrix(rand_matrix, n, n);
+    print_matrix(rand_matrix_1, n, n);
+
+    //---------------------------------------------------------------
 
     //matrix initialization with same seed
-    generate_graph(rand_matrix, n, rand_seed);
+    generate_graph(rand_matrix_2, n, rand_seed);
     
     //floyd_warshall_blocked execution
-    floyd_warshall_blocked(rand_matrix, n, BLOCKING_FACTOR);
+    floyd_warshall_blocked(rand_matrix_2, n, BLOCKING_FACTOR);
     
     //print floyd_warshall_blocked output
     printf("output adjacency matrix blocked %lux%lu:\n", n, n);
-    print_matrix(rand_matrix, n, n);
+    print_matrix(rand_matrix_2, n, n);
+
+    //---------------------------------------------------------------
+
+    //compare matrixes output
+    bool are_the_same = same_matrix(rand_matrix_1, rand_matrix_2, n, n);
+    printf("Matrixes are equal? %s\n", (are_the_same ? "true" : "false"));
 
     return 0;
 }
 
+bool same_matrix(int **matrix_1, int **matrix_2, int m, int n) {
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            if(matrix_1[i][j] != matrix_2[i][j]) return false;
+        }
+    }
+    return true;
+}
 
 void generate_graph(int **matrix, int n, int seed) {
     srand(seed);
@@ -106,15 +128,27 @@ void floyd_warshall_blocked(int **matrix, int n, int B) {
         //phase 1: self-dependent block
         execute_round(matrix, n, t, t, t, B);
 
-        //phase 2,3: remaining blocks
-        //phase 2 blocks right
-        for (int j = t+1; j < num_rounds; j++) {
+        //phase 2 blocks left
+        for (int j = t-1; j >= 0; j--) {
             execute_round(matrix, n, t, t, j, B);
         }
+
         //phase 2 blocks above
         for (int i = t-1; i >= 0; i--) {
             execute_round(matrix, n, t, i, t, B);
         }
+
+        //phase 2 blocks below
+        for (int i = t+1; i < num_rounds; i++) {
+            execute_round(matrix, n, t, i, t, B);
+        }
+
+        //phase 2 blocks right
+        for (int j = t+1; j < num_rounds; j++) {
+            execute_round(matrix, n, t, t, j, B);
+        }
+        
+        //phase 2,3: remaining blocks
         //phase 3 blocks above and right
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t-1; i >= 0; i--) {
@@ -126,15 +160,6 @@ void floyd_warshall_blocked(int **matrix, int n, int B) {
             for (int i = t-1; i >= 0; i--) {
                 execute_round(matrix, n, t, i, j, B);
             }
-        }
-
-        //phase 2 blocks left
-        for (int j = t-1; j >= 0; j--) {
-            execute_round(matrix, n, t, t, j, B);
-        }
-        //phase 2 blocks below
-        for (int i = t+1; i < num_rounds; i++) {
-            execute_round(matrix, n, t, i, t, B);
         }
         //phase 3 blocks below and left
         for (int j = t-1; j >= 0; j--) {
@@ -194,9 +219,9 @@ void print_array(int *array, int size) {
     printf("[");
     for (int i = 0; i < size; i++) {
         if (array[i] < INF)
-            printf("%d", array[i]);
+            printf("%02d", array[i]);
         else 
-            printf("-");
+            printf("--");
         if (i < size-1) printf(", ");
     }
     printf("]\n");
