@@ -83,6 +83,12 @@
     <None Include=".gitignore" />
     <None Include="README.md" />
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="adj_matrix_reader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="adj_matrix_reader.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.6.targets" />
