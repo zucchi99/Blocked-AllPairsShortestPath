@@ -6,22 +6,27 @@
 #include <stdbool.h>
 
 #define INF __INT16_MAX__
+
+#define DENSITY 45 //%
+#define MIN_COST 1
+#define MAX_COST 20
+
 #define min(a,b) ((a < b) ? a : b)
 
 void print_array(int *array, int size);
 void print_matrix(int **matrix, int m, int n);
+void floyd_warshall(int **matrix, int n);
 void floyd_warshall_blocked(int **matrix, int n, int B);
 int sum_if_not_infinite(int a, int b, int infinity);
 void execute_round(int **matrix, int n, int t, int row, int col, int B);
-
-#define DENSITY 55 //%
-#define MIN_COST 1
-#define MAX_COST 20
+void generate_graph(int **matrix, int n);
 
 int main() {
 
     //matrix size n*n
-    size_t n = 4;
+    size_t n = 6;
+
+    //if no weights in graph:
     //int INF = (n * (n-1) / 2) + 1;
 
     int BLOCKING_FACTOR = 2;
@@ -33,29 +38,52 @@ int main() {
     }
 
     //random seed
-    //srand(time(NULL));
-    srand(10);
+    srand(time(NULL));
+
+    //srand(10);
 
     //matrix initialization
-    for (int i = 0; i < n; i++) {
-        for (int j = i+1; j < n; j++) {
-            bool add_edge = (rand() % 100) <= DENSITY;
-            int val = (rand() % MAX_COST) + MIN_COST;
-            rand_matrix[i][j] = add_edge ? val : INF;
-            //non-oriented graph
-            rand_matrix[j][i] = rand_matrix[i][j];
-        }
-    }
+    generate_graph(rand_matrix, n);
 
     printf("input adjacency matrix %lux%lu:\n", n, n);
     print_matrix(rand_matrix, n, n);
 
+    floyd_warshall(rand_matrix, n);
+
+    printf("output adjacency matrix classic %lux%lu:\n", n, n);
+    print_matrix(rand_matrix, n, n);
+
     floyd_warshall_blocked(rand_matrix, n, BLOCKING_FACTOR);
 
-    printf("output adjacency matrix %lux%lu:\n", n, n);
+    printf("output adjacency matrix blocked %lux%lu:\n", n, n);
     print_matrix(rand_matrix, n, n);
 
     return 0;
+}
+
+
+void generate_graph(int **matrix, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = i+1; j < n; j++) {
+            bool add_edge = (rand() % 100) <= DENSITY;
+            int val = (rand() % MAX_COST) + MIN_COST;
+            matrix[i][j] = add_edge ? val : INF;
+            //non-oriented graph
+            matrix[j][i] = matrix[i][j];
+        }
+    }
+}
+
+void floyd_warshall(int **matrix, int n) {
+    for(int k = 0; k < n; k++) {
+        for(int i = 0; i < n; i++) {
+            for(int j = 0; j < n; j++) {
+                int a = matrix[i][j];
+                int b = sum_if_not_infinite(matrix[i][k], matrix[k][j], INF);
+                matrix[i][j] = min(a, b);
+            }
+        }
+    }
 }
 
 void floyd_warshall_blocked(int **matrix, int n, int B) {
