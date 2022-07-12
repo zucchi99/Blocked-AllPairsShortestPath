@@ -1,6 +1,7 @@
 #include "adj_matrix_reader.h"
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
 int _getNumberOfNodes(std::string adjMatrixLine, const char delim) {
 
@@ -28,24 +29,26 @@ int _parseLine(std::string adjMatrixLine, const char delim, int lineNumber, int*
 	int i = 0;
 	while (std::getline(ss, itemStr, delim)) {
 
-		adjMatrix[lineNumber][i] = std::stoi(itemStr);
+		int value = std::stoi(itemStr);
+		adjMatrix[lineNumber][i] = value;
+
 		i++;
 	}
 
-	return -1;
+	return 0;
 }
 
 
-int readAdjMatrixCSV(const std::string filename, const char delim, int** adjMatrix, int *numberOfNodes) {
+int** readAdjMatrixCSV(const std::string filename, const char delim, int *numberOfNodes) {
 
 	std::ifstream fs(filename);
 	
 	if (!fs.is_open()) {
-		return -1;
+		// todo: add error
 	}
 	
-	if (!fs.eof()) {
-		return -1;
+	if (fs.eof()) {
+		// todo: add error
 	}
 
 	// read first line
@@ -57,16 +60,27 @@ int readAdjMatrixCSV(const std::string filename, const char delim, int** adjMatr
 	*numberOfNodes = _getNumberOfNodes(line, delim);
 
 	// allocate memory for matrix
-	adjMatrix = (int**) malloc((*numberOfNodes) * (*numberOfNodes) * sizeof(int));
+	int** adjMatrix = (int **) malloc(sizeof(int*) * (*numberOfNodes));
 
 	// parse all lines and fill adjMatrix
 	do {
+		adjMatrix[lineNumber] = (int*) malloc(sizeof(int) * (*numberOfNodes));
 		_parseLine(line, delim, lineNumber, adjMatrix);
 		lineNumber++;
 	} while (std::getline(fs, line));
 
-	return 0;
+	return adjMatrix;
 }
 
 
+void printAdjMatrix(int** adjMatrix, int numberOfNodes, const char delim) {
+	
+	for (int i = 0; i < numberOfNodes; i++) {
+		for (int j = 0; j < numberOfNodes-1; j++) {
+			std::cout << adjMatrix[i][j] << delim;
+		}
+
+		std::cout << adjMatrix[i][numberOfNodes - 1] << "\n";
+	}
+}
 
