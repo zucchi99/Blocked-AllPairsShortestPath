@@ -8,3 +8,5 @@ x64/
 BlockedAPSP.vcx.proj.user
 BlockedAPSP.vcxproj
 BlockedAPSP.sln
+
+graphs_istances/**
