@@ -19,7 +19,7 @@ void floyd_warshall(int **matrix, int n);
 void floyd_warshall_blocked(int **matrix, int n, int B);
 int sum_if_not_infinite(int a, int b, int infinity);
 void execute_round(int **matrix, int n, int t, int row, int col, int B);
-void generate_graph(int **matrix, int n);
+void generate_graph(int **matrix, int n, int seed);
 
 int main() {
 
@@ -38,23 +38,22 @@ int main() {
     }
 
     //random seed
-    srand(time(NULL));
-
-    //srand(10);
+    int rand_seed = time(NULL);
+    srand(rand_seed);
 
     //matrix initialization
-    generate_graph(rand_matrix, n);
-
+    generate_graph(rand_matrix, n, rand_seed);
     printf("input adjacency matrix %lux%lu:\n", n, n);
     print_matrix(rand_matrix, n, n);
-
     floyd_warshall(rand_matrix, n);
-
     printf("output adjacency matrix classic %lux%lu:\n", n, n);
     print_matrix(rand_matrix, n, n);
 
+    //matrix initialization
+    generate_graph(rand_matrix, n, rand_seed);
+    //printf("input adjacency matrix %lux%lu:\n", n, n);
+    //print_matrix(rand_matrix, n, n);
     floyd_warshall_blocked(rand_matrix, n, BLOCKING_FACTOR);
-
     printf("output adjacency matrix blocked %lux%lu:\n", n, n);
     print_matrix(rand_matrix, n, n);
 
@@ -62,8 +61,10 @@ int main() {
 }
 
 
-void generate_graph(int **matrix, int n) {
+void generate_graph(int **matrix, int n, int seed) {
+    srand(seed);
     for (int i = 0; i < n; i++) {
+        matrix[i][i] = 0;
         for (int j = i+1; j < n; j++) {
             bool add_edge = (rand() % 100) <= DENSITY;
             int val = (rand() % MAX_COST) + MIN_COST;
@@ -112,15 +113,16 @@ void floyd_warshall_blocked(int **matrix, int n, int B) {
                 execute_round(matrix, n, t, i, j, B);
             }
         }
-        //phase 2 blocks left
-        for (int j = t-1; j >= 0; j--) {
-            execute_round(matrix, n, t, t, j, B);
-        }
         //phase 3 blocks above and left
         for (int j = t-1; j >= 0; j--) {
             for (int i = t-1; i >= 0; i--) {
                 execute_round(matrix, n, t, i, j, B);
             }
+        }
+
+        //phase 2 blocks left
+        for (int j = t-1; j >= 0; j--) {
+            execute_round(matrix, n, t, t, j, B);
         }
         //phase 2 blocks below
         for (int i = t+1; i < num_rounds; i++) {
@@ -131,7 +133,7 @@ void floyd_warshall_blocked(int **matrix, int n, int B) {
             for (int i = t+1; i < num_rounds; i++) {
                 execute_round(matrix, n, t, i, j, B);
             }
-        }
+        }      
         //phase 3 blocks below and right
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t+1; i < num_rounds; i++) {
@@ -147,11 +149,10 @@ void execute_round(int **matrix, int n, int t, int row, int col, int B) {
     for (int k = t * B; k < (t+1) * B; k++) {
         //foreach i,j in the self-dependent block
         for (int i = t * B; i < (t+1) * B; i++) {
-            for (int j = t*B; j < (t+1) * B; j++) {
+            for (int j = t * B; j < (t+1) * B; j++) {
                 int a = matrix[i][j];
                 int b = sum_if_not_infinite(matrix[i][k], matrix[k][j], INF);
                 matrix[i][j] = min(a, b);
-                //printf("matrix[i][j]: %d, matrix[i][k]: %d, matrix[k][j]: %d", a, matrix[i][k], matrix[k][j])
             }
         }
     }
