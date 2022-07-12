@@ -12,6 +12,7 @@ void print_array(int *array, int size);
 void print_matrix(int **matrix, int m, int n);
 void floyd_warshall_blocked(int **matrix, int n, int B);
 int sum_if_not_infinite(int a, int b, int infinity);
+void execute_round(int **matrix, int n, int t, int row, int col, int B);
 
 #define DENSITY 55 //%
 #define MIN_COST 1
@@ -58,35 +59,73 @@ int main() {
 }
 
 void floyd_warshall_blocked(int **matrix, int n, int B) {
+
     int num_rounds = n/B;
+
     for(int t = 0; t < num_rounds; t++) { 
 
+        //execute_round(int **matrix, int n, int t, int row, int col, int B)
+
         //phase 1: self-dependent block
-        //foreach k: t*B <= t < t+B
-        for (int k = t * B; k < (t+1) * B; k++) {
-            //foreach i,j in the self-dependent block
-            for (int i = t*B; i < (t+1)*B; i++) {
-                for (int j = t*B; j < (t+1)*B; j++) {
-                    int a = matrix[i][j];
-                    int b = sum_if_not_infinite(matrix[i][k], matrix[k][j], INF);
-                    matrix[i][j] = min(a, b);
-                }
-            }
-        }
+        execute_round(matrix, n, t, t, t, B);
 
         //phase 2,3: remaining blocks
-        //foreach k: t*B <= t < t+B
-        for (int k = t * B; k < (t+1) * B; k++) {
-            //foreach i,j in the self-dependent block
-            for (int i = t*B; i < (t+1)*B; i++) {
-                for (int j = t*B; j < (t+1)*B; j++) {
-                    int a = matrix[i][j];
-                    int b = sum_if_not_infinite(matrix[i][k], matrix[k][j], INF);
-                    matrix[i][j] = min(a, b);
-                }
+        //phase 2 blocks right
+        for (int j = t+1; j < num_rounds; j++) {
+            execute_round(matrix, n, t, t, j, B);
+        }
+        //phase 2 blocks above
+        for (int i = t-1; i >= 0; i--) {
+            execute_round(matrix, n, t, i, t, B);
+        }
+        //phase 3 blocks above and right
+        for (int j = t+1; j < num_rounds; j++) {
+            for (int i = t-1; i >= 0; i--) {
+                execute_round(matrix, n, t, i, j, B);
             }
         }
+        //phase 2 blocks left
+        for (int j = t-1; j >= 0; j--) {
+            execute_round(matrix, n, t, t, j, B);
+        }
+        //phase 3 blocks above and left
+        for (int j = t-1; j >= 0; j--) {
+            for (int i = t-1; i >= 0; i--) {
+                execute_round(matrix, n, t, i, j, B);
+            }
+        }
+        //phase 2 blocks below
+        for (int i = t+1; i < num_rounds; i++) {
+            execute_round(matrix, n, t, i, t, B);
+        }
+        //phase 3 blocks below and left
+        for (int j = t-1; j >= 0; j--) {
+            for (int i = t+1; i < num_rounds; i++) {
+                execute_round(matrix, n, t, i, j, B);
+            }
+        }
+        //phase 3 blocks below and right
+        for (int j = t+1; j < num_rounds; j++) {
+            for (int i = t+1; i < num_rounds; i++) {
+                execute_round(matrix, n, t, i, j, B);
+            }
+        }   
+        
+    }
+}
 
+void execute_round(int **matrix, int n, int t, int row, int col, int B) {
+    //foreach k: t*B <= t < t+B
+    for (int k = t * B; k < (t+1) * B; k++) {
+        //foreach i,j in the self-dependent block
+        for (int i = t * B; i < (t+1) * B; i++) {
+            for (int j = t*B; j < (t+1) * B; j++) {
+                int a = matrix[i][j];
+                int b = sum_if_not_infinite(matrix[i][k], matrix[k][j], INF);
+                matrix[i][j] = min(a, b);
+                //printf("matrix[i][j]: %d, matrix[i][k]: %d, matrix[k][j]: %d", a, matrix[i][k], matrix[k][j])
+            }
+        }
     }
 }
 
