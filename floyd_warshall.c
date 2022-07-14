@@ -12,6 +12,7 @@
 #define MAX_COST 20
 
 #define min(a,b) ((a < b) ? a : b)
+#define bool_to_string(cond) (cond ? "true" : "false")
 
 void print_array(int *array, int size);
 void print_matrix(int **matrix, int m, int n);
@@ -37,6 +38,7 @@ int main() {
     for (int i = 0; i < n; i++) {
         rand_matrix_1[i] = (int *) malloc(sizeof(int) * n);
     }
+
     int **rand_matrix_2 = (int **) malloc(sizeof(int *) * n);
     for (int i = 0; i < n; i++) {
         rand_matrix_2[i] = (int *) malloc(sizeof(int) * n);
@@ -77,7 +79,7 @@ int main() {
 
     //compare matrixes output
     bool are_the_same = same_matrix(rand_matrix_1, rand_matrix_2, n, n);
-    printf("Matrixes are equal? %s\n", (are_the_same ? "true" : "false"));
+    printf("Matrixes are equal? %s\n", bool_to_string(are_the_same));
 
     return 0;
 }
