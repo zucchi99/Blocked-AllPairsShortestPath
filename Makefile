@@ -1,12 +1,24 @@
 main :	
-	nvcc -rdc=true main.cpp src/adj_matrix_reader.cpp -o bin/main.out
+	nvcc -rdc=true -o bin/main.out \
+		main.cpp 
+		src/adj_matrix_reader.cpp 
 
 fwm:
-	g++ floyd_warshall_matrix.cpp src/adj_matrix_utils.cpp src/host_floyd_warshall.cpp -o bin/fwm.out
+	g++ -o bin/fwm.out \
+		floyd_warshall_matrix.cpp \
+		src/adj_matrix_utils.cpp  \
+		src/host_floyd_warshall.cpp \
+		 
 
 fwa:
-	g++ floyd_warshall_array.cpp src/adj_matrix_utils.cpp src/host_floyd_warshall.cpp -o bin/fwa.out
+	g++ -o bin/fwa.out \
+		floyd_warshall_array.cpp \
+		src/adj_matrix_utils.cpp \
+		src/host_floyd_warshall.cpp
 
 fwa_dev:
-	nvcc floyd_warshall_array_device.cu src/adj_matrix_utils.cpp -o bin/fwa_dev.out
+	nvcc -o bin/fwa_dev.out \
+		floyd_warshall_array_device.cu \
+		src/adj_matrix_utils.cpp \
+		src/host_floyd_warshall.cpp 
 	
