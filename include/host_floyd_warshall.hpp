@@ -1,7 +1,9 @@
 #ifndef HOST_FLOYD_WARSHALL
 #define HOST_FLOYD_WARSHALL
 
-#define min(a,b) ((a < b) ? a : b)
+// #define min(a,b) ((a < b) ? a : b)
+
+#include "num_macro.hpp"
 
 int sum_if_not_infinite(int a, int b, int infinity);
 

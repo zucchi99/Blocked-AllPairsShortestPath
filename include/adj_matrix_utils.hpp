@@ -3,8 +3,7 @@
 
 #include <stdbool.h>
 
-/// Big M, value that should be threated as "infinity"
-#define INF __INT16_MAX__
+#include "num_macro.hpp"
 
 /// Parameters used when generating a graph
 #define DENSITY 60
