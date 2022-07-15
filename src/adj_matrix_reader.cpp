@@ -3,8 +3,6 @@
 #include <sstream>
 #include <iostream>
 
-//#define out
-
 int _getNumberOfNodes(std::string adjMatrixLine, const char delim) {
 
 	// insipired to: https://java2blog.com/split-string-space-cpp/#Using_getline_Method

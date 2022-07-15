@@ -101,13 +101,6 @@ void execute_round(int **matrix, int n, int t, int row, int col, int B) {
     }
 }
 
-// int sum_if_not_infinite(int a, int b, int infinity) {    
-//     bool isInf = (a == infinity) || (b == infinity);
-//     return isInf ? infinity : a+b;
-// }
-
-
-
 // ---------------------------------------------------------------------------
 // Array data structure version
 
