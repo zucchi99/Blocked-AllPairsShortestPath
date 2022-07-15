@@ -5,7 +5,11 @@
 
 #include "num_macro.hpp"
 
-int sum_if_not_infinite(int a, int b, int infinity);
+#define sum_if_not_infinite(a,b,infinity) ((a==infinity) || (b==infinity)) ? infinity : a+b 
+
+
+// int sum_if_not_infinite(int a, int b, int infinity);
+
 
 // ---------------------------------------------------------------------------
 // Matrix data structure version
