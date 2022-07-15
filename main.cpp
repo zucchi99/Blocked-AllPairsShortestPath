@@ -1,19 +1,18 @@
-﻿#include "adj_matrix_reader.h"
+﻿#include "include/adj_matrix_utils.h"
 
 #include <iostream>
 #include <string>
-
 
 using namespace std;
 
 int main() {
 
-	const string adjMatrixFile = "C:\\Users\\Proprietario\\Downloads\\graph_adj_matrix.csv";
+	const string adjMatrixFile = "./graphs_istances/graph_random_basic.csv";
 	const char delim = ' ';
 	
 	int numberOfNodes;
 
-	cout << "Lettura file: C:\\Users\\Proprietario\\Downloads\\graph_adj_matrix.csv" << endl;
+	cout << "Lettura file: " << endl;
 
 	int** adjMatrix = readAdjMatrixCSV(adjMatrixFile, delim, &numberOfNodes);
 
