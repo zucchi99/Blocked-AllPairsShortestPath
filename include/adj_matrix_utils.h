@@ -1,22 +1,24 @@
-#include <string>
+#ifndef ADJ_MATRIX_UTILS_H
+#define ADJ_MATRIX_UTILS_H
 
-#pragma once
+#include <stdbool.h>
 
-/// <summary>
-/// Leggi un file CSV contenente una matrice di adiacenza.
-/// </summary>
-/// <param name="filename">Il nome del file da leggere</param>
-/// <param name="delim">Il delimitatore del file CSV</param>
-/// <param name="adjMatrix">Un puntatore vuoto dove verrà allocata la memoria per mem. la matrice</param>
-/// <param name="numberOfNodes">Il numero di nodi del grafo (corrisponde al numero di righe e colonne della matrice)</param>
-/// <return>0 if okay, else something less</return>
-int** readAdjMatrixCSV(std::string filename, const char delim, int* numberOfNodes);
+/// Big M, value that should be threated as "infinity"
+#define INF __INT16_MAX__
 
-/// <summary>
-/// Stampa a schermo una matrice di adiacenza (utile a fini di debug).
-/// </summary>
-/// <param name="adjMatrix"></param>
-/// <param name="numberOfNodes"></param>
-/// <param name="delim"></param>
-/// <returns></returns>
-void printAdjMatrix(int** adjMatrix, int numberOfNodes, const char delim);
+/// Parameters used when generating a graph
+#define DENSITY 60
+#define MIN_COST 1
+#define MAX_COST 20
+
+/// Print a bool as a string
+#define bool_to_string(cond) (cond ? "true" : "false")
+
+/// #pragma once
+
+void print_array(int *array, int size);
+void print_matrix(int **matrix, int m, int n);
+void generate_graph(int **matrix, int n, int seed);
+bool same_matrix(int **matrix_1, int **matrix_2, int m, int n);
+
+#endif // ADJ_MATRIX_UTILS_H

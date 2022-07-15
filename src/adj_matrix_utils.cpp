@@ -1,88 +1,50 @@
 #include "../include/adj_matrix_utils.h"
-#include <fstream>
-#include <sstream>
-#include <iostream>
 
-//#define out
+#include <stdio.h>
+#include <stdlib.h>
 
-int _getNumberOfNodes(std::string adjMatrixLine, const char delim) {
 
-	// insipired to: https://java2blog.com/split-string-space-cpp/#Using_getline_Method
-
-	std::istringstream ss(adjMatrixLine);
-
-	int nodesCounter = 0;
-
-	std::string s;
-	while (std::getline(ss, s, delim)) {
-		nodesCounter++;
-	}
-
-	return nodesCounter;
+void print_array(int *array, int size) {
+    printf("[");
+    for (int i = 0; i < size; i++) {
+        if (array[i] < INF)
+            printf("%02d", array[i]);
+        else 
+            printf("--");
+        if (i < size-1) printf(", ");
+    }
+    printf("]\n");
 }
 
-int _parseLine(std::string adjMatrixLine, const char delim, int lineNumber, int** adjMatrix) {
+void print_matrix(int **matrix, int m, int n) {
+    printf("[\n");
+    for (int i = 0; i < m; i++) {
+        printf(" ");
+        print_array(matrix[i], n);
 
-	// insipired to: https://java2blog.com/split-string-space-cpp/#Using_getline_Method
-
-	std::istringstream ss(adjMatrixLine);
-	std::string itemStr;
-
-	int i = 0;
-	while (std::getline(ss, itemStr, delim)) {
-
-		int value = std::stoi(itemStr);
-		adjMatrix[lineNumber][i] = value;
-
-		i++;
-	}
-
-	return 0;
+    }
+    printf("]\n");
 }
 
-
-int** readAdjMatrixCSV(const std::string filename, const char delim, int *numberOfNodes) {
-
-	std::ifstream fs(filename);
-	
-	if (!fs.is_open()) {
-		// todo: add error
-	}
-	
-	if (fs.eof()) {
-		// todo: add error
-	}
-
-	// read first line
-	std::string line;
-	std::getline(fs, line);
-	int lineNumber = 0;
-	
-	// get number of nodes
-	*numberOfNodes = _getNumberOfNodes(line, delim);
-
-	// allocate memory for matrix
-	int** adjMatrix = (int **) malloc(sizeof(int*) * (*numberOfNodes));
-
-	// parse all lines and fill adjMatrix
-	do {
-		adjMatrix[lineNumber] = (int*) malloc(sizeof(int) * (*numberOfNodes));
-		_parseLine(line, delim, lineNumber, adjMatrix);
-		lineNumber++;
-	} while (std::getline(fs, line));
-
-	return adjMatrix;
+bool same_matrix(int **matrix_1, int **matrix_2, int m, int n) {
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            if(matrix_1[i][j] != matrix_2[i][j]) return false;
+        }
+    }
+    return true;
 }
 
-
-void printAdjMatrix(int** adjMatrix, int numberOfNodes, const char delim) {
-	
-	for (int i = 0; i < numberOfNodes; i++) {
-		for (int j = 0; j < numberOfNodes-1; j++) {
-			std::cout << adjMatrix[i][j] << delim;
-		}
-
-		std::cout << adjMatrix[i][numberOfNodes - 1] << "\n";
-	}
+void generate_graph(int **matrix, int n, int seed) {
+    srand(seed);
+    for (int i = 0; i < n; i++) {
+        matrix[i][i] = 0;
+        for (int j = i+1; j < n; j++) {
+            bool add_edge = (rand() % 100) <= DENSITY;
+            int val = (rand() % MAX_COST) + MIN_COST;
+            matrix[i][j] = add_edge ? val : INF;
+            //non-oriented graph
+            matrix[j][i] = matrix[i][j];
+        }
+    }
 }
-
