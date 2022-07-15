@@ -14,14 +14,21 @@
 /// Print a bool as a string
 #define bool_to_string(cond) (cond ? "true" : "false")
 
-/// #pragma once
+// ---------------------------------------------------------------
+//  PRINT UTILS
 
 void print_array(int *array, int size);
 void print_matrix(int **matrix, int m, int n);
 void print_element(int val, int infinity);
 
+// ---------------------------------------------------------------
+// MATRIX GENERATION, COMPARE and others utils
+
 void generate_graph(int **matrix, int n, int seed);
 bool same_matrix(int **matrix_1, int **matrix_2, int m, int n);
+
+// ---------------------------------------------------------------
+// ARRAY MATRIX FUNCTIONS VARIANTS
 
 void print_arr_matrix(int *matrix, int m, int n);
 void generate_arr_graph(int *matrix, int n, int seed);
