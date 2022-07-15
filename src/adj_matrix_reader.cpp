@@ -1,4 +1,4 @@
-#include "adj_matrix_utils.h"
+#include "../include/adj_matrix_reader.hpp"
 #include <fstream>
 #include <sstream>
 #include <iostream>

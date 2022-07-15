@@ -1,5 +1,7 @@
-#include <string>
+#ifndef ADJ_MATRIX_READER_HPP
+#define ADJ_MATRIX_READER_HPP
 
+#include <string>
 
 /// <summary>
 /// Leggi un file CSV contenente una matrice di adiacenza.
@@ -19,3 +21,5 @@ int** readAdjMatrixCSV(std::string filename, const char delim, int* numberOfNode
 /// <param name="delim"></param>
 /// <returns></returns>
 void printAdjMatrix(int** adjMatrix, int numberOfNodes, const char delim);
+
+#endif
