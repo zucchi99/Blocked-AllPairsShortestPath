@@ -1,14 +1,21 @@
+# compilati
+*.out
+bin/
+
+# roba di visual studio
 .vs
 BlockedAPSP.vcx.proj.user
 UpgradeLog.htm
 x64/
-
-*.out
-
 *.vcx.proj.user
 *.vcxproj
 *.sln
 *.vcxproj.user
 
+# istanze di input (matr. di adj di grafi)
 graphs_istances/
+
+# impostazioni di vs-code
 .vscode/
+
+
