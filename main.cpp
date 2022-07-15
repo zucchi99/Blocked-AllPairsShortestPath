@@ -1,4 +1,4 @@
-﻿#include "include/adj_matrix_utils.h"
+﻿#include "include/adj_matrix_utils.hpp"
 
 #include <iostream>
 #include <string>

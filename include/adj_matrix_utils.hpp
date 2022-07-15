@@ -1,5 +1,5 @@
-#ifndef ADJ_MATRIX_UTILS_H
-#define ADJ_MATRIX_UTILS_H
+#ifndef ADJ_MATRIX_UTILS_HPP
+#define ADJ_MATRIX_UTILS_HPP
 
 #include <stdbool.h>
 
