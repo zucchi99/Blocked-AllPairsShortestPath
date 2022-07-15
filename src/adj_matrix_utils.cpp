@@ -43,7 +43,14 @@ bool same_matrix(int **matrix_1, int **matrix_2, int m, int n) {
     return true;
 }
 
-void generate_graph(int **matrix, int n, int seed) {
+int** generate_graph(int n, int seed) {
+
+    int **matrix = (int **) malloc(sizeof(int *) * n);
+    for (int i = 0; i < n; i++) {
+        matrix[i] = (int *) malloc(sizeof(int) * n);
+    }
+
+
     srand(seed);
     for (int i = 0; i < n; i++) {
         matrix[i][i] = 0;
@@ -55,6 +62,8 @@ void generate_graph(int **matrix, int n, int seed) {
             matrix[j][i] = matrix[i][j];
         }
     }
+
+    return matrix;
 }
 
 // ---------------------------------------------------------------

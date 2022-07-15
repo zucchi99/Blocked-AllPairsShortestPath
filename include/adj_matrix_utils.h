@@ -24,7 +24,7 @@ void print_element(int val, int infinity);
 // ---------------------------------------------------------------
 // MATRIX GENERATION, COMPARE and others utils
 
-void generate_graph(int **matrix, int n, int seed);
+int** generate_graph(int n, int seed);
 bool same_matrix(int **matrix_1, int **matrix_2, int m, int n);
 
 // ---------------------------------------------------------------
