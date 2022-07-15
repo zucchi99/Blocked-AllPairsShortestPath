@@ -34,7 +34,7 @@ int main() {
     //if no weights in graph:
     //int INF = (n * (n-1) / 2) + 1;
 
-    int BLOCKING_FACTOR = n; //2;
+    int BLOCKING_FACTOR = 2;
 
     //memory allocation 
     // int *rand_matrix_1 = (int *) malloc(sizeof(int *) * n * n);
@@ -226,8 +226,10 @@ __global__ void execute_round_device(int *matrix, int n, int t, int row, int col
 
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
-    int i = threadIdx.x;    // row
-    int j = blockIdx.x;     // col
+    int i = tid/n;  // row
+    int j = tid%n;  // col
+
+    // printf("(%d, %d)\n", i, j);
 
     int row_start = row * B;
     int row_end = (row+1) * B;
@@ -237,13 +239,19 @@ __global__ void execute_round_device(int *matrix, int n, int t, int row, int col
 
     for (int k = block_start; k < block_end; k++) {
 
+        int a, b, x1, x2;
+
         if (i>=row_start && i<row_end && j>=col_start && j<col_end) {
 
-            int a = matrix[i*n + j];
-            int x1 = matrix[i*n + k];
-            int x2 =  matrix[k*n + j];
+            x1 = matrix[i*n + k];
+            x2 =  matrix[k*n + j];
+            a = matrix[i*n + j];
+            b = (x1 == INF) || (x2 == INF) ? INF : x1+x2;
+        }
 
-            int b = (x1 == INF) || (x2 == INF) ? INF : x1+x2;
+        __syncthreads();
+
+        if (i>=row_start && i<row_end && j>=col_start && j<col_end) {
 
             matrix[i*n + j] = min(a, b); 
         }
