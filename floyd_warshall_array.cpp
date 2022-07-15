@@ -6,13 +6,14 @@
 #include <stdbool.h>
 
 #include "include/adj_matrix_utils.hpp"
+#include "include/host_floyd_warshall.hpp"
 
 #define min(a,b) ((a < b) ? a : b)
 
-void floyd_warshall(int *matrix, int n);
-void floyd_warshall_blocked(int *matrix, int n, int B);
-int sum_if_not_infinite(int a, int b, int infinity);
-void execute_round(int *matrix, int n, int t, int row, int col, int B);
+void arr_floyd_warshall(int *matrix, int n);
+void arr_floyd_warshall_blocked(int *matrix, int n, int B);
+// int sum_if_not_infinite(int a, int b, int infinity);
+void arr_execute_round(int *matrix, int n, int t, int row, int col, int B);
 
 int main() {
 
@@ -41,7 +42,7 @@ int main() {
     print_arr_matrix(rand_matrix_1, n, n);
 
     //floyd_warshall execution
-    floyd_warshall(rand_matrix_1, n);
+    arr_floyd_warshall(rand_matrix_1, n);
 
     //print floyd_warshall output
     printf("output adjacency matrix classic %lux%lu:\n", n, n);
@@ -53,7 +54,7 @@ int main() {
     int *rand_matrix_2 = generate_arr_graph(n, rand_seed);
     
     //floyd_warshall_blocked execution
-    floyd_warshall_blocked(rand_matrix_2, n, BLOCKING_FACTOR);
+    arr_floyd_warshall_blocked(rand_matrix_2, n, BLOCKING_FACTOR);
     
     //print floyd_warshall_blocked output
     printf("output adjacency matrix blocked %lux%lu:\n", n, n);
@@ -68,7 +69,7 @@ int main() {
     return 0;
 }
 
-void floyd_warshall(int *matrix, int n) {
+void arr_floyd_warshall(int *matrix, int n) {
     for(int k = 0; k < n; k++) {
         for(int i = 0; i < n; i++) {
             for(int j = 0; j < n; j++) {
@@ -80,7 +81,7 @@ void floyd_warshall(int *matrix, int n) {
     }
 }
 
-void floyd_warshall_blocked(int *matrix, int n, int B) {
+void arr_floyd_warshall_blocked(int *matrix, int n, int B) {
 
     int num_rounds = n/B;
 
@@ -89,58 +90,58 @@ void floyd_warshall_blocked(int *matrix, int n, int B) {
         //execute_round(int *matrix, int n, int t, int row, int col, int B)
 
         //phase 1: self-dependent block
-        execute_round(matrix, n, t, t, t, B);
+        arr_execute_round(matrix, n, t, t, t, B);
 
         //phase 2 blocks left
         for (int j = t-1; j >= 0; j--) {
-            execute_round(matrix, n, t, t, j, B);
+            arr_execute_round(matrix, n, t, t, j, B);
         }
 
         //phase 2 blocks above
         for (int i = t-1; i >= 0; i--) {
-            execute_round(matrix, n, t, i, t, B);
+            arr_execute_round(matrix, n, t, i, t, B);
         }
 
         //phase 2 blocks below
         for (int i = t+1; i < num_rounds; i++) {
-            execute_round(matrix, n, t, i, t, B);
+            arr_execute_round(matrix, n, t, i, t, B);
         }
 
         //phase 2 blocks right
         for (int j = t+1; j < num_rounds; j++) {
-            execute_round(matrix, n, t, t, j, B);
+            arr_execute_round(matrix, n, t, t, j, B);
         }
         
         //phase 2,3: remaining blocks
         //phase 3 blocks above and right
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t-1; i >= 0; i--) {
-                execute_round(matrix, n, t, i, j, B);
+                arr_execute_round(matrix, n, t, i, j, B);
             }
         }
         //phase 3 blocks above and left
         for (int j = t-1; j >= 0; j--) {
             for (int i = t-1; i >= 0; i--) {
-                execute_round(matrix, n, t, i, j, B);
+                arr_execute_round(matrix, n, t, i, j, B);
             }
         }
         //phase 3 blocks below and left
         for (int j = t-1; j >= 0; j--) {
             for (int i = t+1; i < num_rounds; i++) {
-                execute_round(matrix, n, t, i, j, B);
+                arr_execute_round(matrix, n, t, i, j, B);
             }
         }      
         //phase 3 blocks below and right
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t+1; i < num_rounds; i++) {
-                execute_round(matrix, n, t, i, j, B);
+                arr_execute_round(matrix, n, t, i, j, B);
             }
         }   
         
     }
 }
 
-void execute_round(int *matrix, int n, int t, int row, int col, int B) {
+void arr_execute_round(int *matrix, int n, int t, int row, int col, int B) {
     //foreach k: t*B <= t < t+B
     int block_start = t * B;
     int block_end = (t+1) * B;
@@ -163,7 +164,7 @@ void execute_round(int *matrix, int n, int t, int row, int col, int B) {
     }
 }
 
-int sum_if_not_infinite(int a, int b, int infinity) {
-    bool isInf = (a == infinity) || (b == infinity);
-    return isInf ? infinity : a+b;
-}
+// int sum_if_not_infinite(int a, int b, int infinity) {
+//     bool isInf = (a == infinity) || (b == infinity);
+//     return isInf ? infinity : a+b;
+// }
