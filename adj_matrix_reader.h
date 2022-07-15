@@ -1,6 +1,5 @@
 #include <string>
 
-#pragma once
 
 /// <summary>
 /// Leggi un file CSV contenente una matrice di adiacenza.
