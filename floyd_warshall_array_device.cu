@@ -248,7 +248,7 @@ __global__ void execute_round_device(int *matrix, int n, int t, int row, int col
             x1 = matrix[i*n + k];
             x2 =  matrix[k*n + j];
             a = matrix[i*n + j];
-            b = (x1 == INF) || (x2 == INF) ? INF : x1+x2;
+            b = sum_if_not_infinite(x1,x2, INF);
         }
 
         __syncthreads();

@@ -5,7 +5,6 @@
 
 #include "num_macro.hpp"
 
-#define sum_if_not_infinite(a,b,infinity) ((a==infinity) || (b==infinity)) ? infinity : a+b 
 
 
 // int sum_if_not_infinite(int a, int b, int infinity);

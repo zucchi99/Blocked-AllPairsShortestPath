@@ -7,6 +7,8 @@
 /// Get minimum of two values
 #define min(a,b) ((a < b) ? a : b)
 
+/// Sum two numbers if they are not infinite, else return infinity
+#define sum_if_not_infinite(a,b,infinity) ((a==infinity) || (b==infinity)) ? infinity : a+b 
 
 
 #endif
