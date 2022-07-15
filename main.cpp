@@ -1,13 +1,14 @@
-﻿#include "include/adj_matrix_utils.hpp"
-
-#include <iostream>
+﻿#include <iostream>
 #include <string>
+
+#include "include/adj_matrix_reader.hpp"
+#include "include/adj_matrix_utils.hpp"
 
 using namespace std;
 
 int main() {
 
-	const string adjMatrixFile = "./graphs_istances/graph_random_basic.csv";
+	const string adjMatrixFile = "./graphs_istances/easy_graph.csv";
 	const char delim = ' ';
 	
 	int numberOfNodes;
@@ -20,5 +21,5 @@ int main() {
 
 	cout << "Stampa matrice:" << endl;
 
-	printAdjMatrix(adjMatrix, numberOfNodes, delim);
+	print_matrix(adjMatrix, numberOfNodes, numberOfNodes);
 }

@@ -13,13 +13,4 @@
 /// <return>0 if okay, else something less</return>
 int** readAdjMatrixCSV(std::string filename, const char delim, int* numberOfNodes);
 
-/// <summary>
-/// Stampa a schermo una matrice di adiacenza (utile a fini di debug).
-/// </summary>
-/// <param name="adjMatrix"></param>
-/// <param name="numberOfNodes"></param>
-/// <param name="delim"></param>
-/// <returns></returns>
-void printAdjMatrix(int** adjMatrix, int numberOfNodes, const char delim);
-
 #endif

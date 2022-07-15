@@ -1,7 +1,8 @@
-main :	
-	nvcc -rdc=true -o bin/main.out \
-		main.cpp 
-		src/adj_matrix_reader.cpp 
+read_matrix :	
+	nvcc -rdc=true -o bin/read_matrix.out \
+		main.cpp \
+		src/adj_matrix_reader.cpp \
+		src/adj_matrix_utils.cpp
 
 fwm:
 	g++ -o bin/fwm.out \

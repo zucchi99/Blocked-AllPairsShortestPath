@@ -71,16 +71,3 @@ int** readAdjMatrixCSV(const std::string filename, const char delim, int *number
 
 	return adjMatrix;
 }
-
-
-void printAdjMatrix(int** adjMatrix, int numberOfNodes, const char delim) {
-	
-	for (int i = 0; i < numberOfNodes; i++) {
-		for (int j = 0; j < numberOfNodes-1; j++) {
-			std::cout << adjMatrix[i][j] << delim;
-		}
-
-		std::cout << adjMatrix[i][numberOfNodes - 1] << "\n";
-	}
-}
-

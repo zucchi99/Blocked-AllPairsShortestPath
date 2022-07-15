@@ -1,5 +1,9 @@
 # Blocked-AllPairsShortestPath
 
+## Note varie
+
+Comando per compilare tutto:    <code>make fwa fwm fwa_dev read_matrix</code>
+
 ## Todo
 
 * F.W. classico <-- Zuccato
