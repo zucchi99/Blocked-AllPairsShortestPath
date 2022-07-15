@@ -5,7 +5,7 @@
 #include <math.h>
 #include <stdbool.h>
 
-# include "src/adj_matrix_utils.cpp"
+#include "src/adj_matrix_utils.cpp"
 
 #define min(a,b) ((a < b) ? a : b)
 
