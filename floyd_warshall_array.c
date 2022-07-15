@@ -25,15 +25,16 @@ int main() {
     int BLOCKING_FACTOR = 2;
 
     //memory allocation 
-    int *rand_matrix_1 = (int *) malloc(sizeof(int *) * n * n);
-    int *rand_matrix_2 = (int *) malloc(sizeof(int *) * n * n);
+    // int *rand_matrix_1 = (int *) malloc(sizeof(int *) * n * n);
+    // int *rand_matrix_2 = (int *) malloc(sizeof(int *) * n * n);
+
     //random seed
     int rand_seed = time(NULL);
     printf("seed: %d\n", rand_seed);
     srand(rand_seed);
 
     //matrix initialization
-    generate_arr_graph(rand_matrix_1, n, rand_seed);
+    int *rand_matrix_1 = generate_arr_graph(n, rand_seed);
 
     //matrix print
     printf("input adjacency matrix %lux%lu:\n", n, n);
@@ -49,7 +50,7 @@ int main() {
     //---------------------------------------------------------------
 
     //matrix initialization with same seed
-    generate_arr_graph(rand_matrix_2, n, rand_seed);
+    int *rand_matrix_2 = generate_arr_graph(n, rand_seed);
     
     //floyd_warshall_blocked execution
     floyd_warshall_blocked(rand_matrix_2, n, BLOCKING_FACTOR);

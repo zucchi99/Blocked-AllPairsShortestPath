@@ -85,7 +85,10 @@ bool same_arr_matrix(int *matrix_1, int *matrix_2, int n) {
     return true;
 }
 
-void generate_arr_graph(int *matrix, int n, int seed) {
+int* generate_arr_graph(int n, int seed) {
+
+    int *matrix = (int *) malloc(sizeof(int *) * n * n);
+
     srand(seed);
     for (int i = 0; i < n; i++) {
         matrix[i*n + i] = 0;
@@ -97,4 +100,6 @@ void generate_arr_graph(int *matrix, int n, int seed) {
             matrix[j*n + i] = matrix[i*n + j];
         }
     }
+
+    return matrix;
 }
