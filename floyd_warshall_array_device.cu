@@ -44,7 +44,11 @@ int main() {
         printf("seed: %d", rand_seed);
 
         //matrix initialization
-        int *rand_matrix_1 = generate_arr_graph(n, rand_seed);
+        int *rand_matrix_1 = (int *) malloc(sizeof(int *) * n * n);
+        int *rand_matrix_2 = (int *) malloc(sizeof(int *) * n * n);
+        populate_arr_graph(rand_matrix_1, n, rand_seed);
+        copy_arr_graph(rand_matrix_1, rand_matrix_2, n);
+        // generate_arr_graph(n, rand_seed);
 
         //floyd_warshall execution
         arr_floyd_warshall(rand_matrix_1, n);
@@ -52,7 +56,7 @@ int main() {
         //---------------------------------------------------------------
 
         //matrix initialization with same seed
-        int *rand_matrix_2 = generate_arr_graph(n, rand_seed);
+        //  int *rand_matrix_2 = generate_arr_graph(n, rand_seed);
         
         //floyd_warshall_blocked execution (on device)
         floyd_warshall_blocked_device_v1_0(rand_matrix_2, n, BLOCKING_FACTOR);

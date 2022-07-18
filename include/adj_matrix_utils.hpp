@@ -30,7 +30,8 @@ bool same_matrix(int **matrix_1, int **matrix_2, int m, int n);
 // ARRAY MATRIX FUNCTIONS VARIANTS
 
 void print_arr_matrix(int *matrix, int m, int n);
-int* generate_arr_graph(int n, int seed);
+void populate_arr_graph(int* arr_matrix, int n, int seed);
+void copy_arr_graph(int* src, int* target, int n);
 bool same_arr_matrix(int *matrix_1, int *matrix_2, int n);
 
 #endif // ADJ_MATRIX_UTILS_H

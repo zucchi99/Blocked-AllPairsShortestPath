@@ -85,21 +85,28 @@ bool same_arr_matrix(int *matrix_1, int *matrix_2, int n) {
     return true;
 }
 
-int* generate_arr_graph(int n, int seed) {
+void populate_arr_graph(int* arr_matrix, int n, int seed) {
 
-    int *matrix = (int *) malloc(sizeof(int *) * n * n);
+    // int *matrix = (int *) malloc(sizeof(int *) * n * n);
 
     srand(seed);
     for (int i = 0; i < n; i++) {
-        matrix[i*n + i] = 0;
+        arr_matrix[i*n + i] = 0;
         for (int j = i+1; j < n; j++) {
             bool add_edge = (rand() % 100) <= DENSITY;
             int val = (rand() % MAX_COST) + MIN_COST;
-            matrix[i*n + j] = add_edge ? val : INF;
+            arr_matrix[i*n + j] = add_edge ? val : INF;
             //non-oriented graph
-            matrix[j*n + i] = matrix[i*n + j];
+            arr_matrix[j*n + i] = arr_matrix[i*n + j];
         }
     }
 
-    return matrix;
+    // return arr_matrix;
+}
+
+void copy_arr_graph(int* src, int* target, int n) {
+    for (size_t i = 0; i < n*n; i++)
+    {
+        target[i] = src[i];
+    }
 }
