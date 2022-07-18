@@ -29,7 +29,7 @@ void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR) 
     for (size_t i = 0; i < n_tests; i++)
     {
         //random seed
-        int rand_seed = i*clock(); //time(NULL);
+        int rand_seed = (i+1)*clock(); //time(NULL);
         // srand(rand_seed);
         printf("seed: %d", rand_seed);
 
@@ -61,18 +61,20 @@ void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR) 
 
             n_wrong++;
 
-            //matrix print
-            printf("\ninput adjacency matrix %lux%lu:\n", input_size, input_size);
-            print_arr_matrix(rand_matrix_1, input_size, input_size);
+            // //matrix print
+            // printf("\ninput adjacency matrix %lux%lu:\n", input_size, input_size);
+            // print_arr_matrix(rand_matrix_1, input_size, input_size);
 
-            //print floyd_warshall output
-            printf("output adjacency matrix classic %lux%lu:\n", input_size, input_size);
-            print_arr_matrix(rand_matrix_1, input_size, input_size);
+            // //print floyd_warshall output
+            // printf("output adjacency matrix classic %lux%lu:\n", input_size, input_size);
+            // print_arr_matrix(rand_matrix_1, input_size, input_size);
 
-            //print floyd_warshall_blocked output
-            printf("output adjacency matrix blocked %lux%lu:\n", input_size, input_size);
-            print_arr_matrix(rand_matrix_2, input_size, input_size);
-            printf("Matrixes are equal? %s\n", bool_to_string(are_the_same));
+            // //print floyd_warshall_blocked output
+            // printf("output adjacency matrix blocked %lux%lu:\n", input_size, input_size);
+            // print_arr_matrix(rand_matrix_2, input_size, input_size);
+            // printf("Matrixes are equal? %s\n", bool_to_string(are_the_same));
+
+            printf("NOT OK - seed:\t%d\n", rand_seed); 
         } else {
             printf("\tOK!\n");
         }
@@ -88,15 +90,15 @@ void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR) 
 int main() {
 
     //matrix size n*n
-    size_t n = 6;
+    size_t n = 32;
 
     //if no weights in graph:
     //int INF = (n * (n-1) / 2) + 1;
 
-    int BLOCKING_FACTOR = 2;
+    int BLOCKING_FACTOR = 8;
 
-    // temp_statistical_test(25, n, BLOCKING_FACTOR);
-    do_nvprof_performance_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 100, clock());
+    temp_statistical_test(1000, n, BLOCKING_FACTOR);
+    // do_nvprof_performance_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 100, clock());
     
     return 0;
 }
@@ -111,12 +113,25 @@ __global__ void execute_round_device(int *matrix, int n, int t, int row, int col
     //foreach k: t*B <= t < t+B
     for (int k = t * B; k < (t+1) * B; k++) {
 
+        int a, b;
+
         // check if thread correspond to one of the cells in current block
         if (i>=row * B && i<(row+1) * B && j>=col * B && j<(col+1) * B) {
 
             // WARNING: do NOT put the macro directly into 
-            matrix[i*n + j] = min(matrix[i*n + j], (sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF))); 
+            a = matrix[i*n + j];
+            b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
         }
+
+        __syncthreads();
+
+
+        if (i>=row * B && i<(row+1) * B && j>=col * B && j<(col+1) * B) {
+            matrix[i*n + j] = min(a, b);
+        }
+        
+        __syncthreads();
+
     }
 }
 
