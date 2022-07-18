@@ -5,6 +5,9 @@
 #include <math.h>
 #include <stdbool.h>
 
+#include <ctime>
+
+
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
@@ -36,7 +39,7 @@ int main() {
     for (size_t i = 0; i < 25; i++)
     {
         //random seed
-        int rand_seed = i*time(NULL);
+        int rand_seed = i*clock(); //time(NULL);
         // srand(rand_seed);
         printf("seed: %d", rand_seed);
 
@@ -110,24 +113,15 @@ __global__ void execute_round_device(int *matrix, int n, int t, int row, int col
 
     for (int k = block_start; k < block_end; k++) {
 
-        int a, b, x1, x2;
-
         if (i>=row_start && i<row_end && j>=col_start && j<col_end) {
 
-            x1 = matrix[i*n + k];
-            x2 =  matrix[k*n + j];
-            a = matrix[i*n + j];
-            b = sum_if_not_infinite(x1,x2, INF);
-        }
-
-        // __syncthreads();
-
-        if (i>=row_start && i<row_end && j>=col_start && j<col_end) {
+            int x1 = matrix[i*n + k];
+            int x2 =  matrix[k*n + j];
+            int a = matrix[i*n + j];
+            int b = sum_if_not_infinite(x1, x2, INF);
 
             matrix[i*n + j] = min(a, b); 
         }
-
-        // __syncthreads();
     }
 }
 
