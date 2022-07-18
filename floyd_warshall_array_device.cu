@@ -20,23 +20,11 @@ void floyd_warshall_blocked_device_v1_0(int *matrix, int n, int B);
 __global__ void execute_round_device(int *matrix, int n, int t, int row, int col, int B);
 
 
-int main() {
-
-    //matrix size n*n
-    size_t n = 6;
-
-    //if no weights in graph:
-    //int INF = (n * (n-1) / 2) + 1;
-
-    int BLOCKING_FACTOR = 2;
-
-    //memory allocation 
-    // int *rand_matrix_1 = (int *) malloc(sizeof(int *) * n * n);
-    // int *rand_matrix_2 = (int *) malloc(sizeof(int *) * n * n);
+void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR) {
 
     int n_wrong = 0;
 
-    for (size_t i = 0; i < 25; i++)
+    for (size_t i = 0; i < n_tests; i++)
     {
         //random seed
         int rand_seed = i*clock(); //time(NULL);
@@ -44,44 +32,44 @@ int main() {
         printf("seed: %d", rand_seed);
 
         //matrix initialization
-        int *rand_matrix_1 = (int *) malloc(sizeof(int *) * n * n);
-        int *rand_matrix_2 = (int *) malloc(sizeof(int *) * n * n);
-        populate_arr_graph(rand_matrix_1, n, rand_seed);
-        copy_arr_graph(rand_matrix_1, rand_matrix_2, n);
-        // generate_arr_graph(n, rand_seed);
+        int *rand_matrix_1 = (int *) malloc(sizeof(int *) * input_size * input_size);
+        int *rand_matrix_2 = (int *) malloc(sizeof(int *) * input_size * input_size);
+        populate_arr_graph(rand_matrix_1, input_size, rand_seed);
+        copy_arr_graph(rand_matrix_1, rand_matrix_2, input_size);
+        // generate_arr_graph(input_size, rand_seed);
 
         //floyd_warshall execution
-        arr_floyd_warshall(rand_matrix_1, n);
+        arr_floyd_warshall(rand_matrix_1, input_size);
 
         //---------------------------------------------------------------
 
         //matrix initialization with same seed
-        //  int *rand_matrix_2 = generate_arr_graph(n, rand_seed);
+        //  int *rand_matrix_2 = generate_arr_graph(input_size, rand_seed);
         
         //floyd_warshall_blocked execution (on device)
-        floyd_warshall_blocked_device_v1_0(rand_matrix_2, n, BLOCKING_FACTOR);
-        // arr_floyd_warshall_blocked(rand_matrix_2, n, BLOCKING_FACTOR);
+        floyd_warshall_blocked_device_v1_0(rand_matrix_2, input_size, BLOCKING_FACTOR);
+        // arr_floyd_warshall_blocked(rand_matrix_2, input_size, BLOCKING_FACTOR);
         
         //---------------------------------------------------------------
 
         //compare matrixes output
-        bool are_the_same = same_arr_matrix(rand_matrix_1, rand_matrix_2, n);
+        bool are_the_same = same_arr_matrix(rand_matrix_1, rand_matrix_2, input_size);
 
         if (!are_the_same) {
 
             n_wrong++;
 
             //matrix print
-            printf("\ninput adjacency matrix %lux%lu:\n", n, n);
-            print_arr_matrix(rand_matrix_1, n, n);
+            printf("\ninput adjacency matrix %lux%lu:\n", input_size, input_size);
+            print_arr_matrix(rand_matrix_1, input_size, input_size);
 
             //print floyd_warshall output
-            printf("output adjacency matrix classic %lux%lu:\n", n, n);
-            print_arr_matrix(rand_matrix_1, n, n);
+            printf("output adjacency matrix classic %lux%lu:\n", input_size, input_size);
+            print_arr_matrix(rand_matrix_1, input_size, input_size);
 
             //print floyd_warshall_blocked output
-            printf("output adjacency matrix blocked %lux%lu:\n", n, n);
-            print_arr_matrix(rand_matrix_2, n, n);
+            printf("output adjacency matrix blocked %lux%lu:\n", input_size, input_size);
+            print_arr_matrix(rand_matrix_2, input_size, input_size);
             printf("Matrixes are equal? %s\n", bool_to_string(are_the_same));
         } else {
             printf("\tOK!\n");
@@ -92,6 +80,20 @@ int main() {
     }
 
     printf("%d errors detected\n\n", n_wrong);
+}
+
+
+int main() {
+
+    //matrix size n*n
+    size_t n = 6;
+
+    //if no weights in graph:
+    //int INF = (n * (n-1) / 2) + 1;
+
+    int BLOCKING_FACTOR = 2;
+
+    temp_statistical_test(25, n, BLOCKING_FACTOR);
     
     return 0;
 }
