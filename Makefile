@@ -23,5 +23,6 @@ fwa_dev:
 		src/adj_matrix_utils.cpp \
 		src/cuda_errors_utils.cu \
 		src/performance_test.cu \
+		src/statistical_test.cpp \
 		src/host_floyd_warshall.cpp 
 	
