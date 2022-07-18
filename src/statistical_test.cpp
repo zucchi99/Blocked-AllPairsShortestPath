@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <cassert>
 
 #include "../include/host_floyd_warshall.hpp"
 #include "../include/adj_matrix_utils.hpp"
@@ -77,4 +78,62 @@ int do_arr_floyd_warshall_statistical_test(
 
     printf("Test ended. Performed %d/%d tests and got %d/%d errors\n\n", i, n_tests, n_wrong, n_tests);
     return n_wrong;
+}
+
+int multi_size_statistical_test(
+    void (*function_to_test)  (int* arr_matrix, int n, int b), 
+    int start_input_size, int end_input_size, 
+    int min_blocking_factor, int max_blocking_factor, 
+    int n_tests_per_round, int use_always_seed, 
+    bool stop_if_fail, bool print_failed_tests) {
+
+    assert(end_input_size%start_input_size==0);
+    assert(end_input_size>=start_input_size);
+    assert(start_input_size%2==0);
+    assert(end_input_size%2==0);
+
+    assert(max_blocking_factor%min_blocking_factor==0);
+    assert(max_blocking_factor>=min_blocking_factor);
+    assert(min_blocking_factor%2==0);
+    assert(max_blocking_factor%2==0);
+
+    assert(start_input_size%min_blocking_factor==0);
+
+    printf("Performing Multi-size statistical test:\n");
+    printf("\tFrom %d to %d input size (multiplying *2 every time)", start_input_size, end_input_size);
+    printf("\tApplying from %d to %d blocking factor for each size (multiplying *2 every time)", min_blocking_factor, max_blocking_factor);
+    printf("\t%d Executions for each single test round\n", n_tests_per_round);
+
+    if (use_always_seed==RANDOM_SEED) {
+        printf("\tseed=RANDOM\n");
+    } else {
+        printf("\tseed=%d\n", use_always_seed);
+    }
+
+    int n_err_tot = 0;
+
+    for (int n = start_input_size; n <= end_input_size; n *= 2) {
+
+        int MAX_B = min(n, max_blocking_factor);
+    
+        for (int BLOCKING_FACTOR = min_blocking_factor; BLOCKING_FACTOR <= MAX_B; BLOCKING_FACTOR *= 2) {
+
+            // if((n % BLOCKING_FACTOR) == 0) {
+                
+                printf("n: %d, B: %d\n", n, BLOCKING_FACTOR);
+                int n_err = do_arr_floyd_warshall_statistical_test(
+                    function_to_test, n, BLOCKING_FACTOR, n_tests_per_round, use_always_seed, stop_if_fail, 1, print_failed_tests);
+                // int n_err = do_arr_floyd_warshall_statistical_test(&arr_floyd_warshall_blocked, n, BLOCKING_FACTOR, 1000, RANDOM_SEED, true, 4, true);
+                
+                n_err_tot += n_err;
+                if (n_err>0 && stop_if_fail) {
+                    return n_err_tot;
+                };
+            // }
+
+            printf("Cumulative errors at size=%d, blocking_factor=%d:\t%d (%d new ones)\n\n", n, BLOCKING_FACTOR, n_err_tot, n_err);
+        }
+    }
+
+    return n_err_tot;
 }
