@@ -49,4 +49,16 @@ Linee di sviluppo da esplorare:
 
 *   valutare l'uso della shared memory
 
+## 18/07 - Stato della situazione
+
+A seguito dell'esecuzione di test statistici un po' più seri, abbiamo scoperto che <code>floyd_warshall_blocked_device_v1_0</code> non funziona per input elevati (il risultato ottenuto è differente rispetto a quello ottenuto con il classico <code>floyd_warshall</code> di base eseguito su host).
+
+Abbiamo quindi implementato una nuova sotto-versione <code>floyd_warshall_blocked_device_v1_1</code> che, a differenza della versione base <code>v1_0</code>, fa uso di una nuova funzione device <code>execute_round_device_v1_0</code> che, a differenza della precedente:
+
+*   viene lanciata su <code>B*B</code> thread (solo quelli del blocco da analizzare) invece che sull'intera griglia
+*   assume che un blocco CUDA abbia dimensione <code>B*B</code>, che non può essere mai superiore alla massima dimensione del blocco nel device
+*   viene lanciata come griglia 2D invece che come array di thread, permettendo un'indicizzazione relativa interna al blocco più semplice (non c'è più solo un <code>tid</code>, bensì un <code>tid_x</code> che rappr. la riga relativa e un <code>tid_y</code> che rappresenta la colonna relativa all'interno del blocco)
+
+All'atto pratico, allo stato attuale si esegue sempre un blocco CUDA singolo per ogni chiamata. Successivamente proveremo a parallelizzare, in più blocchi cuda, le varie esecuzioni delle fasi 2 e 3.
+
 
