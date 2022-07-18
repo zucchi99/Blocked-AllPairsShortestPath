@@ -25,15 +25,21 @@ void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR, 
 
 int main() {
 
-    //matrix size n*n
-    size_t n = 128;
+    for (size_t n = 10; n < 200; n += 2) {
 
-    //if no weights in graph:
-    //int INF = (n * (n-1) / 2) + 1;
+        int MAX_B = min(32, n);
+    
+        for (int BLOCKING_FACTOR = 1; BLOCKING_FACTOR < MAX_B; BLOCKING_FACTOR += 2) {
+            if((n % BLOCKING_FACTOR) == 0) {
+                
+                printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
+                temp_statistical_test(1000, n, BLOCKING_FACTOR, true);
 
-    int BLOCKING_FACTOR = 16;
+            }
+        }
+    }
 
-    // temp_statistical_test(10000, n, BLOCKING_FACTOR, true);
+    // 
     // do_nvprof_performance_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 100, clock());
     
     return 0;
@@ -48,7 +54,14 @@ void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR, 
         //random seed
         int rand_seed = clock(); // (i+1)*clock(); //time(NULL);
         // srand(rand_seed);
-        printf("%lu/%d)\tseed: %d", i, n_tests, rand_seed);
+
+        if((i > 0) && (i % (n_tests/4) == 0)) {
+            double perc = ((double) i) / ((double) n_tests);
+            printf("%.2f%%: %lu of %d\n", perc, i, n_tests);
+        }
+
+        //printf("%lu/%d)\tseed: %d", i, n_tests, rand_seed);
+
 
         //matrix initialization
         int *rand_matrix_1 = (int *) malloc(sizeof(int *) * input_size * input_size);
@@ -91,11 +104,12 @@ void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR, 
             // print_arr_matrix(rand_matrix_2, input_size, input_size);
             // printf("Matrixes are equal? %s\n", bool_to_string(are_the_same));
 
-            printf(" ERROR!\n"); 
+            printf("%lu/%d)\tseed: %d --> ERROR!\n", i, n_tests, rand_seed);
+            //printf(" ERROR!\n"); 
             
             if (stop_if_fail) break;
         } else {
-            printf("\tOK!\n");
+            //printf("\tOK!\n");
         }
 
         free(rand_matrix_1);
