@@ -22,14 +22,14 @@ void floyd_warshall_blocked_device_v1_0(int *matrix, int n, int B);
 __global__ void execute_round_device(int *matrix, int n, int t, int row, int col, int B);
 
 
-void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR) {
+void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR, bool stop_if_fail) {
 
     int n_wrong = 0;
 
     for (size_t i = 0; i < n_tests; i++)
     {
         //random seed
-        int rand_seed = (i+1)*clock(); //time(NULL);
+        int rand_seed = clock(); // (i+1)*clock(); //time(NULL);
         // srand(rand_seed);
         printf("seed: %d", rand_seed);
 
@@ -74,7 +74,9 @@ void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR) 
             // print_arr_matrix(rand_matrix_2, input_size, input_size);
             // printf("Matrixes are equal? %s\n", bool_to_string(are_the_same));
 
-            printf("NOT OK - seed:\t%d\n", rand_seed); 
+            printf(" ERROR!\n"); 
+            
+            if (stop_if_fail) break;
         } else {
             printf("\tOK!\n");
         }
@@ -90,14 +92,14 @@ void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR) 
 int main() {
 
     //matrix size n*n
-    size_t n = 32;
+    size_t n = 64;
 
     //if no weights in graph:
     //int INF = (n * (n-1) / 2) + 1;
 
-    int BLOCKING_FACTOR = 8;
+    int BLOCKING_FACTOR = 16;
 
-    temp_statistical_test(1000, n, BLOCKING_FACTOR);
+    temp_statistical_test(10000, n, BLOCKING_FACTOR, true);
     // do_nvprof_performance_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 100, clock());
     
     return 0;
