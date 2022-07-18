@@ -93,34 +93,20 @@ int main() {
 }
 
 __global__ void execute_round_device(int *matrix, int n, int t, int row, int col, int B) {
-    
-    //foreach k: t*B <= t < t+B
-    int block_start = t * B;
-    int block_end = (t+1) * B;
 
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     int i = tid/n;  // row
     int j = tid%n;  // col
 
-    // printf("(%d, %d)\n", i, j);
+    //foreach k: t*B <= t < t+B
+    for (int k = t * B; k < (t+1) * B; k++) {
 
-    int row_start = row * B;
-    int row_end = (row+1) * B;
-    int col_start = col * B;
-    int col_end = (col+1) * B;
+        // check if thread correspond to one of the cells in current block
+        if (i>=row * B && i<(row+1) * B && j>=col * B && j<(col+1) * B) {
 
-
-    for (int k = block_start; k < block_end; k++) {
-
-        if (i>=row_start && i<row_end && j>=col_start && j<col_end) {
-
-            int x1 = matrix[i*n + k];
-            int x2 =  matrix[k*n + j];
-            int a = matrix[i*n + j];
-            int b = sum_if_not_infinite(x1, x2, INF);
-
-            matrix[i*n + j] = min(a, b); 
+            // WARNING: do NOT put the macro directly into 
+            matrix[i*n + j] = min(matrix[i*n + j], (sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF))); 
         }
     }
 }
