@@ -10,12 +10,6 @@
 
 #include "include/adj_matrix_utils.hpp"
 #include "include/host_floyd_warshall.hpp"
-
-//error handling (todo: copy
-// #define HANDLE_ERROR(err) (handle_error(err, __FILE__, __LINE__))
-// static void handle_error(cudaError_t err, const char *file, int line);
-// void check_CUDA_error(const char *msg);
-
 #include "include/cuda_errors_utils.cuh"
 
 
@@ -94,21 +88,6 @@ int main() {
     
     return 0;
 }
-
-// static void handle_error(cudaError_t err, const char *file, int line) {
-//     if (err != cudaSuccess) {
-//         printf( "%s in %s at line %d\n", cudaGetErrorString( err ), file, line );
-//         exit(EXIT_FAILURE);
-//     }
-// }
-
-// void check_CUDA_error(const char *msg) {
-//     cudaError_t err = cudaGetLastError();
-//     if(cudaSuccess != err) {
-//         fprintf(stderr, "ERRORE CUDA: >%s<: >%s<. Eseguo: EXIT\n", msg, cudaGetErrorString(err) );
-//         exit(-1);
-//     }
-// }
 
 __global__ void execute_round_device(int *matrix, int n, int t, int row, int col, int B) {
     
