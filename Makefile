@@ -22,5 +22,6 @@ fwa_dev:
 		floyd_warshall_array_device.cu \
 		src/adj_matrix_utils.cpp \
 		src/cuda_errors_utils.cu \
+		src/performance_test.cu \
 		src/host_floyd_warshall.cpp 
 	

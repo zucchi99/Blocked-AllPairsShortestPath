@@ -10,10 +10,12 @@
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+#include <cuda_profiler_api.h>
 
 #include "include/adj_matrix_utils.hpp"
 #include "include/host_floyd_warshall.hpp"
 #include "include/cuda_errors_utils.cuh"
+#include "include/performance_test.cuh"
 
 
 void floyd_warshall_blocked_device_v1_0(int *matrix, int n, int B);
@@ -93,7 +95,8 @@ int main() {
 
     int BLOCKING_FACTOR = 2;
 
-    temp_statistical_test(25, n, BLOCKING_FACTOR);
+    // temp_statistical_test(25, n, BLOCKING_FACTOR);
+    do_nvprof_performance_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 100, clock());
     
     return 0;
 }
