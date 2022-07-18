@@ -20,7 +20,24 @@
 
 void floyd_warshall_blocked_device_v1_0(int *matrix, int n, int B);
 __global__ void execute_round_device(int *matrix, int n, int t, int row, int col, int B);
+void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR, bool stop_if_fail);
 
+
+int main() {
+
+    //matrix size n*n
+    size_t n = 128;
+
+    //if no weights in graph:
+    //int INF = (n * (n-1) / 2) + 1;
+
+    int BLOCKING_FACTOR = 16;
+
+    // temp_statistical_test(10000, n, BLOCKING_FACTOR, true);
+    // do_nvprof_performance_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 100, clock());
+    
+    return 0;
+}
 
 void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR, bool stop_if_fail) {
 
@@ -89,21 +106,6 @@ void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR, 
 }
 
 
-int main() {
-
-    //matrix size n*n
-    size_t n = 128;
-
-    //if no weights in graph:
-    //int INF = (n * (n-1) / 2) + 1;
-
-    int BLOCKING_FACTOR = 16;
-
-    // temp_statistical_test(10000, n, BLOCKING_FACTOR, true);
-    // do_nvprof_performance_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 100, clock());
-    
-    return 0;
-}
 
 __global__ void execute_round_device(int *matrix, int n, int t, int row, int col, int B) {
 
