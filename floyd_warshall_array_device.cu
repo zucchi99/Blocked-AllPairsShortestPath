@@ -26,106 +26,41 @@ __global__ void execute_round_device(int *matrix, int n, int t, int row, int col
 
 int main() {
 
-    for (size_t n = 10; n < 200; n += 2) {
+    // for (size_t n = 10; n < 200; n += 2) {
 
-        int MAX_B = min(32, n);
+    //     int MAX_B = min(32, n);
     
-        for (int BLOCKING_FACTOR = 1; BLOCKING_FACTOR < MAX_B; BLOCKING_FACTOR += 2) {
-            if((n % BLOCKING_FACTOR) == 0) {
+    //     for (int BLOCKING_FACTOR = 1; BLOCKING_FACTOR < MAX_B; BLOCKING_FACTOR += 2) {
+    //         if((n % BLOCKING_FACTOR) == 0) {
                 
-                printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
-                do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 1000, true, 4);
+    //             printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
+    //             do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 1000, RANDOM_SEED, true, 4);
 
-            }
-        }
-    }
+    //         }
+    //     }
+    // }
 
-    // int n = 8, b = 2, n_tests = 1000;
-    // do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v1_0, n, b, n_tests, true);
+    int n = 128;
+    int b = 32;
+    int n_tests = 1000;
+    int seed = 2862999;
+    // int seed = RANDOM_SEED;
+
+    do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v1_0, n, b, n_tests, seed, false, 4, false);
 
     // 
     // do_nvprof_performance_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 100, clock());
-
-
     
+
+    // int *input_instance = (int *) malloc(sizeof(int *) * n * n);
+    // int *test_instance_space = (int *) malloc(sizeof(int *) * n * n);
+    // populate_arr_graph(input_instance, n, seed);
+    // copy_arr_graph(input_instance, test_instance_space, n);
+    // bool result = test_arr_floyd_warshall(&floyd_warshall_blocked_device_v1_0, input_instance, test_instance_space, n, b);
+    // printf("Corretto: %s\n", bool_to_string(result));
+
     return 0;
 }
-
-// void temp_statistical_test(int n_tests, size_t input_size, int BLOCKING_FACTOR, bool stop_if_fail) {
-
-//     int n_wrong = 0;
-
-//     for (size_t i = 0; i < n_tests; i++)
-//     {
-//         //random seed
-//         int rand_seed = clock(); // (i+1)*clock(); //time(NULL);
-//         // srand(rand_seed);
-
-//         if((i > 0) && (i % (n_tests/4) == 0)) {
-//             double perc = ((double) i) / ((double) n_tests);
-//             printf("%.2f%%: %lu of %d\n", perc, i, n_tests);
-//         }
-
-//         //printf("%lu/%d)\tseed: %d", i, n_tests, rand_seed);
-
-
-//         //matrix initialization
-//         int *rand_matrix_1 = (int *) malloc(sizeof(int *) * input_size * input_size);
-//         int *rand_matrix_2 = (int *) malloc(sizeof(int *) * input_size * input_size);
-//         populate_arr_graph(rand_matrix_1, input_size, rand_seed);
-//         copy_arr_graph(rand_matrix_1, rand_matrix_2, input_size);
-//         // generate_arr_graph(input_size, rand_seed);
-
-//         //floyd_warshall execution
-//         arr_floyd_warshall(rand_matrix_1, input_size);
-
-//         //---------------------------------------------------------------
-
-//         //matrix initialization with same seed
-//         //  int *rand_matrix_2 = generate_arr_graph(input_size, rand_seed);
-        
-//         //floyd_warshall_blocked execution (on device)
-//         floyd_warshall_blocked_device_v1_0(rand_matrix_2, input_size, BLOCKING_FACTOR);
-//         // arr_floyd_warshall_blocked(rand_matrix_2, input_size, BLOCKING_FACTOR);
-        
-//         //---------------------------------------------------------------
-
-//         //compare matrixes output
-//         bool are_the_same = same_arr_matrix(rand_matrix_1, rand_matrix_2, input_size);
-
-//         if (!are_the_same) {
-
-//             n_wrong++;
-
-//             // //matrix print
-//             // printf("\ninput adjacency matrix %lux%lu:\n", input_size, input_size);
-//             // print_arr_matrix(rand_matrix_1, input_size, input_size);
-
-//             // //print floyd_warshall output
-//             // printf("output adjacency matrix classic %lux%lu:\n", input_size, input_size);
-//             // print_arr_matrix(rand_matrix_1, input_size, input_size);
-
-//             // //print floyd_warshall_blocked output
-//             // printf("output adjacency matrix blocked %lux%lu:\n", input_size, input_size);
-//             // print_arr_matrix(rand_matrix_2, input_size, input_size);
-//             // printf("Matrixes are equal? %s\n", bool_to_string(are_the_same));
-
-//             printf("%lu/%d)\tseed: %d --> ERROR!\n", i, n_tests, rand_seed);
-//             //printf(" ERROR!\n"); 
-            
-//             if (stop_if_fail) break;
-//         } else {
-//             //printf("\tOK!\n");
-//         }
-
-//         free(rand_matrix_1);
-//         free(rand_matrix_2);
-//     }
-
-//     printf("%d errors detected\n\n", n_wrong);
-// }
-
-
 
 __global__ void execute_round_device(int *matrix, int n, int t, int row, int col, int B) {
 
