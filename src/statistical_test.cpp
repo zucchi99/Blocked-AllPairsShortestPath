@@ -25,7 +25,10 @@ bool test_arr_floyd_warshall(
 }
 
 
-int do_arr_floyd_warshall_statistical_test(void (*function_to_test) (int* arr_matrix, int n, int b), int input_size, int blocking_factor, int n_tests, bool stop_if_fail) {
+int do_arr_floyd_warshall_statistical_test(
+    void (*function_to_test) (int* arr_matrix, int n, int b), 
+    int input_size, int blocking_factor, 
+    int n_tests, bool stop_if_fail, int progress_print_fraction) {
 
     int n_wrong = 0;
 
@@ -36,7 +39,7 @@ int do_arr_floyd_warshall_statistical_test(void (*function_to_test) (int* arr_ma
     for (size_t i = 0; i < n_tests; i++)
     {
         // Progression status print
-        if((i > 0) && (i % (n_tests/10) == 0)) {
+        if((i > 0) && (i % (n_tests/progress_print_fraction) == 0)) {
             double perc = ((double) i) / ((double) n_tests);
             printf("%d%%: %lu of %d\n", (int) (perc*100), i, n_tests);
         }

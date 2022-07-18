@@ -34,7 +34,7 @@ int main() {
             if((n % BLOCKING_FACTOR) == 0) {
                 
                 printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
-                do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 1000, true);
+                do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 1000, true, 4);
 
             }
         }
