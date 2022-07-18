@@ -120,14 +120,14 @@ __global__ void execute_round_device(int *matrix, int n, int t, int row, int col
             b = sum_if_not_infinite(x1,x2, INF);
         }
 
-        __syncthreads();
+        // __syncthreads();
 
         if (i>=row_start && i<row_end && j>=col_start && j<col_end) {
 
             matrix[i*n + j] = min(a, b); 
         }
 
-        __syncthreads();
+        // __syncthreads();
     }
 }
 
