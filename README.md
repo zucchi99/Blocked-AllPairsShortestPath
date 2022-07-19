@@ -87,6 +87,12 @@ Si noti che il codice del confronto effettuato da queste funzioni è molto simil
 
 Si noti anche che per tutte e tre queste funzioni è importantissimo tenere un <code>__syncthread()</code> al termine di ogni iterazione del ciclo su tutti i nodi del blocco <code>t</code>.
 
+### Scelta della struttura dati
 
+TODO: write log
 
+### Sviluppi per i prossimi giorni
 
+*   misurare l'efficienza di <code>floyd_warshall_blocked_device_v1_2</code>
+*   confrontare le varie soluzioni sviluppate con le diverse strutture dati e scegliere quale mantenere per gli sviluppi futuri
+*   creare una versione pulita del codice <code>floyd_warshall_blocked_device_v1_*</code>, da ottimizzare poi al massimo con la memoria e da tenere come riferimento quando si svilupperanno le versioni più avanzate.
