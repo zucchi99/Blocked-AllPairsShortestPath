@@ -61,7 +61,32 @@ Abbiamo quindi implementato una nuova sotto-versione <code>floyd_warshall_blocke
 
 All'atto pratico, allo stato attuale si esegue sempre un blocco CUDA singolo per ogni chiamata. Successivamente proveremo a parallelizzare, in più blocchi cuda, le varie esecuzioni delle fasi 2 e 3.
 
-
 ## 19/07 - Stato della situazione
+
+Oggi parallelamente si sono sperimentate:
+
+*   la parallelizzazione delle fasi 2 e 3 dell'algoritmo <code>floyd_warshall_blocked_device_v1_1</code>
+*   l'utilizzo di differenti strutture dati per eseguire l'algoritmo <code>floyd_warshall_blocked_device_v1_1</code>
+
+### Parallelizzazione delle fasi
+
+Si è scritta una nuova versione <code>floyd_warshall_blocked_device_v1_2</code>, che a differenza della precedente fa uso di 3 funzioni device differenti:
+
+<code>execute_round_device_v1_2_phase_1</code> è molto simile a <code>execute_round_device_v1_0</code>, si lancia sui <code>B*B</code> thread del blocco self dipendente della fase 1 dei round.
+
+<code>execute_round_device_v1_2_phase_2</code> e <code>execute_round_device_v1_2_phase_3</code> sono due nuove funzioni che svolgono rispettivamente la fase 2 e la fase 3 dei round. Esse:
+
+*   si lanciano su una griglia completa di <code>n*n</code> blocchi 
+*   i thread sono sempre indicizzati a griglia, ma questa volta <code>tid_x</code> e <code>tid_y</code> rappresentano gli indici assoluti della cella della matrice sulla quale il blocco deve lavorare
+*   sono divisi in <code>(B/n)^2</code> blocchi CUDA
+*   hanno sempre come struttura principale un ciclo che itera su tutti i nodi del blocco <code>t</code>
+*   attivano il confronto SSE il thread corrisponde ad uno dei blocchi della fase corrispondente (attraverso una serie di espressioni booleane che verificano il posizionamento del blocco). Si noti che quest'ultima caratteristica potrebbe essere ragione di inefficienza, in quanto si lanciano sempre più blocchi di quanti effettivamente se ne usano, in particolare per la fase 2.
+
+
+Si noti che il codice del confronto effettuato da queste funzioni è molto simile a quanto già presente.
+
+Si noti anche che per tutte e tre queste funzioni è importantissimo tenere un <code>__syncthread()</code> al termine di ogni iterazione del ciclo su tutti i nodi del blocco <code>t</code>.
+
+
 
 
