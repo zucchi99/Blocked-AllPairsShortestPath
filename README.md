@@ -29,7 +29,7 @@ Comando per compilare tutto:    <code>make fwa fwm fwa_dev read_matrix</code>
 
 *   Dato questo metodo, si è creata una v. parallela del F.W. a blocchi  implementando:
     -   un codice host di controllo analogo a quello del F.W. a blocchi non parallelo
-    -   una versione parallela del metodo <code>execute_round</code> (chiamata <code>execute_round_device_v1_0</code>) che esegue su device e parallelizza con <code>n*n</code> thread i due cicli <code>for</code> più interni di <code>execute_round</code>.Sostanzialmente, ogni thread ha la responsabilità di verificare tutti i percorsi i percorsi <code>i->k->j</code> - con <code>k<code> del blocco <code>(t,t)</code> - per un certa coppia <code>(i,j) in (row,col)</code>.
+    -   una versione parallela del metodo <code>execute_round</code> (chiamata <code>execute_round_device_v1_0</code>) che esegue su device e parallelizza con <code>n*n</code> thread i due cicli <code>for</code> più interni di <code>execute_round</code>.Sostanzialmente, ogni thread ha la responsabilità di verificare tutti i percorsi i percorsi <code>i->k->j</code> - con <code>k</code> del blocco <code>(t,t)</code> - per un certa coppia <code>(i,j) in (row,col)</code>.
 
     In questa prima versione di codice parallelo (<code>floyd_warshall_blocked_device_v1_0</code>) si esegue un alg. di struttura analoga alla versione di F.W. al blocchi e si parallelizza solo le singole esecuzioni di round (*). Si noti che, anche se non sono assolutamente necessari, si lanciano sempre <code>n*n</code> thread, dei quali si attivano però soltanto quelli corrispondenti al blocco <code>(row,col)</code>.
 
