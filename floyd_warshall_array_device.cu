@@ -49,7 +49,7 @@ int main() {
     //     }
     // }
 
-    multi_size_statistical_test(&floyd_warshall_blocked_device_v1_1, 16, 512, 8, 32, 100, RANDOM_SEED, false, false);
+    multi_size_statistical_test(&floyd_warshall_blocked_device_v1_1, 128, 256, 8, 32, 100, RANDOM_SEED, false, false);
 
     // int n = 128;
     // int b = 16;
@@ -216,7 +216,7 @@ __global__ void execute_round_device_v1_1(int *matrix, int n, int t, int row, in
             b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
         }
 
-        __syncthreads();
+        // __syncthreads();
 
         if (b < a) {
             matrix[i*n + j] = b;
