@@ -62,3 +62,6 @@ Abbiamo quindi implementato una nuova sotto-versione <code>floyd_warshall_blocke
 All'atto pratico, allo stato attuale si esegue sempre un blocco CUDA singolo per ogni chiamata. Successivamente proveremo a parallelizzare, in più blocchi cuda, le varie esecuzioni delle fasi 2 e 3.
 
 
+## 19/07 - Stato della situazione
+
+
