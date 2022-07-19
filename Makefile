@@ -25,4 +25,14 @@ fwa_dev:
 		src/performance_test.cu \
 		src/statistical_test.cpp \
 		src/host_floyd_warshall.cpp 
+
+
+fwa_dev_v1_2:
+	nvcc -o bin/fwa_dev_v1_2.out \
+		floyd_washall_device_v1_2.cu \
+		src/adj_matrix_utils.cpp \
+		src/cuda_errors_utils.cu \
+		src/performance_test.cu \
+		src/statistical_test.cpp \
+		src/host_floyd_warshall.cpp 
 	
