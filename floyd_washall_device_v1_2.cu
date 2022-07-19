@@ -18,7 +18,7 @@
 /// Macro to get block ending position (of a column or of a row)
 #define BLOCK_END(block_index,B) ((block_index+1) * B)
 
-__global__ void execute_round_device_v1_2_phase_1(int *matrix, int n, int t, int row, int col, int B);
+__global__ void execute_round_device_v1_2_phase_1(int *matrix, int n, int t, int B);
 __global__ void execute_round_device_v1_2_phase_2(int *matrix, int n, int t, int B);
 __global__ void execute_round_device_v1_2_phase_3(int *matrix, int n, int t, int B);
 
@@ -50,7 +50,7 @@ void floyd_warshall_blocked_device_v1_2(int *matrix, int n, int B) {
         dim3 num_blocks_phase_1(1, 1);
         dim3 threads_per_block_phase_1(B, B);
 
-        execute_round_device_v1_2_phase_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, t, t, B);
+        execute_round_device_v1_2_phase_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
         HANDLE_ERROR(cudaDeviceSynchronize());
 
         // phase 2: all blocks that share a row or a column with the self dependent, so
@@ -75,13 +75,13 @@ void floyd_warshall_blocked_device_v1_2(int *matrix, int n, int B) {
     HANDLE_ERROR(cudaFree(dev_rand_matrix));
 }
 
-__global__ void execute_round_device_v1_2_phase_1(int *matrix, int n, int t, int row, int col, int B) {
+__global__ void execute_round_device_v1_2_phase_1(int *matrix, int n, int t, int B) {
 
     int tid_x = threadIdx.x + blockIdx.x * blockDim.x;
     int tid_y = threadIdx.y + blockIdx.y * blockDim.y;
 
-    int i = tid_x + row * B;  // row
-    int j = tid_y + col * B;  // col
+    int i = tid_x + t * B;  // row
+    int j = tid_y + t * B;  // col
 
     //foreach k: t*B <= t < t+B
     for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
