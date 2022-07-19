@@ -25,7 +25,7 @@ Comando per compilare tutto:    <code>make fwa fwm fwa_dev read_matrix</code>
     -   un blocco <code>(t,t)</code>
     -   un blocco <code>(row,col)</code>
 
-    confronta per ogni <code>(i,j) in (row,col)</code> il percorso <code>i->j</code> con tutti i percorsi <code>i->k->j</code> con i vari nodi <code>k<code> del blocco <code>(t,t)</code>.
+    confronta per ogni <code>(i,j) in (row,col)</code> il percorso <code>i->j</code> con tutti i percorsi <code>i->k->j</code> con i vari nodi <code>k</code> del blocco <code>(t,t)</code>.
 
 *   Dato questo metodo, si è creata una v. parallela del F.W. a blocchi  implementando:
     -   un codice host di controllo analogo a quello del F.W. a blocchi non parallelo
