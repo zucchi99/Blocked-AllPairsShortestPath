@@ -19,6 +19,7 @@
 #include "include/performance_test.cuh"
 #include "include/statistical_test.hpp"
 
+#define MAX_BLOCK_SIZE 1024 // in realtà basta fare le proprerties della macchina
 
 void floyd_warshall_blocked_device_v1_0(int *matrix, int n, int B);
 __global__ void execute_round_device(int *matrix, int n, int t, int row, int col, int B);
@@ -83,7 +84,7 @@ __global__ void execute_round_device(int *matrix, int n, int t, int row, int col
     for (int k = t * B; k < (t+1) * B; k++) {
 
         int a, b;
-        bool run_this = i>=row * B && i<(row+1) * B && j>=col * B && j<(col+1) * B;
+        bool run_this = ((i >= row*B) && (i < (row+1)*B) && (j >= col*B) && (j < (col+1)*B));
 
         // check if thread correspond to one of the cells in current block
         if (run_this) {
@@ -225,8 +226,6 @@ __global__ void execute_round_device_v1_1(int *matrix, int n, int t, int row, in
 
     }
 }
-
-#define MAX_BLOCK_SIZE 1024
 
 void floyd_warshall_blocked_device_v1_1(int *matrix, int n, int B) {
 
