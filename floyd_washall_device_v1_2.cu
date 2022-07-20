@@ -70,7 +70,7 @@ void floyd_warshall_blocked_device_v1_3(int *matrix, int n, int B) {
 
 __global__ void execute_round_device_v1_3_phase_2(int *matrix, int n, int t, int B) {
 
-    // Launched threads and correspondent position in the matrix
+    // Launched blocks and correspondent position in the matrix
     //  -   blockIdx.x says if I am iterating row or cols, 
     //  -   blockIdx.y says something about which row or col)
     //  -   threadIdx.x and threadIdx.y are relative position of cell in block
@@ -144,7 +144,7 @@ __global__ void execute_round_device_v1_3_phase_2(int *matrix, int n, int t, int
 
 __global__ void execute_round_device_v1_3_phase_3(int *matrix, int n, int t, int B) {
 
-    // Launched threads and correspondent position in the matrix
+    // Launched blocks and correspondent position in the matrix
 
     //  UL  UL  UL  UR  UR
     //  UL  UL  UL  UR  UR

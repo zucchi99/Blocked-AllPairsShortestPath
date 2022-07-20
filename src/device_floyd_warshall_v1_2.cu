@@ -52,6 +52,17 @@ void floyd_warshall_blocked_device_v1_2(int *matrix, int n, int B) {
 
 __global__ void execute_round_device_v1_2_phase_1(int *matrix, int n, int t, int B) {
 
+    // Launched block and correspondent position in the matrix
+
+    //  t
+
+    //  .   .   .   .   .   . 
+    //  .   .   .   .   .   . 
+    //  .   .   .   .   .   . 
+    //  .   .   .   t   .   .
+    //  .   .   .   .   .   . 
+    //  .   .   .   .   .   . 
+
     int tid_x = threadIdx.x + blockIdx.x * blockDim.x;
     int tid_y = threadIdx.y + blockIdx.y * blockDim.y;
 
@@ -72,6 +83,17 @@ __global__ void execute_round_device_v1_2_phase_1(int *matrix, int n, int t, int
 }
 
 __global__ void execute_round_device_v1_2_phase_2(int *matrix, int n, int t, int B) {
+
+    // Launched blocks and correspondent position in the matrix 
+    // ("-" and "." blocks are just kept inactive using IF statement)
+
+    //  .   .   .   U1  .   .
+    //  .   .   .   U2  .   .
+    //  .   .   .   U3  .   .
+    //  L1  L2  L3  -   R1  R2
+    //  .   .   .   D1  .   .
+    //  .   .   .   D2  .   .
+
 
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     int j = threadIdx.y + blockIdx.y * blockDim.y;
@@ -99,6 +121,16 @@ __global__ void execute_round_device_v1_2_phase_2(int *matrix, int n, int t, int
 }
 
 __global__ void execute_round_device_v1_2_phase_3(int *matrix, int n, int t, int B) {
+
+    // Launched blocks and correspondent position in the matrix 
+    // ("-" blocks are just kept inactive using IF statement)
+
+    //  UL  UL  UL  -   UR  UR
+    //  UL  UL  UL  -   UR  UR
+    //  UL  UL  UL  -   UR  UR  
+    //  -   -   -   -   -   - 
+    //  DL  DL  DL  -   DR  DR
+    //  DL  DL  DL  -   DR  DR
 
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     int j = threadIdx.y + blockIdx.y * blockDim.y;
