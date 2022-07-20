@@ -34,5 +34,6 @@ fwa_dev_v1_2:
 		src/cuda_errors_utils.cu \
 		src/performance_test.cu \
 		src/statistical_test.cpp \
-		src/host_floyd_warshall.cpp 
+		src/host_floyd_warshall.cpp \
+		src/device_floyd_warshall_v1_2.cu
 	
