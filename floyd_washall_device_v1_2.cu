@@ -78,7 +78,6 @@ __global__ void execute_round_device_v1_3_phase_2(int *matrix, int n, int t, int
     //  L1  L2  L3  R1  R2
     //  U1  U2  U3  D1  D2
 
-
     //  .   .   .   U1  .   .
     //  .   .   .   U2  .   .
     //  .   .   .   U3  .   .

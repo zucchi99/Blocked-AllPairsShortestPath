@@ -96,3 +96,45 @@ TODO: write log
 *   misurare l'efficienza di <code>floyd_warshall_blocked_device_v1_2</code>
 *   confrontare le varie soluzioni sviluppate con le diverse strutture dati e scegliere quale mantenere per gli sviluppi futuri
 *   creare una versione pulita del codice <code>floyd_warshall_blocked_device_v1_*</code>, da ottimizzare poi al massimo con la memoria e da tenere come riferimento quando si svilupperanno le versioni più avanzate.
+
+## 20/07 - Stato della situazione
+
+Si è creata una versione <code>floyd_warshall_blocked_device_v1_3</code> simile alla precedente, che però questa volta ottimizza il numero di blocchi lanciati per le fasi 2 e 3. 
+
+*   Per la fase 2 si lanciano <code>2*(n/B-1)</code> blocchi, aventi la seguente struttura (rispetto alla griglia)
+
+    <code>
+        //  L1  L2  L3  R1  R2
+        //  U1  U2  U3  D1  D2
+        
+        //  .   .   .   U1  .   .
+        //  .   .   .   U2  .   .
+        //  .   .   .   U3  .   .
+        //  L1  L2  L3  -   R1  R2
+        //  .   .   .   D1  .   .
+        //  .   .   .   D2  .   .
+    </code>
+
+*   Per la fase 3 si lanciano <code>(n/B-1)*(n/B-1)</code> blocchi, aventi la seguente struttura (rispetto alla griglia)
+
+    <code>
+        //  UL  UL  UL  UR  UR
+        //  UL  UL  UL  UR  UR
+        //  UL  UL  UL  UR  UR
+        //  DL  DL  DL  DR  DR
+        //  DL  DL  DL  DR  DR
+
+        //  UL  UL  UL  -   UR  UR
+        //  UL  UL  UL  -   UR  UR
+        //  UL  UL  UL  -   UR  UR  
+        //  -   -   -   -   -   - 
+        //  DL  DL  DL  -   DR  DR
+        //  DL  DL  DL  -   DR  DR
+    </code>
+
+*   (Per la fase 1 si lancia sempre solo un blocco)
+
+Per fare ciò si sono ri-scritte le procedure <code>execute_round_device_v1_3_phase_2</code> e <code>execute_round_device_v1_3_phase_3</code>; <code>execute_round_device_v1_2_phase_1</code> invece è rimasta invariata.
+
+La razionalizzazione del numero di blocchi lanciati si paga con una complicazione del metodo di indirizzamento, che diventa più complicato (specie per la fase 2).
+
