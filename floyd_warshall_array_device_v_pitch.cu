@@ -13,7 +13,7 @@
 #include "device_launch_parameters.h"
 #include <cuda_profiler_api.h>
 
-#include "include/adj_matrix_utils.cuh"
+//#include "include/adj_matrix_utils.cuh"
 #include "include/adj_matrix_utils.hpp"
 #include "include/host_floyd_warshall.hpp"
 #include "include/cuda_errors_utils.cuh"
@@ -29,6 +29,8 @@ void floyd_warshall_blocked_device_v1_1(int *matrix, int n, int B);
 __global__ void execute_round_device_v1_1(int *matrix, int n, int t, int row, int col, int B);
 
 void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B);
+
+__device__ void print_matrix_device(int *matrix, int m, int n);
 
 
 int main() {
@@ -208,11 +210,30 @@ __global__ void execute_round_device_v1_1(int *matrix, int n, int t, int row, in
         
         __syncthreads();
 
-        if(i == 0 && j == 0) {
+        
+
+        if(i%2 == 0 && j%2 == 0) {
             printf("k:%d\n",k);
             print_matrix_device(matrix, n, n);
         }
 
-
+        
     }
+}
+
+__device__ void print_matrix_device(int *matrix, int m, int n) {
+    printf("[\n");
+    for (int i = 0; i < m; i++) {
+        printf("  ");
+        for (int j = 0; j < n; j++) {
+            int val = matrix[i*n + j];
+            if (val < INF)
+                printf("%02d", val);
+            else 
+                printf("--");
+            if (j < n-1) printf(", ");
+        }
+        printf("\n");
+    }
+    printf("]\n");
 }

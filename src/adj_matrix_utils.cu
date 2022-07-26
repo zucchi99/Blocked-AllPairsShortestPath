@@ -4,8 +4,6 @@
 
 #include "../include/adj_matrix_utils.cuh"
 
-#include "num_macro.hpp"
-
 __device__ void print_matrix_device(int *matrix, int m, int n) {
     printf("[\n");
     for (int i = 0; i < m; i++) {
