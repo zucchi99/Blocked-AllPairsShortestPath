@@ -13,6 +13,7 @@
 #include "device_launch_parameters.h"
 #include <cuda_profiler_api.h>
 
+#include "include/adj_matrix_utils.cuh"
 #include "include/adj_matrix_utils.hpp"
 #include "include/host_floyd_warshall.hpp"
 #include "include/cuda_errors_utils.cuh"
@@ -28,7 +29,6 @@ void floyd_warshall_blocked_device_v1_1(int *matrix, int n, int B);
 __global__ void execute_round_device_v1_1(int *matrix, int n, int t, int row, int col, int B);
 
 void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B);
-
 
 
 int main() {
@@ -50,7 +50,14 @@ int main() {
     //     }
     // }
 
-    multi_size_statistical_test(&floyd_warshall_blocked_device_v_pitch, 16, 512, 8, 32, 100, RANDOM_SEED, false, false);
+    
+    size_t n = 6;
+    int BLOCKING_FACTOR = 2;
+    printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
+    int n_err = do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v_pitch, n, BLOCKING_FACTOR, 1, RANDOM_SEED, true, 4, true);
+
+
+    //multi_size_statistical_test(&floyd_warshall_blocked_device_v_pitch, 16, 512, 8, 32, 100, RANDOM_SEED, false, false);
 
     // int n = 128;
     // int b = 16;
@@ -170,6 +177,11 @@ __global__ void execute_round_device_v1_1(int *matrix, int n, int t, int row, in
     int i = tid_x + row * B;  // row
     int j = tid_y + col * B;  // col
 
+    printf(
+        "tid_x:%d, tid_y:%d, i:%d, j:%d, threadIdx.x:%d, blockIdx.x:%d, blockDim.x:%d, threadIdx.y:%d, blockIdx.y:%d, blockDim.y:%d\n",
+        tid_x, tid_y, i, j, threadIdx.x, blockIdx.x, blockDim.x, threadIdx.y, blockIdx.y, blockDim.y
+    );
+
     //foreach k: t*B <= t < t+B
     for (int k = t * B; k < (t+1) * B; k++) {
 
@@ -178,14 +190,29 @@ __global__ void execute_round_device_v1_1(int *matrix, int n, int t, int row, in
         // check if thread correspond to one of the cells in current block
         if (run_this) {
 
+            int ik = matrix[i*n + k];
+            int kj = matrix[k*n + j];
+            int ij_bef = matrix[i*n + j];
+
             int using_k_path = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
 
             if (using_k_path < matrix[i*n + j]) {
                 matrix[i*n + j] = using_k_path;
             }
+
+            int ij_aft = matrix[i*n + j];
+
+            
+            printf("i:%d, j:%d, k:%d, ik:%02d, kj:%02d, ij_bef:%02d, ij_aft:%02d\n", i, j, k, (min(ik, 99)), (min(kj, 99)), (min(ij_bef, 99)), (min(ij_aft, 99)));
         }
         
         __syncthreads();
+
+        if(i == 0 && j == 0) {
+            printf("k:%d\n",k);
+            print_matrix_device(matrix, n, n);
+        }
+
 
     }
 }

@@ -1,10 +1,12 @@
 #include <stdlib.h>
+#include <stdio.h>
 #include <cassert>
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
 
 #include "include/cuda_errors_utils.cuh"
+#include "include/adj_matrix_utils.cuh"
 #include "include/adj_matrix_utils.hpp"
 #include "include/host_floyd_warshall.hpp"
 #include "include/statistical_test.hpp"
@@ -14,11 +16,21 @@
 __global__ void execute_round_device_v1_3_phase_2(int *matrix, int n, int t, int B);
 __global__ void execute_round_device_v1_3_phase_3(int *matrix, int n, int t, int B);
 
+
 void floyd_warshall_blocked_device_v1_3(int *matrix, int n, int B);
 
 int main() {
 
     multi_size_statistical_test(&floyd_warshall_blocked_device_v1_3, 8, 256, 8, 32, 1000, RANDOM_SEED, false, true);
+
+    //single test
+    /*
+    size_t n = 6;
+    int BLOCKING_FACTOR = 2;
+    printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
+    int n_err = do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v1_3, n, BLOCKING_FACTOR, 1, RANDOM_SEED, true, 4, true);
+    printf("n_err:%d\n", n_err);
+    */
 
     return 0;
 }
@@ -137,9 +149,13 @@ __global__ void execute_round_device_v1_3_phase_2(int *matrix, int n, int t, int
             }
         }
 
+        //printf("i:%d, j:%d, k:%d\n", i, j, k);
+
         __syncthreads();
+
     }
 }
+
 
 __global__ void execute_round_device_v1_3_phase_3(int *matrix, int n, int t, int B) {
 
