@@ -109,29 +109,34 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
         dim3 num_blocks_phase_1(1, 1);
         dim3 threads_per_block_phase_1(B, B);
 
+        printf("start self dependent, t:%d, row:%d, col:%d\n",t,t,t);
         execute_round_device_v1_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, t, t, B);
         HANDLE_ERROR(cudaDeviceSynchronize());
 
         //phase 2 blocks left
         for (int j = t-1; j >= 0; j--) {
+            printf("start phase 2 blocks left, t:%d, row:%d, col:%d\n",t,t,j);
             execute_round_device_v1_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, t, j, B);
             // HANDLE_ERROR(cudaDeviceSynchronize());  
         }
 
         //phase 2 blocks above
         for (int i = t-1; i >= 0; i--) {
+            printf("start phase 2 blocks above, t:%d, row:%d, col:%d\n",t,i,t);
             execute_round_device_v1_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, t, B);
             // HANDLE_ERROR(cudaDeviceSynchronize());  
         }
 
         //phase 2 blocks below
         for (int i = t+1; i < num_rounds; i++) {
+            printf("start phase 2 blocks below, t:%d, row:%d, col:%d\n",t,i,t);
             execute_round_device_v1_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, t, B);
             // HANDLE_ERROR(cudaDeviceSynchronize());  
         }
 
         //phase 2 blocks right
         for (int j = t+1; j < num_rounds; j++) {
+            printf("start phase 2 blocks right, t:%d, row:%d, col:%d\n",t,t,j);
             execute_round_device_v1_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, t, j, B);
             // HANDLE_ERROR(cudaDeviceSynchronize());  
         }
@@ -141,6 +146,7 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
         //phase 3 blocks above and right
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t-1; i >= 0; i--) {
+                printf("start phase 3 blocks above and right, t:%d, row:%d, col:%d\n",t,i,j);
                 execute_round_device_v1_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B);
                 // HANDLE_ERROR(cudaDeviceSynchronize());  
             }
@@ -148,6 +154,7 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
         //phase 3 blocks above and left
         for (int j = t-1; j >= 0; j--) {
             for (int i = t-1; i >= 0; i--) {
+                printf("start phase 3 blocks above and left, t:%d, row:%d, col:%d\n",t,i,j);
                 execute_round_device_v1_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B);
                 // HANDLE_ERROR(cudaDeviceSynchronize());  
             }
@@ -155,6 +162,7 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
         //phase 3 blocks below and left
         for (int j = t-1; j >= 0; j--) {
             for (int i = t+1; i < num_rounds; i++) {
+                printf("start phase 3 blocks below and left, t:%d, row:%d, col:%d\n",t,i,j);
                 execute_round_device_v1_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B);
                 // HANDLE_ERROR(cudaDeviceSynchronize());  
             }
@@ -162,6 +170,7 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
         //phase 3 blocks below and right
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t+1; i < num_rounds; i++) {
+                printf("start phase 3 blocks below and right, t:%d, row:%d, col:%d\n",t,i,j);
                 execute_round_device_v1_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B);
                 // HANDLE_ERROR(cudaDeviceSynchronize());  
             }
@@ -204,19 +213,16 @@ __global__ void execute_round_device_v1_1(int *matrix, int n, int t, int row, in
 
             int ij_aft = matrix[i*n + j];
 
-            
-            printf("i:%d, j:%d, k:%d, ik:%02d, kj:%02d, ij_bef:%02d, ij_aft:%02d\n", i, j, k, (min(ik, 99)), (min(kj, 99)), (min(ij_bef, 99)), (min(ij_aft, 99)));
+            printf("i:%d, j:%d, k:%d, max_k:%d, ik:%02d, kj:%02d, ij_bef:%02d, ij_aft:%02d\n", i, j, k, (t+1)*B, (min(ik, 99)), (min(kj, 99)), (min(ij_bef, 99)), (min(ij_aft, 99)));
         }
         
         __syncthreads();
 
-        
-
-        if(i%2 == 0 && j%2 == 0) {
+        if((i % 2 == 0) && (j % 2 == 0)) {
             printf("k:%d\n",k);
             print_matrix_device(matrix, n, n);
+            printf("\n");
         }
-
         
     }
 }
