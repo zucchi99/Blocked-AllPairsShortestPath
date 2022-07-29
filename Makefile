@@ -9,10 +9,9 @@ GXX=g++
 src_path=src
 header_path=include
 
-#headers
 dev:
 	@echo "version:" $(VERSION)
-	nvcc -o bin/fwa_dev_v_$(VERSION).out \
+	nvcc -rdc=true -o bin/fwa_dev_v_$(VERSION).out \
 		device_floyd_warshall_v_$(VERSION).cu \
 		src/adj_matrix_utils.cu \
 		src/adj_matrix_utils.cpp \

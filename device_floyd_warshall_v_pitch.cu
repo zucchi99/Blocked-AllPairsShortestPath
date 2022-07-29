@@ -24,10 +24,6 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B);
 //rounds code
 __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row, int col, int B, size_t pitch);
 
-//rpint matrix to debug
-__device__ void print_matrix_device(int *matrix, int m, int n);
-
-
 int main() {
 
     // for (size_t n = 10; n < 200; n += 2) {
@@ -210,21 +206,4 @@ __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row,
 
     }
     
-}
-
-__device__ void print_matrix_device(int *matrix, int m, int n) {
-    printf("[\n");
-    for (int i = 0; i < m; i++) {
-        printf("  ");
-        for (int j = 0; j < n; j++) {
-            int val = matrix[i*n + j];
-            if (val < INF)
-                printf("%02d", val);
-            else 
-                printf("--");
-            if (j < n-1) printf(", ");
-        }
-        printf("\n");
-    }
-    printf("]\n");
 }
