@@ -174,7 +174,7 @@ __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row,
     int i = tid_x + row * B;  // row
     int j = tid_y + col * B;  // col
         
-    int *cell_i_j = (int *)((char*) matrix + i * pitch) + j;
+    int *cell_i_j = pitched_pointer(matrix, i, j, pitch); //(int *)((char*) matrix + i * pitch) + j;
     int cell_i_j_bef = *cell_i_j;
 
     printf(
@@ -190,8 +190,8 @@ __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row,
         // check if thread correspond to one of the cells in current block
         if (run_this) {
 
-            int* cell_k_j = (int *)((char*) matrix + k * pitch) + j;
-            int* cell_i_k = (int *)((char*) matrix + i * pitch) + k;
+            int* cell_k_j = pitched_pointer(matrix, k, j, pitch); //(int *)((char*) matrix + k * pitch) + j;
+            int* cell_i_k = pitched_pointer(matrix, i, k, pitch); //(int *)((char*) matrix + i * pitch) + k;
 
             int using_k_path = sum_if_not_infinite(*cell_i_k, *cell_k_j, INF); 
 
@@ -207,7 +207,7 @@ __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row,
         
         if((i % 2 == 0) && (j % 2 == 0)) {
             printf("k:%d\n",k);
-            print_matrix_device(matrix, n, n);
+            print_matrix_device(matrix, n, n, pitch);
             printf("\n");
         }
 

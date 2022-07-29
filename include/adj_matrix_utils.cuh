@@ -5,7 +5,7 @@
 
 #include "macros.hpp"
 
-__device__ void print_matrix_device(int *matrix, int m, int n);
+__device__ void print_matrix_device(int *matrix, int m, int n, int pitch);
 
 
 #endif // ADJ_MATRIX_UTILS_CUH

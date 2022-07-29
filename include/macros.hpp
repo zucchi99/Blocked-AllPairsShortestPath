@@ -23,4 +23,7 @@
 #define bool_to_string(cond) (cond ? "true" : "false")
 
 
+#define pitched_pointer(matrix, i, j, pitch) ((int *)((char*) matrix + i * pitch) + j)
+
+
 #endif
