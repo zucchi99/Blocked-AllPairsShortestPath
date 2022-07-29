@@ -1,7 +1,7 @@
 #ifndef STATISTICAL_TEST_HPP
 #define STATISTICAL_TEST_HPP
 
-# define RANDOM_SEED 0
+#define RANDOM_SEED 0
 
 
 bool test_arr_floyd_warshall(

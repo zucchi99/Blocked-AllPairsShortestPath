@@ -1,7 +1,8 @@
-#include "../include/adj_matrix_utils.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#include "../include/adj_matrix_utils.hpp"
 
 // ---------------------------------------------------------------
 //  PRINT UTILS

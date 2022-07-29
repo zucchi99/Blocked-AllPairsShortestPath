@@ -1,7 +1,9 @@
-#include "../include/adj_matrix_reader.hpp"
+
 #include <fstream>
 #include <sstream>
 #include <iostream>
+
+#include "../include/adj_matrix_reader.hpp"
 
 int _getNumberOfNodes(std::string adjMatrixLine, const char delim) {
 

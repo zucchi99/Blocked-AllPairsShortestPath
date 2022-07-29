@@ -1,11 +1,12 @@
-#include "../include/performance_test.cuh"
+
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <cuda_profiler_api.h>
 
 #include "../include/adj_matrix_utils.hpp"
-
+#include "../include/performance_test.cuh"
 
 void do_nvprof_performance_test(void (*floyd_warshall_arr_algorithm)(int * matrix, int n, int B), int input_size, int blocking_factor, int number_of_tests, int seed) {
 

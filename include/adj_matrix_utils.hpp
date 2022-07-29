@@ -3,15 +3,12 @@
 
 #include <stdbool.h>
 
-#include "num_macro.hpp"
+#include "macros.hpp"
 
 /// Parameters used when generating a graph
 #define DENSITY 60
 #define MIN_COST 1
 #define MAX_COST 20
-
-/// Print a bool as a string
-#define bool_to_string(cond) (cond ? "true" : "false")
 
 // ---------------------------------------------------------------
 //  PRINT UTILS

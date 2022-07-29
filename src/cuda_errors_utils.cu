@@ -1,8 +1,9 @@
-#include "../include/cuda_errors_utils.cuh"
+#include <stdio.h>
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-#include "stdio.h"
+
+#include "../include/cuda_errors_utils.cuh"
 
 void handle_error(cudaError_t err, const char *file, int line) {
     if (err != cudaSuccess) {

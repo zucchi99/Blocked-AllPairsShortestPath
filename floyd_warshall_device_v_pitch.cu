@@ -8,23 +8,23 @@
 #include <ctime>
 #include <cassert>
 
-
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-#include <cuda_profiler_api.h>
 
-//#include "include/adj_matrix_utils.cuh"
+#include "include/adj_matrix_utils.cuh"
 #include "include/adj_matrix_utils.hpp"
-#include "include/host_floyd_warshall.hpp"
 #include "include/cuda_errors_utils.cuh"
-#include "include/performance_test.cuh"
+#include "include/host_floyd_warshall.hpp"
+#include "include/macros.hpp"
 #include "include/statistical_test.hpp"
 
-#define MAX_BLOCK_SIZE 1024 // in realtà basta fare le proprerties della macchina
-
+//main device code
 void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B);
+
+//rounds code
 __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row, int col, int B, size_t pitch);
 
+//rpint matrix to debug
 __device__ void print_matrix_device(int *matrix, int m, int n);
 
 

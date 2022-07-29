@@ -3,7 +3,7 @@
 
 //  PRINT UTILS
 
-#include "num_macro.hpp"
+#include "macros.hpp"
 
 __device__ void print_matrix_device(int *matrix, int m, int n);
 

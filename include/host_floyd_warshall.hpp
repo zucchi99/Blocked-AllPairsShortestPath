@@ -2,7 +2,7 @@
 #define HOST_FLOYD_WARSHALL
 
 
-#include "num_macro.hpp"
+#include "macros.hpp"
 
 // ---------------------------------------------------------------------------
 // Matrix data structure version

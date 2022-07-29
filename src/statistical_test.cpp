@@ -1,13 +1,12 @@
-#include "../include/statistical_test.hpp"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <cassert>
 
-#include "../include/host_floyd_warshall.hpp"
 #include "../include/adj_matrix_utils.hpp"
-
+#include "../include/host_floyd_warshall.hpp"
+#include "../include/statistical_test.hpp"
 
 bool test_arr_floyd_warshall(
     void (*function_to_test) (int* arr_matrix, int n, int b), 
