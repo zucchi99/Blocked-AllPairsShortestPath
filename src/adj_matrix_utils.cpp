@@ -74,7 +74,7 @@ void print_arr_matrix(int *matrix, int m, int n) {
     printf("[\n");
     for (int i = 0; i < m; i++) {
         printf("  ");
-        print_array(&(matrix[i]), n);
+        print_array(&(matrix[i*n]), n);
     }
     printf("]\n");
 }
