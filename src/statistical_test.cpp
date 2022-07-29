@@ -13,15 +13,17 @@ bool test_arr_floyd_warshall(
     int *input_instance, int *test_instance_space, 
     int input_size, int blocking_factor) {
 
+    //make a copy of input_instance to test_instance
     copy_arr_graph(input_instance, test_instance_space, input_size);
     
-    // classic floyd_warshall on host, used to compare output
+    //classic floyd_warshall on host, used to compare output
     host_array_floyd_warshall(test_instance_space, input_size);
 
-    // function to test execution
+    //function to test execution
     function_to_test(input_instance, input_size, blocking_factor);
 
-    return same_arr_matrix(input_instance, test_instance_space, input_size);
+    //return true <==> foreach 0 <= i,j < n : input[i,j] = test[i,j]
+    return same_arr_matrix(input_instance, test_instance_space, input_size*input_size);
 }
 
 

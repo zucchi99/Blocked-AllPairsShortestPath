@@ -175,12 +175,14 @@ __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row,
     int j = tid_y + col * B;  // col
         
     int *cell_i_j = pitched_pointer(matrix, i, j, pitch); //(int *)((char*) matrix + i * pitch) + j;
-    int cell_i_j_bef = *cell_i_j;
+    //int cell_i_j_bef = *cell_i_j;
 
+    /*
     printf(
         "tid_x:%d, tid_y:%d, i:%d, j:%d, threadIdx.x:%d, blockIdx.x:%d, blockDim.x:%d, threadIdx.y:%d, blockIdx.y:%d, blockDim.y:%d\n",
         tid_x, tid_y, i, j, threadIdx.x, blockIdx.x, blockDim.x, threadIdx.y, blockIdx.y, blockDim.y
     );
+    */
 
     //foreach k: t*B <= t < t+B
     for (int k = t * B; k < (t+1) * B; k++) {
@@ -199,17 +201,18 @@ __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row,
                 *cell_i_j = using_k_path;
             }
 
-            printf("i:%d, j:%d, k:%d, max_k:%d, ik:%02d, kj:%02d, ij_bef:%02d, ij_aft:%02d\n", i, j, k, (t+1)*B, (min(*cell_i_k, 99)), (min(*cell_k_j, 99)), (min(cell_i_j_bef, 99)), (min(*cell_i_j, 99)));
+            //printf("i:%d, j:%d, k:%d, max_k:%d, ik:%02d, kj:%02d, ij_bef:%02d, ij_aft:%02d\n", i, j, k, (t+1)*B, (min(*cell_i_k, 99)), (min(*cell_k_j, 99)), (min(cell_i_j_bef, 99)), (min(*cell_i_j, 99)));
 
         }      
         
         __syncthreads();
-        
+        /*
         if((i % 2 == 0) && (j % 2 == 0)) {
             printf("k:%d\n",k);
             print_matrix_device(matrix, n, n, pitch);
             printf("\n");
         }
+        */
 
     }
     
