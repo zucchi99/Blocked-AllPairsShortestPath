@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 // Matrix data structure version
 
-void floyd_warshall(int **matrix, int n) {
+void host_matrix_floyd_warshall(int **matrix, int n) {
     for(int k = 0; k < n; k++) {
         for(int i = 0; i < n; i++) {
             for(int j = 0; j < n; j++) {
@@ -16,67 +16,67 @@ void floyd_warshall(int **matrix, int n) {
     }
 }
 
-void floyd_warshall_blocked(int **matrix, int n, int B) {
+void host_matrix_floyd_warshall_blocked(int **matrix, int n, int B) {
 
     int num_rounds = n/B;
 
     for(int t = 0; t < num_rounds; t++) { 
 
-        //execute_round(int **matrix, int n, int t, int row, int col, int B)
+        //host_matrix_execute_round(int **matrix, int n, int t, int row, int col, int B)
 
         //phase 1: self-dependent block
-        execute_round(matrix, n, t, t, t, B);
+        host_matrix_execute_round(matrix, n, t, t, t, B);
 
         //phase 2 blocks left
         for (int j = t-1; j >= 0; j--) {
-            execute_round(matrix, n, t, t, j, B);
+            host_matrix_execute_round(matrix, n, t, t, j, B);
         }
 
         //phase 2 blocks above
         for (int i = t-1; i >= 0; i--) {
-            execute_round(matrix, n, t, i, t, B);
+            host_matrix_execute_round(matrix, n, t, i, t, B);
         }
 
         //phase 2 blocks below
         for (int i = t+1; i < num_rounds; i++) {
-            execute_round(matrix, n, t, i, t, B);
+            host_matrix_execute_round(matrix, n, t, i, t, B);
         }
 
         //phase 2 blocks right
         for (int j = t+1; j < num_rounds; j++) {
-            execute_round(matrix, n, t, t, j, B);
+            host_matrix_execute_round(matrix, n, t, t, j, B);
         }
         
         //phase 2,3: remaining blocks
         //phase 3 blocks above and right
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t-1; i >= 0; i--) {
-                execute_round(matrix, n, t, i, j, B);
+                host_matrix_execute_round(matrix, n, t, i, j, B);
             }
         }
         //phase 3 blocks above and left
         for (int j = t-1; j >= 0; j--) {
             for (int i = t-1; i >= 0; i--) {
-                execute_round(matrix, n, t, i, j, B);
+                host_matrix_execute_round(matrix, n, t, i, j, B);
             }
         }
         //phase 3 blocks below and left
         for (int j = t-1; j >= 0; j--) {
             for (int i = t+1; i < num_rounds; i++) {
-                execute_round(matrix, n, t, i, j, B);
+                host_matrix_execute_round(matrix, n, t, i, j, B);
             }
         }      
         //phase 3 blocks below and right
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t+1; i < num_rounds; i++) {
-                execute_round(matrix, n, t, i, j, B);
+                host_matrix_execute_round(matrix, n, t, i, j, B);
             }
         }   
         
     }
 }
 
-void execute_round(int **matrix, int n, int t, int row, int col, int B) {
+void host_matrix_execute_round(int **matrix, int n, int t, int row, int col, int B) {
 
     //foreach k: t*B <= t < t+B
     int block_start = t * B;
@@ -104,7 +104,7 @@ void execute_round(int **matrix, int n, int t, int row, int col, int B) {
 // ---------------------------------------------------------------------------
 // Array data structure version
 
-void arr_floyd_warshall(int *matrix, int n) {
+void host_array_floyd_warshall(int *matrix, int n) {
     for(int k = 0; k < n; k++) {
         for(int i = 0; i < n; i++) {
             for(int j = 0; j < n; j++) {
@@ -116,67 +116,67 @@ void arr_floyd_warshall(int *matrix, int n) {
     }
 }
 
-void arr_floyd_warshall_blocked(int *matrix, int n, int B) {
+void host_array_floyd_warshall_blocked(int *matrix, int n, int B) {
 
     int num_rounds = n/B;
 
     for(int t = 0; t < num_rounds; t++) { 
 
-        //execute_round(int *matrix, int n, int t, int row, int col, int B)
+        //host_matrix_execute_round(int *matrix, int n, int t, int row, int col, int B)
 
         //phase 1: self-dependent block
-        arr_execute_round(matrix, n, t, t, t, B);
+        host_array_execute_round(matrix, n, t, t, t, B);
 
         //phase 2 blocks left
         for (int j = t-1; j >= 0; j--) {
-            arr_execute_round(matrix, n, t, t, j, B);
+            host_array_execute_round(matrix, n, t, t, j, B);
         }
 
         //phase 2 blocks above
         for (int i = t-1; i >= 0; i--) {
-            arr_execute_round(matrix, n, t, i, t, B);
+            host_array_execute_round(matrix, n, t, i, t, B);
         }
 
         //phase 2 blocks below
         for (int i = t+1; i < num_rounds; i++) {
-            arr_execute_round(matrix, n, t, i, t, B);
+            host_array_execute_round(matrix, n, t, i, t, B);
         }
 
         //phase 2 blocks right
         for (int j = t+1; j < num_rounds; j++) {
-            arr_execute_round(matrix, n, t, t, j, B);
+            host_array_execute_round(matrix, n, t, t, j, B);
         }
         
         //phase 2,3: remaining blocks
         //phase 3 blocks above and right
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t-1; i >= 0; i--) {
-                arr_execute_round(matrix, n, t, i, j, B);
+                host_array_execute_round(matrix, n, t, i, j, B);
             }
         }
         //phase 3 blocks above and left
         for (int j = t-1; j >= 0; j--) {
             for (int i = t-1; i >= 0; i--) {
-                arr_execute_round(matrix, n, t, i, j, B);
+                host_array_execute_round(matrix, n, t, i, j, B);
             }
         }
         //phase 3 blocks below and left
         for (int j = t-1; j >= 0; j--) {
             for (int i = t+1; i < num_rounds; i++) {
-                arr_execute_round(matrix, n, t, i, j, B);
+                host_array_execute_round(matrix, n, t, i, j, B);
             }
         }      
         //phase 3 blocks below and right
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t+1; i < num_rounds; i++) {
-                arr_execute_round(matrix, n, t, i, j, B);
+                host_array_execute_round(matrix, n, t, i, j, B);
             }
         }   
         
     }
 }
 
-void arr_execute_round(int *matrix, int n, int t, int row, int col, int B) {
+void host_array_execute_round(int *matrix, int n, int t, int row, int col, int B) {
     //foreach k: t*B <= t < t+B
     int block_start = t * B;
     int block_end = (t+1) * B;

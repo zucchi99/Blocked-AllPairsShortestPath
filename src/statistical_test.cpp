@@ -15,8 +15,8 @@ bool test_arr_floyd_warshall(
 
     copy_arr_graph(input_instance, test_instance_space, input_size);
     
-    // correct floyd_warshall execution
-    arr_floyd_warshall(test_instance_space, input_size);
+    // classic floyd_warshall on host, used to compare output
+    host_array_floyd_warshall(test_instance_space, input_size);
 
     // function to test execution
     function_to_test(input_instance, input_size, blocking_factor);

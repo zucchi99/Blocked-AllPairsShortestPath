@@ -47,15 +47,18 @@ int main() {
     size_t n = 6;
     int BLOCKING_FACTOR = 2;
     printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
-    int n_err = do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v_pitch, n, BLOCKING_FACTOR, 1, RANDOM_SEED, true, 4, true);
+    //int n_err = do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v_pitch, n, BLOCKING_FACTOR, 1, RANDOM_SEED, true, 4, true);
 
-
-    // int *input_instance = (int *) malloc(sizeof(int *) * n * n);
-    // int *test_instance_space = (int *) malloc(sizeof(int *) * n * n);
-    // populate_arr_graph(input_instance, n, seed);
-    // copy_arr_graph(input_instance, test_instance_space, n);
-    // bool result = test_arr_floyd_warshall(&floyd_warshall_blocked_device_v1_0, input_instance, test_instance_space, n, b);
-    // printf("Corretto: %s\n", bool_to_string(result));
+    int *input_instance = (int *) malloc(sizeof(int *) * n * n);
+    int *test_instance  = (int *) malloc(sizeof(int *) * n * n);
+    int rand_seed = time(NULL);
+    printf("rand_seed:, %d\n", rand_seed);
+    populate_arr_graph(input_instance, n, rand_seed);
+    printf("input matrix:\n");
+    print_arr_matrix(input_instance, n, n);
+    printf("\n\n");
+    bool result = test_arr_floyd_warshall(&floyd_warshall_blocked_device_v_pitch, input_instance, test_instance, n, BLOCKING_FACTOR);
+    printf("Corretto: %s\n", bool_to_string(result));
 
     return 0;
 }
@@ -157,6 +160,10 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
 
         HANDLE_ERROR(cudaDeviceSynchronize());  
     }
+
+    // HANDLE_ERROR(cudaMemcpy(matrix, dev_rand_matrix, n*n*sizeof(int), cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy2D(matrix, pitch, dev_rand_matrix, width, width, height, cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaFree(dev_rand_matrix));
 }
 
 __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row, int col, int B, size_t pitch) {
