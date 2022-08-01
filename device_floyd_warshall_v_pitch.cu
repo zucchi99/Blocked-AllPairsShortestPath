@@ -16,6 +16,7 @@
 #include "include/cuda_errors_utils.cuh"
 #include "include/host_floyd_warshall.hpp"
 #include "include/macros.hpp"
+#include "include/performance_test.cuh"
 #include "include/statistical_test.hpp"
 
 //main device code
@@ -43,23 +44,21 @@ int main() {
     //     }
     // }
 
-    multi_size_statistical_test(&floyd_warshall_blocked_device_v_pitch, 128, 256, 8, 32, 100, RANDOM_SEED, false, false);
-    
-    // size_t n = 6;
-    // int BLOCKING_FACTOR = 2;
-    // printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
-    // int n_err = do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v_pitch, n, BLOCKING_FACTOR, 1, RANDOM_SEED, true, 4, true);
+    //multi_size_statistical_test(&floyd_warshall_blocked_device_v_pitch, 128, 256, 8, 32, 100, RANDOM_SEED, false, false);
 
-    // int *input_instance = (int *) malloc(sizeof(int *) * n * n);
-    // int *test_instance  = (int *) malloc(sizeof(int *) * n * n);
-    // int rand_seed = time(NULL);
-    // printf("rand_seed:, %d\n", rand_seed);
-    // populate_arr_graph(input_instance, n, rand_seed);
-    // printf("input matrix:\n");
-    // print_arr_matrix(input_instance, n, n);
-    // printf("\n\n");
-    // bool result = test_arr_floyd_warshall(&floyd_warshall_blocked_device_v_pitch, input_instance, test_instance, n, BLOCKING_FACTOR);
-    // printf("Corretto: %s\n", bool_to_string(result));
+    int n = 256;
+    int B = 32;
+    //int *test_instance = allocate_arr_matrix(n, n);
+    int *input_instance = allocate_arr_matrix(n, n);
+    int rand_seed = time(NULL);
+    printf("rand_seed: %d\n", rand_seed);
+    populate_arr_adj_matrix(input_instance, n, rand_seed, false);
+    printf("input matrix:\n");
+    print_arr_matrix(input_instance, n, n);
+    printf("\n\n");
+    floyd_warshall_blocked_device_v_pitch(input_instance, n, B);
+    //bool result = test_arr_floyd_warshall(&floyd_warshall_blocked_device_v_pitch, input_instance, test_instance, n, BLOCKING_FACTOR);
+    //printf("Corretto: %s\n", bool_to_string(result));
 
     return 0;
 }

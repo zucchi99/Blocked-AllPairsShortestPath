@@ -9,8 +9,7 @@
 
 void do_nvprof_performance_test(void (*floyd_warshall_arr_algorithm)(int* matrix, int n, int B), int input_size, int blocking_factor, int number_of_tests, int seed) {
 
-    int* arr_matrix = NULL;
-    allocate_arr_matrix(arr_matrix, input_size, input_size);
+    int* arr_matrix = allocate_arr_matrix(input_size, input_size);
 
     for (int i=0; i<number_of_tests; i++) {
 

@@ -44,23 +44,23 @@ bool same_matrixes(int **matrix_1, int **matrix_2, int m, int n, bool oriented_g
     return true;
 }
 
-void allocate_matrix(int **matrix, int m, int n) {
+int** allocate_matrix(int m, int n) {
     //matrix with row major order:
     //m rows pointers
-    matrix = (int **) malloc(sizeof(int *) * m);
+    int** matrix = (int **) malloc(sizeof(int *) * m);
     for (int i = 0; i < m; i++) {
         //each row has n intengers
         matrix[i] = (int *) malloc(sizeof(int) * n);
     }
+    return matrix;
 }
 
 void populate_adj_matrix(int **matrix, int n, int seed, bool oriented_graph) {
-    srand(seed);
     for (int i = 0; i < n; i++) {
         //diagonal always zero (distance 0 to myself)
         matrix[i][i] = 0;
         for (int j = oriented_graph ? 0 : (i+1); j < n; j++) {
-            if (i != j) {                
+            if (i != j) {               
                 bool add_edge = (rand() % 100) <= DENSITY;
                 int val = (rand() % MAX_COST) + MIN_COST;
                 matrix[i][j] = add_edge ? val : INF;
@@ -94,16 +94,16 @@ bool same_arr_matrixes(int *matrix_1, int *matrix_2, int m, int n, bool oriented
     return true;
 }
 
-void allocate_arr_matrix(int *arr_matrix, int m, int n) {
-    arr_matrix = (int *) malloc(sizeof(int) * m * n);
+int* allocate_arr_matrix(int m, int n) {
+    return (int *) malloc(sizeof(int) * m * n);
 }
 
 void populate_arr_adj_matrix(int* arr_matrix, int n, int seed, bool oriented_graph) {
-    srand(seed);
     for (int i = 0; i < n; i++) {
         arr_matrix[i*n + i] = 0;
         for (int j = oriented_graph ? 0 : (i+1); j < n; j++) {
-            if (i != j) {                  
+            if (i != j) {        
+                printf("%d %d", i, j);           
                 bool add_edge = (rand() % 100) <= DENSITY;
                 int val = (rand() % MAX_COST) + MIN_COST;
                 arr_matrix[i*n + j] = add_edge ? val : INF;
