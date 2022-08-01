@@ -16,19 +16,20 @@
 void print_array(int *array, int size);
 void print_matrix(int **matrix, int m, int n);
 void print_element(int val, int infinity);
+void print_arr_matrix(int *matrix, int m, int n);
 
 // ---------------------------------------------------------------
 // MATRIX GENERATION, COMPARE and others utils
 
-int** generate_graph(int n, int seed);
-bool same_matrix(int **matrix_1, int **matrix_2, int m, int n);
+void allocate_matrix(int **matrix, int m, int n);
+void populate_adj_matrix(int **matrix, int n, int seed, bool oriented_graph);
+bool same_matrixes(int **matrix_1, int **matrix_2, int m, int n, bool oriented_graph);
 
 // ---------------------------------------------------------------
 // ARRAY MATRIX FUNCTIONS VARIANTS
 
-void print_arr_matrix(int *matrix, int m, int n);
-void populate_arr_graph(int* arr_matrix, int n, int seed);
-void copy_arr_graph(int* src, int* target, int n);
-bool same_arr_matrix(int *matrix_1, int *matrix_2, int n);
+void allocate_arr_matrix(int *arr_matrix, int m, int n);
+void populate_arr_adj_matrix(int* arr_matrix, int n, int seed, bool oriented_graph);
+bool same_arr_matrixes(int *matrix_1, int *matrix_2, int m, int n, bool oriented_graph);
 
 #endif // ADJ_MATRIX_UTILS_H

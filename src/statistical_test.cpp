@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <cassert>
+#include <cstring>
 
 #include "../include/adj_matrix_utils.hpp"
 #include "../include/host_floyd_warshall.hpp"
@@ -14,7 +15,7 @@ bool test_arr_floyd_warshall(
     int input_size, int blocking_factor) {
 
     //make a copy of input_instance to test_instance
-    copy_arr_graph(input_instance, test_instance_space, input_size);
+    memcpy((void*) test_instance_space, (void*) input_instance, input_size*input_size*sizeof(int));
     
     //classic floyd_warshall on host, used to compare output
     host_array_floyd_warshall(test_instance_space, input_size);
@@ -23,7 +24,7 @@ bool test_arr_floyd_warshall(
     function_to_test(input_instance, input_size, blocking_factor);
 
     //return true <==> foreach 0 <= i,j < n : input[i,j] = test[i,j]
-    return same_arr_matrix(input_instance, test_instance_space, input_size*input_size);
+    return same_arr_matrixes(input_instance, test_instance_space, input_size, input_size, false);
 }
 
 
@@ -61,7 +62,7 @@ int do_arr_floyd_warshall_statistical_test(
         // if necessary, generate (pseudo) random input instance
         int seed = (use_always_seed == RANDOM_SEED) ? clock() : use_always_seed;
         
-        populate_arr_graph(input_instance, input_size, seed);
+        populate_arr_adj_matrix(input_instance, input_size, seed, false);
 
         // perform test
         if (!test_arr_floyd_warshall(*function_to_test, input_instance, test_instance_space, input_size, blocking_factor)) {
