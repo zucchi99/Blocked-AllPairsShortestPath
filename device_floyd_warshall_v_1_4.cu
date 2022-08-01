@@ -162,19 +162,10 @@ __global__ void execute_round_device_v_1_4_phase_2_row(int *matrix, int n, int t
     //foreach k: t*B <= t < t+B
     for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
 
-        if (
-            /* row index is contained in s.d. block and column index is outside */
-            ( BLOCK_START(t,B)<=i<BLOCK_END(t,B) && (j<BLOCK_START(t,B) || j>=BLOCK_END(t,B)) )   ||  
+        int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
 
-            /* column index is contained in s.d. block and row index is outside */
-            ( BLOCK_START(t,B)<=j<BLOCK_END(t,B) && (i<BLOCK_START(t,B) || i>=BLOCK_END(t,B)) ) 
-            ) {
-
-            int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
-
-            if (b < matrix[i*n + j]) {
-                matrix[i*n + j] = b;
-            }
+        if (b < matrix[i*n + j]) {
+            matrix[i*n + j] = b;
         }
 
         //printf("i:%d, j:%d, k:%d\n", i, j, k);
@@ -219,25 +210,15 @@ __global__ void execute_round_device_v_1_4_phase_2_col(int *matrix, int n, int t
     //foreach k: t*B <= t < t+B
     for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
 
-        if (
-            /* row index is contained in s.d. block and column index is outside */
-            ( BLOCK_START(t,B)<=i<BLOCK_END(t,B) && (j<BLOCK_START(t,B) || j>=BLOCK_END(t,B)) )   ||  
+        int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
 
-            /* column index is contained in s.d. block and row index is outside */
-            ( BLOCK_START(t,B)<=j<BLOCK_END(t,B) && (i<BLOCK_START(t,B) || i>=BLOCK_END(t,B)) ) 
-            ) {
-
-            int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
-
-            if (b < matrix[i*n + j]) {
-                matrix[i*n + j] = b;
-            }
+        if (b < matrix[i*n + j]) {
+            matrix[i*n + j] = b;
         }
 
         //printf("i:%d, j:%d, k:%d\n", i, j, k);
 
         __syncthreads();
-
     }
 }
 
