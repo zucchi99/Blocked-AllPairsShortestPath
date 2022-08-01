@@ -18,7 +18,8 @@ void floyd_warshall_blocked_device_v_2_0(int *matrix, int n, int B);
 
 //rounds code
 __global__ void execute_round_device_v_2_0_phase_1(int *matrix, int n, int t, int B);
-__global__ void execute_round_device_v_2_0_phase_2(int *matrix, int n, int t, int B);
+__global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t, int B);
+__global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t, int B);
 __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, int B);
 
 int main() {
@@ -72,9 +73,14 @@ void floyd_warshall_blocked_device_v_2_0(int *matrix, int n, int B) {
         //  -   all blocks just above or under t
         //  -   all block at left and at right of t
 
-        dim3 num_blocks_phase_2(2, num_rounds-1);  
+        dim3 num_blocks_phase_2(1, num_rounds-1);  
 
-        execute_round_device_v_2_0_phase_2<<<num_blocks_phase_2, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
+        execute_round_device_v_2_0_phase_2_col<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
+
+        HANDLE_ERROR(cudaDeviceSynchronize());
+
+        execute_round_device_v_2_0_phase_2_row<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
+        
         HANDLE_ERROR(cudaDeviceSynchronize());
 
         // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
@@ -132,7 +138,7 @@ __global__ void execute_round_device_v_2_0_phase_1(int *matrix, int n, int t, in
     matrix[i*n + j] = block_t_t_shared[tid_x*B + tid_y];
 }
 
-__global__ void execute_round_device_v_2_0_phase_2(int *matrix, int n, int t, int B) {
+__global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t, int B) {
 
     // Launched blocks and correspondent position in the matrix
     //  -   blockIdx.x says if I am iterating row or cols, 
@@ -140,6 +146,68 @@ __global__ void execute_round_device_v_2_0_phase_2(int *matrix, int n, int t, in
     //  -   threadIdx.x and threadIdx.y are relative position of cell in block
 
     //  L1  L2  L3  R1  R2
+
+    //  .   .   .   U1  .   .
+    //  .   .   .   U2  .   .
+    //  .   .   .   U3  .   .
+    //  L1  L2  L3  -   R1  R2
+    //  .   .   .   D1  .   .
+    //  .   .   .   D2  .   .
+
+    extern __shared__ int shared_mem[];
+
+    int* block_t_t_shared = shared_mem;
+    int* block_i_j_shared = B*B*sizeof(int) + shared_mem;
+
+    int i, j;
+    int tid_x = threadIdx.x, tid_y = threadIdx.y;
+
+    // it's a row ...
+    i = BLOCK_START(t, B) + threadIdx.x;
+
+    if (blockIdx.y < t) {
+
+        // ... and it's the left one
+        j = BLOCK_START(blockIdx.y, B) + threadIdx.y;
+
+    } else {
+        
+        // ... and it's the right one
+        j = BLOCK_START(blockIdx.y, B) + B + threadIdx.y;
+    }
+
+    block_i_j_shared[tid_x*B + tid_y] = matrix[i*n + j];
+
+    // I want to read (i, j+dist), where:
+    // dist = (t-block_col_index)*B = (t-int(j/B))*B
+    block_t_t_shared[tid_x*B + tid_y] = matrix[i*n + (j + (t-j/B)*B)];
+
+    __syncthreads();
+
+    //foreach k: t*B <= t < t+B
+    for (int k = 0; k < B; k++) {
+
+        int b = sum_if_not_infinite(block_t_t_shared[tid_x*B + k], block_i_j_shared[k*B + tid_y], INF); 
+
+        if (b < block_i_j_shared[tid_x*B + tid_y]) {
+            block_i_j_shared[tid_x*B + tid_y] = b;
+        }
+
+        //printf("i:%d, j:%d, k:%d\n", i, j, k);
+
+        __syncthreads();
+    }
+
+    matrix[i*n + j] = block_i_j_shared[tid_x*B + tid_y];
+}
+
+__global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t, int B) {
+
+    // Launched blocks and correspondent position in the matrix
+    //  -   blockIdx.x says if I am iterating row or cols, 
+    //  -   blockIdx.y says something about which row or col)
+    //  -   threadIdx.x and threadIdx.y are relative position of cell in block
+
     //  U1  U2  U3  D1  D2
 
     //  .   .   .   U1  .   .
@@ -149,63 +217,47 @@ __global__ void execute_round_device_v_2_0_phase_2(int *matrix, int n, int t, in
     //  .   .   .   D1  .   .
     //  .   .   .   D2  .   .
 
+    extern __shared__ int shared_mem[];
+
+    int* block_t_t_shared = shared_mem;
+    int* block_i_j_shared = B*B*sizeof(int) + shared_mem;
+
     int i, j;
+    int tid_x = threadIdx.x, tid_y = threadIdx.y;
 
-    if (blockIdx.x == 0) {  
+    // it's a column ...
+    j = BLOCK_START(t, B) + threadIdx.y;
 
-        // it's a row ...
-        i = BLOCK_START(t, B) + threadIdx.x;
+    if (blockIdx.y < t) {
 
-        if (blockIdx.y < t) {
+        // ... and it's the up one
+        i = BLOCK_START(blockIdx.y, B) + threadIdx.x;
 
-            // ... and it's the left one
-            j = BLOCK_START(blockIdx.y, B) + threadIdx.y;
-
-        } else {
-            
-            // ... and it's the right one
-            j = BLOCK_START(blockIdx.y, B) + B + threadIdx.y;
-        }
     } else {
 
-        // it's a column ...
-        j = BLOCK_START(t, B) + threadIdx.y;
-
-        if (blockIdx.y < t) {
-
-            // ... and it's the up one
-            i = BLOCK_START(blockIdx.y, B) + threadIdx.x;
-
-        } else {
-
-            // ... and it's the down one
-            i = BLOCK_START(blockIdx.y, B) + B + threadIdx.x;
-        }
+        // ... and it's the down one
+        i = BLOCK_START(blockIdx.y, B) + B + threadIdx.x;
     }
 
+    // I want to read (i+dist, j), where:
+    // dist = (t-block_row_index)*B = (t-int(i/B))*B
+    block_t_t_shared[tid_x*B + tid_y] = matrix[(i+(t-i/B)*B)*n + j];
+
     //foreach k: t*B <= t < t+B
-    for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
+    for (int k = 0; k < B; k++) {
+        
+        int b = sum_if_not_infinite(block_i_j_shared[tid_x*B + k], block_t_t_shared[k*B + tid_y], INF); 
 
-        if (
-            /* row index is contained in s.d. block and column index is outside */
-            ( BLOCK_START(t,B)<=i<BLOCK_END(t,B) && (j<BLOCK_START(t,B) || j>=BLOCK_END(t,B)) )   ||  
-
-            /* column index is contained in s.d. block and row index is outside */
-            ( BLOCK_START(t,B)<=j<BLOCK_END(t,B) && (i<BLOCK_START(t,B) || i>=BLOCK_END(t,B)) ) 
-            ) {
-
-            int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
-
-            if (b < matrix[i*n + j]) {
-                matrix[i*n + j] = b;
-            }
+        if (b < block_i_j_shared[tid_x*B + tid_y]) {
+            block_i_j_shared[tid_x*B + tid_y] = b;
         }
 
         //printf("i:%d, j:%d, k:%d\n", i, j, k);
 
         __syncthreads();
-
     }
+
+    matrix[i*n + j] = block_i_j_shared[tid_x*B + tid_y];
 }
 
 
