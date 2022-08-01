@@ -52,8 +52,15 @@ void floyd_warshall_blocked_device_v_1_3(int *matrix, int n, int B) {
     assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
 
     int *dev_rand_matrix;
-    HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n * n* sizeof(int)));
-    HANDLE_ERROR(cudaMemcpy(dev_rand_matrix, matrix, n*n*sizeof(int), cudaMemcpyHostToDevice));
+    size_t pitch;                          //size in bytes of memory allocated to guarantee alignment
+    size_t width = n * sizeof(int);
+    size_t height = n;
+
+    //cudaMallocPitch(&devPtr, &devPitch, N_cols * sizeof(type), N_rows);
+
+    HANDLE_ERROR(cudaMallocPitch( (void**) &dev_rand_matrix, &pitch, width, height));
+    //HANDLE_ERROR(cudaMemcpy(dev_rand_matrix, matrix, n * n * sizeof(int), cudaMemcpyHostToDevice));
+    HANDLE_ERROR(cudaMemcpy2D(dev_rand_matrix, pitch, matrix, width, width, height, cudaMemcpyHostToDevice));
 
     int num_rounds = n/B;
      
@@ -85,9 +92,8 @@ void floyd_warshall_blocked_device_v_1_3(int *matrix, int n, int B) {
         HANDLE_ERROR(cudaDeviceSynchronize()); 
     }
 
-    // HANDLE_ERROR(cudaDeviceSynchronize());  
-
-    HANDLE_ERROR(cudaMemcpy(matrix, dev_rand_matrix, n*n*sizeof(int), cudaMemcpyDeviceToHost));
+    // HANDLE_ERROR(cudaMemcpy(matrix, dev_rand_matrix, n*n*sizeof(int), cudaMemcpyDeviceToHost));
+    HANDLE_ERROR(cudaMemcpy2D(matrix, width, dev_rand_matrix, pitch, width, height, cudaMemcpyDeviceToHost));
     HANDLE_ERROR(cudaFree(dev_rand_matrix));
 }
 
@@ -111,13 +117,18 @@ __global__ void execute_round_device_v_1_2_phase_1(int *matrix, int n, int t, in
     int i = tid_x + t * B;  // row
     int j = tid_y + t * B;  // col
 
+    int *cell_i_j = pitched_pointer(matrix, i, j, pitch);
+
     //foreach k: t*B <= t < t+B
     for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
 
-        int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
+        int* cell_k_j = pitched_pointer(matrix, k, j, pitch); //(int *)((char*) matrix + k * pitch) + j;
+        int* cell_i_k = pitched_pointer(matrix, i, k, pitch); //(int *)((char*) matrix + i * pitch) + k;
 
-        if (b < matrix[i*n + j]) {
-            matrix[i*n + j] = b;
+        int using_k_path = sum_if_not_infinite(*cell_i_k, *cell_k_j, INF); 
+
+        if (using_k_path < *cell_i_j) {
+            *cell_i_j = using_k_path;
         }
         
         __syncthreads();
@@ -175,6 +186,8 @@ __global__ void execute_round_device_v_1_3_phase_2(int *matrix, int n, int t, in
         }
     }
 
+    int *cell_i_j = pitched_pointer(matrix, i, j, pitch); 
+
     //foreach k: t*B <= t < t+B
     for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
 
@@ -186,10 +199,13 @@ __global__ void execute_round_device_v_1_3_phase_2(int *matrix, int n, int t, in
             ( BLOCK_START(t,B)<=j<BLOCK_END(t,B) && (i<BLOCK_START(t,B) || i>=BLOCK_END(t,B)) ) 
             ) {
 
-            int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
-
-            if (b < matrix[i*n + j]) {
-                matrix[i*n + j] = b;
+            int* cell_k_j = pitched_pointer(matrix, k, j, pitch); //(int *)((char*) matrix + k * pitch) + j;
+            int* cell_i_k = pitched_pointer(matrix, i, k, pitch); //(int *)((char*) matrix + i * pitch) + k;
+    
+            int using_k_path = sum_if_not_infinite(*cell_i_k, *cell_k_j, INF); 
+    
+            if (using_k_path < *cell_i_j) {
+                *cell_i_j = using_k_path;
             }
         }
 
@@ -227,13 +243,18 @@ __global__ void execute_round_device_v_1_3_phase_3(int *matrix, int n, int t, in
     // if a thread is ar right of t, add B as col offset to get right position in matrix
     if (blockIdx.y >= t)    j += B;
 
+    int *cell_i_j = pitched_pointer(matrix, i, j, pitch); 
+
     //foreach k: t*B <= t < t+B
     for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
 
-        int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
+        int* cell_k_j = pitched_pointer(matrix, k, j, pitch); //(int *)((char*) matrix + k * pitch) + j;
+        int* cell_i_k = pitched_pointer(matrix, i, k, pitch); //(int *)((char*) matrix + i * pitch) + k;
 
-        if (b < matrix[i*n + j]) {
-                matrix[i*n + j] = b;
+        int using_k_path = sum_if_not_infinite(*cell_i_k, *cell_k_j, INF); 
+
+        if (using_k_path < *cell_i_j) {
+            *cell_i_j = using_k_path;
         }
 
         __syncthreads();

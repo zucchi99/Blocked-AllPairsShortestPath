@@ -17,6 +17,7 @@
 #include "include/cuda_errors_utils.cuh"
 #include "include/host_floyd_warshall.hpp"
 #include "include/macros.hpp"
+#include "include/performance_test.cuh"
 #include "include/statistical_test.hpp"
 
 //main device code
@@ -45,7 +46,16 @@ int main() {
     //     }
     // }
 
-    multi_size_statistical_test(&floyd_warshall_blocked_device_v_1_1, 128, 256, 8, 32, 100, RANDOM_SEED, false, false);
+    //multi_size_statistical_test(&floyd_warshall_blocked_device_v_1_3, 8, 256, 8, 32, 1000, RANDOM_SEED, false, true);
+
+    int n = 256;
+    int B = 32;
+    //int *test_instance = allocate_arr_matrix(n, n);
+    //int *input_instance = allocate_arr_matrix(n, n);
+    int rand_seed = time(NULL);
+    printf("rand_seed: %d\n", rand_seed);
+    //populate_arr_adj_matrix(input_instance, n, rand_seed, false);
+    do_nvprof_performance_test(&floyd_warshall_blocked_device_v_1_3, n, B, 10, rand_seed);
 
     // int n = 128;
     // int b = 16;

@@ -10,6 +10,7 @@
 #include "include/cuda_errors_utils.cuh"
 #include "include/host_floyd_warshall.hpp"
 #include "include/macros.hpp"
+#include "include/performance_test.cuh"
 #include "include/statistical_test.hpp"
 
 //main device code

@@ -103,7 +103,6 @@ void populate_arr_adj_matrix(int* arr_matrix, int n, int seed, bool oriented_gra
         arr_matrix[i*n + i] = 0;
         for (int j = oriented_graph ? 0 : (i+1); j < n; j++) {
             if (i != j) {        
-                printf("%d %d", i, j);           
                 bool add_edge = (rand() % 100) <= DENSITY;
                 int val = (rand() % MAX_COST) + MIN_COST;
                 arr_matrix[i*n + j] = add_edge ? val : INF;
