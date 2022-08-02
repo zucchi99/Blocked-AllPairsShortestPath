@@ -22,6 +22,9 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
 __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t, int B);
 __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, int B);
 
+
+
+
 int main() {
 
     multi_size_statistical_test(&floyd_warshall_blocked_device_v_2_0, 8, 256, 8, 32, 100, RANDOM_SEED, false, true);
@@ -75,12 +78,9 @@ void floyd_warshall_blocked_device_v_2_0(int *matrix, int n, int B) {
 
         dim3 num_blocks_phase_2(1, num_rounds-1);  
 
+        execute_round_device_v_2_0_phase_2_row<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
         execute_round_device_v_2_0_phase_2_col<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
 
-        HANDLE_ERROR(cudaDeviceSynchronize());
-
-        execute_round_device_v_2_0_phase_2_row<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
-        
         HANDLE_ERROR(cudaDeviceSynchronize());
 
         // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
@@ -155,9 +155,9 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
     //  .   .   .   D2  .   .
 
     extern __shared__ int shared_mem[];
-
+    
     int* block_t_t_shared = &shared_mem[0];
-    int* block_i_j_shared = &shared_mem[B*B*sizeof(int)];
+    int* block_i_j_shared = &shared_mem[B*B];
 
     int i, j;
 
@@ -176,6 +176,7 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
     }
 
     block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
+
     block_t_t_shared[threadIdx.x*B + threadIdx.y] = matrix[
         (BLOCK_START(t, B) + threadIdx.x) * n
         + (BLOCK_START(t, B) + threadIdx.y)
@@ -223,7 +224,7 @@ __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t
     extern __shared__ int shared_mem[];
 
     int* block_t_t_shared = &shared_mem[0];
-    int* block_i_j_shared = &shared_mem[B*B*sizeof(int)];
+    int* block_i_j_shared = &shared_mem[B*B];
 
     int i, j;
 
@@ -242,6 +243,7 @@ __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t
     }
 
     block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
+
     block_t_t_shared[threadIdx.x*B + threadIdx.y] = matrix[
         (BLOCK_START(t, B) + threadIdx.x) * n
         + (BLOCK_START(t, B) + threadIdx.y)
