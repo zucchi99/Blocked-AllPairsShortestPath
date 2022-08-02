@@ -138,7 +138,7 @@ int multi_size_statistical_test(
         for (int tests = 0; tests < 50 && cur_B_idx < 5; tests++) {
 
             // range for b is between 0 and n/2
-            int b = rand() % (n/2);
+            int b = rand() % min(n/2, MAX_BLOCKING_FACTOR);
             // but if it is zero then use B=n
             b = (b == 0) ? n : b;       
 
