@@ -22,7 +22,100 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
 __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t, int B);
 __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, int B);
 
+__global__ void execute_round_device_v_1_4_phase_2_row(int *matrix, int n, int t, int B) {
 
+    // Launched blocks and correspondent position in the matrix
+    //  -   blockIdx.x says if I am iterating row or cols, 
+    //  -   blockIdx.y says something about which row or col)
+    //  -   threadIdx.x and threadIdx.y are relative position of cell in block
+
+    //  L1  L2  L3  R1  R2
+
+    //  .   .   .   U1  .   .
+    //  .   .   .   U2  .   .
+    //  .   .   .   U3  .   .
+    //  L1  L2  L3  -   R1  R2
+    //  .   .   .   D1  .   .
+    //  .   .   .   D2  .   .
+
+    int i, j;
+
+    // it's a row ...
+    i = BLOCK_START(t, B) + threadIdx.x;
+
+    if (blockIdx.y < t) {
+
+        // ... and it's the left one
+        j = BLOCK_START(blockIdx.y, B) + threadIdx.y;
+
+    } else {
+        
+        // ... and it's the right one
+        j = BLOCK_START(blockIdx.y, B) + B + threadIdx.y;
+    }
+
+    //foreach k: t*B <= t < t+B
+    for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
+
+        int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
+
+        if (b < matrix[i*n + j]) {
+            matrix[i*n + j] = b;
+        }
+
+        //printf("i:%d, j:%d, k:%d\n", i, j, k);
+
+        __syncthreads();
+
+    }
+}
+
+__global__ void execute_round_device_v_1_4_phase_2_col(int *matrix, int n, int t, int B) {
+
+    // Launched blocks and correspondent position in the matrix
+    //  -   blockIdx.x says if I am iterating row or cols, 
+    //  -   blockIdx.y says something about which row or col)
+    //  -   threadIdx.x and threadIdx.y are relative position of cell in block
+
+    //  U1  U2  U3  D1  D2
+
+    //  .   .   .   U1  .   .
+    //  .   .   .   U2  .   .
+    //  .   .   .   U3  .   .
+    //  L1  L2  L3  -   R1  R2
+    //  .   .   .   D1  .   .
+    //  .   .   .   D2  .   .
+
+    int i, j;
+
+    // it's a column ...
+    j = BLOCK_START(t, B) + threadIdx.y;
+
+    if (blockIdx.y < t) {
+
+        // ... and it's the up one
+        i = BLOCK_START(blockIdx.y, B) + threadIdx.x;
+
+    } else {
+
+        // ... and it's the down one
+        i = BLOCK_START(blockIdx.y, B) + B + threadIdx.x;
+    }
+
+    //foreach k: t*B <= t < t+B
+    for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
+
+        int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
+
+        if (b < matrix[i*n + j]) {
+            matrix[i*n + j] = b;
+        }
+
+        //printf("i:%d, j:%d, k:%d\n", i, j, k);
+
+        __syncthreads();
+    }
+}
 
 
 int main() {
@@ -80,6 +173,10 @@ void floyd_warshall_blocked_device_v_2_0(int *matrix, int n, int B) {
 
         execute_round_device_v_2_0_phase_2_row<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
         execute_round_device_v_2_0_phase_2_col<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
+
+        // execute_round_device_v_1_4_phase_2_row<<<num_blocks_phase_2, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
+        // execute_round_device_v_1_4_phase_2_col<<<num_blocks_phase_2, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
+
 
         HANDLE_ERROR(cudaDeviceSynchronize());
 
@@ -223,8 +320,8 @@ __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t
 
     extern __shared__ int shared_mem[];
 
-    int* block_t_t_shared = &shared_mem[0];
-    int* block_i_j_shared = &shared_mem[B*B];
+    int* block_i_j_shared = &shared_mem[0];
+    int* block_t_t_shared = &shared_mem[B*B];
 
     int i, j;
 

@@ -38,3 +38,8 @@ fwa:
 		host_floyd_warshall_array.cpp \
 		src/adj_matrix_utils.cpp \
 		src/host_floyd_warshall.cpp
+
+dev_test:
+	nvcc -rdc=true -o bin/dev_test \
+		device_test.cu \
+		src/cuda_errors_utils.cu
