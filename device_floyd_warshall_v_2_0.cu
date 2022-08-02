@@ -156,11 +156,10 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
 
     extern __shared__ int shared_mem[];
 
-    int* block_t_t_shared = shared_mem;
-    int* block_i_j_shared = B*B*sizeof(int) + shared_mem;
+    int* block_t_t_shared = &shared_mem[0];
+    int* block_i_j_shared = &shared_mem[B*B*sizeof(int)];
 
     int i, j;
-    int tid_x = threadIdx.x, tid_y = threadIdx.y;
 
     // it's a row ...
     i = BLOCK_START(t, B) + threadIdx.x;
@@ -176,21 +175,24 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
         j = BLOCK_START(blockIdx.y, B) + B + threadIdx.y;
     }
 
-    block_i_j_shared[tid_x*B + tid_y] = matrix[i*n + j];
-
-    // I want to read (i, j+dist), where:
-    // dist = (t-block_col_index)*B = (t-int(j/B))*B
-    block_t_t_shared[tid_x*B + tid_y] = matrix[i*n + (j + (t-j/B)*B)];
+    block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
+    block_t_t_shared[threadIdx.x*B + threadIdx.y] = matrix[
+        (BLOCK_START(t, B) + threadIdx.x) * n
+        + (BLOCK_START(t, B) + threadIdx.y)
+    ];
 
     __syncthreads();
 
     //foreach k: t*B <= t < t+B
     for (int k = 0; k < B; k++) {
 
-        int b = sum_if_not_infinite(block_t_t_shared[tid_x*B + k], block_i_j_shared[k*B + tid_y], INF); 
+        // Because we are doing rows:
+        // -    matrix[i,k] is in block_t_t_shared[threadIdx.x,k]
+        // -    matrix[k,j] is in block_i_j_shared[k,threadIdx.y]
+        int b = sum_if_not_infinite(block_t_t_shared[threadIdx.x*B + k], block_i_j_shared[k*B + threadIdx.y], INF); 
 
-        if (b < block_i_j_shared[tid_x*B + tid_y]) {
-            block_i_j_shared[tid_x*B + tid_y] = b;
+        if (b < block_i_j_shared[threadIdx.x*B + threadIdx.y]) {
+            block_i_j_shared[threadIdx.x*B + threadIdx.y] = b;
         }
 
         //printf("i:%d, j:%d, k:%d\n", i, j, k);
@@ -198,7 +200,8 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
         __syncthreads();
     }
 
-    matrix[i*n + j] = block_i_j_shared[tid_x*B + tid_y];
+    // copy result in global memory
+    matrix[i*n + j] = block_i_j_shared[threadIdx.x*B + threadIdx.y];
 }
 
 __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t, int B) {
@@ -219,11 +222,10 @@ __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t
 
     extern __shared__ int shared_mem[];
 
-    int* block_t_t_shared = shared_mem;
-    int* block_i_j_shared = B*B*sizeof(int) + shared_mem;
+    int* block_t_t_shared = &shared_mem[0];
+    int* block_i_j_shared = &shared_mem[B*B*sizeof(int)];
 
     int i, j;
-    int tid_x = threadIdx.x, tid_y = threadIdx.y;
 
     // it's a column ...
     j = BLOCK_START(t, B) + threadIdx.y;
@@ -239,17 +241,22 @@ __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t
         i = BLOCK_START(blockIdx.y, B) + B + threadIdx.x;
     }
 
-    // I want to read (i+dist, j), where:
-    // dist = (t-block_row_index)*B = (t-int(i/B))*B
-    block_t_t_shared[tid_x*B + tid_y] = matrix[(i+(t-i/B)*B)*n + j];
+    block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
+    block_t_t_shared[threadIdx.x*B + threadIdx.y] = matrix[
+        (BLOCK_START(t, B) + threadIdx.x) * n
+        + (BLOCK_START(t, B) + threadIdx.y)
+    ];
 
     //foreach k: t*B <= t < t+B
     for (int k = 0; k < B; k++) {
         
-        int b = sum_if_not_infinite(block_i_j_shared[tid_x*B + k], block_t_t_shared[k*B + tid_y], INF); 
+        // Because we are doing columns:
+        // -    matrix[i,k] is in block_i_j_shared[threadIdx.x,k]
+        // -    matrix[k,j] is in block_t_t_shared[k,threadIdx.y]
+        int b = sum_if_not_infinite(block_i_j_shared[threadIdx.x*B + k], block_t_t_shared[k*B + threadIdx.y], INF); 
 
-        if (b < block_i_j_shared[tid_x*B + tid_y]) {
-            block_i_j_shared[tid_x*B + tid_y] = b;
+        if (b < block_i_j_shared[threadIdx.x*B + threadIdx.y]) {
+            block_i_j_shared[threadIdx.x*B + threadIdx.y] = b;
         }
 
         //printf("i:%d, j:%d, k:%d\n", i, j, k);
@@ -257,7 +264,8 @@ __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t
         __syncthreads();
     }
 
-    matrix[i*n + j] = block_i_j_shared[tid_x*B + tid_y];
+    // copy result in global memory
+    matrix[i*n + j] = block_i_j_shared[threadIdx.x*B + threadIdx.y];
 }
 
 
