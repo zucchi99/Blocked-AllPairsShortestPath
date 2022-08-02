@@ -87,9 +87,6 @@ void floyd_warshall_blocked_device_v_2_0(int *matrix, int n, int B) {
         execute_round_device_v_2_0_phase_2_row<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
         execute_round_device_v_2_0_phase_2_col<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
 
-        //execute_round_device_v_1_4_phase_2_row<<<num_blocks_phase_2, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
-        //execute_round_device_v_1_4_phase_2_col<<<num_blocks_phase_2, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
-
 
         HANDLE_ERROR(cudaDeviceSynchronize());
 
@@ -97,7 +94,7 @@ void floyd_warshall_blocked_device_v_2_0(int *matrix, int n, int B) {
 
         dim3 num_blocks_phase_3(num_rounds-1, num_rounds-1); 
 
-        execute_round_device_v_2_0_phase_3<<<num_blocks_phase_3, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
+        execute_round_device_v_2_0_phase_3<<<num_blocks_phase_3, threads_per_block_phase_1, 3*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
         HANDLE_ERROR(cudaDeviceSynchronize()); 
     }
 
@@ -286,25 +283,47 @@ __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, in
     //  DL  DL  DL  -   DR  DR
     //  DL  DL  DL  -   DR  DR
 
-    int i = threadIdx.x + blockIdx.x * blockDim.x;
-    int j = threadIdx.y + blockIdx.y * blockDim.y;
-           
-    // if a thread is under t, add B as row offset to get right position in matrix
-    if (blockIdx.x >= t)    i += B; 
+    extern __shared__ int shared_mem[];
 
-    // if a thread is ar right of t, add B as col offset to get right position in matrix
-    if (blockIdx.y >= t)    j += B;
+    int* block_i_j_shared = &shared_mem[0];
+    int* block_i_t__shared = &shared_mem[B*B];
+    int* block_t_j_shared = &shared_mem[2*B*B];
+
+
+    int i = threadIdx.x + blockIdx.x * blockDim.x + ((blockIdx.x >= t) ? B : 0);
+    int j = threadIdx.y + blockIdx.y * blockDim.y + ((blockIdx.y >= t) ? B : 0);
+    
+    block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
+    
+    block_i_t_shared[threadIdx.x*B + threadIdx.y] = matrix[
+        i*n + (BLOCK_START(t, B) + threadIdx.y)
+    ];
+
+    block_t_j_shared[threadIdx.x*B + threadIdx.y] = matrix[
+        ((BLOCK_START(t, B) + threadIdx.x) * n) + j
+    ];
+    
+    __syncthreads();
 
     //foreach k: t*B <= t < t+B
-    for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
+    for (int k = 0; k < B; k++) {
 
-        int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
+        int b = sum_if_not_infinite(
+            //matrix[i*n + k], 
+            block_i_t_shared[threadIdx.x*B + k]
+            //matrix[k*n + j], 
+            block_t_j_shared[k*B + threadIdx.y],
+            INF
+        ); 
 
-        if (b < matrix[i*n + j]) {
-                matrix[i*n + j] = b;
+        if (b < block_i_j_shared[threadIdx.x*B + threadIdx.y]) {
+            block_i_j_shared[threadIdx.x*B + threadIdx.y] = b;
         }
 
         __syncthreads();
     }
+
+    // copy result in global memory
+    matrix[i*n + j] = block_i_j_shared[threadIdx.x*B + threadIdx.y];
 }
 
