@@ -24,10 +24,12 @@ __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, in
 
 int main() {
 
-    // multi_size_statistical_test(&floyd_warshall_blocked_device_v_2_0, 8, 256, 8, 32, 100, RANDOM_SEED, false, true);
+    multi_size_statistical_test(&floyd_warshall_blocked_device_v_2_0, 8, 1024, 8, 1024, 500, RANDOM_SEED, false, true);
     
     // int n = 256;
     // int B = 32;
+
+    /*
     
     int rand_seed = time(NULL);
     srand(rand_seed);
@@ -64,6 +66,8 @@ int main() {
                 
         }
     }
+
+    */
     
     //single test
     /*

@@ -89,17 +89,17 @@ int multi_size_statistical_test(
     int n_tests_per_round, int use_always_seed, 
     bool stop_if_fail, bool print_failed_tests) {
 
-    assert(end_input_size%start_input_size==0);
+    // assert(end_input_size%start_input_size==0);
     assert(end_input_size>=start_input_size);
-    assert(start_input_size%2==0);
-    assert(end_input_size%2==0);
+    // assert(start_input_size%2==0);
+    // assert(end_input_size%2==0);
 
-    assert(max_blocking_factor%min_blocking_factor==0);
+    // assert(max_blocking_factor%min_blocking_factor==0);
     assert(max_blocking_factor>=min_blocking_factor);
-    assert(min_blocking_factor%2==0);
-    assert(max_blocking_factor%2==0);
+    // assert(min_blocking_factor%2==0);
+    // assert(max_blocking_factor%2==0);
 
-    assert(start_input_size%min_blocking_factor==0);
+    // assert(start_input_size%min_blocking_factor==0);
 
     printf("Performing Multi-size statistical test:\n");
     printf("\tFrom %d to %d input size (multiplying *2 every time)", start_input_size, end_input_size);
@@ -114,26 +114,63 @@ int multi_size_statistical_test(
 
     int n_err_tot = 0;
 
-    for (int n = start_input_size; n <= end_input_size; n *= 2) {
+    // outputs a random number between 1.100 and 1.600
+    srand(time(NULL));
+    double linear_increase = ((double) ((rand() % 500) + 1100)) / ((double) 1000);
+    printf("constant of linear increase for n: %f\n", linear_increase);
+
+    for (int n = start_input_size; n <= end_input_size; n = (int) (linear_increase * (double) n)) { // n *= 2
 
         int MAX_B = min(n, max_blocking_factor);
     
-        for (int BLOCKING_FACTOR = min_blocking_factor; BLOCKING_FACTOR <= MAX_B; BLOCKING_FACTOR *= 2) {
+        //for (int BLOCKING_FACTOR = min_blocking_factor; BLOCKING_FACTOR <= MAX_B; BLOCKING_FACTOR *= 2) {
+        
+        // use max 5 different blocking factors
+        int B[5];
+        // initially all are -1
+        for (int i = 0; i < 5; i++) B[i] = -1;
+
+        // index of the currently used B 
+        int cur_B_idx = -1;
+
+        // generate randomly B check if it is a divisor of n and not already used.
+        // generate  maximum 50 random B (necessary to avoid non-termination, maybe n is prime)
+        for (int tests = 0; tests < 50 && cur_B_idx < 5; tests++) {
+
+            // range for b is between 0 and n/2
+            int b = rand() % (n/2);
+            // but if it is zero then use B=n
+            b = (b == 0) ? n : b;       
+
+            // test if it is ok to be executed (b is a new divisor)
+            bool exec_cond = (n%b == 0);
+            for (int i = 0; (i <= cur_B_idx) && exec_cond; i++) exec_cond = (b != B[i]);
+
+            int BLOCKING_FACTOR = b;
 
             // if((n % BLOCKING_FACTOR) == 0) {
-                
+            if (exec_cond) {
+
+                // add b to the list of B used
+                B[++cur_B_idx] = b;
+                //print n and B
                 printf("n: %d, B: %d\n", n, BLOCKING_FACTOR);
+
+                //execute test
                 int n_err = do_arr_floyd_warshall_statistical_test(
                     function_to_test, n, BLOCKING_FACTOR, n_tests_per_round, use_always_seed, stop_if_fail, 1, print_failed_tests);
                 // int n_err = do_arr_floyd_warshall_statistical_test(&arr_floyd_warshall_blocked, n, BLOCKING_FACTOR, 1000, RANDOM_SEED, true, 4, true);
                 
+                // count errors
                 n_err_tot += n_err;
                 if (n_err>0 && stop_if_fail) {
                     return n_err_tot;
                 };
+                
+                printf("Cumulative errors at size=%d, blocking_factor=%d:\t%d (%d new ones)\n\n", n, BLOCKING_FACTOR, n_err_tot, n_err);
+            }
             // }
 
-            printf("Cumulative errors at size=%d, blocking_factor=%d:\t%d (%d new ones)\n\n", n, BLOCKING_FACTOR, n_err_tot, n_err);
         }
     }
 
