@@ -24,26 +24,47 @@ __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, in
 
 int main() {
 
-    multi_size_statistical_test(&floyd_warshall_blocked_device_v_2_0, 8, 256, 8, 32, 100, RANDOM_SEED, false, true);
+    // multi_size_statistical_test(&floyd_warshall_blocked_device_v_2_0, 8, 256, 8, 32, 100, RANDOM_SEED, false, true);
     
     // int n = 256;
     // int B = 32;
     
-    /*
-    for (int n = 32; n <= 32; n += 2 ) {
-        for (int B = 16; B <= 16; B++) {
-             
-            if (n%B == 0) {
-                printf("n: %d, B: %d\n", n, B);
-                int n_err = do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v_2_0, n, B, 10000, RANDOM_SEED, true, 4, true);
-                printf("n_err:%d\n", n_err);
+    int rand_seed = time(NULL);
+    srand(rand_seed);
+    printf("rand_seed: %d\n", rand_seed);
 
+    // outputs a random number between 1.100 and 1.600
+    double linear_increase = ((double) ((rand() % 500) + 1100)) / ((double) 1000);
+    
+    printf("constant of linear increase for n: %f\n", linear_increase);
+
+    for (int n = 6; n <= 1024; n = (int) (linear_increase * (double) n)) {
+        
+        // use max 5 different blocking factors
+        int B[5];
+        for (int i = 0; i < 5; i++) B[i] = -1;
+
+        // index of the currently used B 
+        int cur_B_idx = -1;
+
+        // try maximum 15 random B 
+        for (int tests = 0; tests < 50 && cur_B_idx < 5; tests++) {
+
+            int b = rand() % (n/2);
+            b = (b == 0) ? n : b;       
+
+            bool test_cond = (n%b == 0);
+            for (int i = 0; (i <= cur_B_idx) && test_cond; i++) test_cond = (b != B[i]);
+
+            if (test_cond) {
+                printf("n: %d, B: %d\n", n, b);
+                B[++cur_B_idx] = b;
+                do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v_2_0, n, b, 500, RANDOM_SEED, true, 4, true);
             }
                 
         }
     }
-    */
-
+    
     //single test
     /*
     size_t n = 6;
@@ -59,7 +80,7 @@ int main() {
 void floyd_warshall_blocked_device_v_2_0(int *matrix, int n, int B) {
 
     assert(n%B == 0);                       // B must divide n
-    assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
+    //assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
 
     int *dev_rand_matrix;
     HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n * n* sizeof(int)));
