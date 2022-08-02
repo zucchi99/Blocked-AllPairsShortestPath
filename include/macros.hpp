@@ -22,8 +22,8 @@
 /// Print a bool as a string
 #define bool_to_string(cond) (cond ? "true" : "false")
 
-
-#define pitched_pointer(matrix, i, j, pitch) ((int *)((char*) matrix + i * pitch) + j)
+/// returns the pointer of given (i,j) using the access pattern of a 2D pitched memory
+#define pitched_pointer(matrix, i, j, pitch) ( (int *) (((char*) matrix + i * pitch) + j) )
 
 
 #endif
