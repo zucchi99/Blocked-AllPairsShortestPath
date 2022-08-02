@@ -286,7 +286,7 @@ __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, in
     extern __shared__ int shared_mem[];
 
     int* block_i_j_shared = &shared_mem[0];
-    int* block_i_t__shared = &shared_mem[B*B];
+    int* block_i_t_shared = &shared_mem[B*B];
     int* block_t_j_shared = &shared_mem[2*B*B];
 
 
@@ -309,9 +309,7 @@ __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, in
     for (int k = 0; k < B; k++) {
 
         int b = sum_if_not_infinite(
-            //matrix[i*n + k], 
-            block_i_t_shared[threadIdx.x*B + k]
-            //matrix[k*n + j], 
+            block_i_t_shared[threadIdx.x*B + k],
             block_t_j_shared[k*B + threadIdx.y],
             INF
         ); 
