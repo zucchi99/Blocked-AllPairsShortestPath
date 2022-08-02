@@ -129,7 +129,7 @@ __global__ void execute_round_device_v_1_1(int *matrix, int n, int t, int row, i
 void floyd_warshall_blocked_device_v_1_1(int *matrix, int n, int B) {
 
     assert(n%B == 0);                       // B must divide n
-    //assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
+    assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
 
     int *dev_rand_matrix;
     HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n * n* sizeof(int)));

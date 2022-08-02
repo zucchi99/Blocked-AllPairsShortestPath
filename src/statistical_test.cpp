@@ -143,7 +143,7 @@ int multi_size_statistical_test(
             b = (b == 0) ? n : b;       
 
             // test if it is ok to be executed (b is a new divisor)
-            bool exec_cond = (n%b == 0);
+            bool exec_cond = (n%b == 0) && (b <= MAX_BLOCKING_FACTOR);
             for (int i = 0; (i <= cur_B_idx) && exec_cond; i++) exec_cond = (b != B[i]);
 
             int BLOCKING_FACTOR = b;

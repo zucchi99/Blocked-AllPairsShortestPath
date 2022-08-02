@@ -12,6 +12,7 @@
 
 
 #define MAX_BLOCK_SIZE 1024 // in realtà basta fare le proprerties della macchina
+#define MAX_BLOCKING_FACTOR 32 // 32*32 = 1024
 
 /// Macro to get block starting position (of a column or of a row)
 #define BLOCK_START(block_index,B) (block_index * B)
