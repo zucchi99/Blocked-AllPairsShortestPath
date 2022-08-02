@@ -253,8 +253,9 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
 
     extern __shared__ int shared_mem[];
     
-    int* block_t_t_shared = &shared_mem[0];
-    int* block_i_j_shared = &shared_mem[B*B];
+    int* block_i_j_shared = &shared_mem[0];
+    int* block_t_t_shared = &shared_mem[B*B];
+    
 
     int i, j;
 
