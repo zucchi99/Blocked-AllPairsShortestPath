@@ -165,6 +165,7 @@ int multi_size_statistical_test(
                 n_err_tot += n_err;
                 if (n_err>0 && stop_if_fail) {
                     return n_err_tot;
+                    //break;
                 };
                 
                 printf("Cumulative errors at size=%d, blocking_factor=%d:\t%d (%d new ones)\n\n", n, BLOCKING_FACTOR, n_err_tot, n_err);
