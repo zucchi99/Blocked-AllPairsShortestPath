@@ -170,7 +170,7 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
 
     // it's a row ...
     i = BLOCK_START(t, B) + threadIdx.x;
-    j = BLOCK_START(blockIdx.y, B) + threadIdx.y + ( (blockIdx.y > t) ? B : 0 );
+    j = BLOCK_START(blockIdx.y, B) + threadIdx.y + ((blockIdx.y >= t) ? B : 0);
 
     block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
 
@@ -229,8 +229,8 @@ __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t
     int i, j;
 
     // it's a column ...
-    i = BLOCK_START(blockIdx.y, B) + threadIdx.x;
-    j = BLOCK_START(t, B) + threadIdx.y + ( (blockIdx.y > t) ? B : 0 );
+    i = BLOCK_START(blockIdx.y, B) + threadIdx.x + ((blockIdx.y >= t) ? B : 0);
+    j = BLOCK_START(t, B) + threadIdx.y;
 
     block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
 
@@ -288,7 +288,6 @@ __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, in
     int* block_i_j_shared = &shared_mem[0];
     int* block_i_t_shared = &shared_mem[B*B];
     int* block_t_j_shared = &shared_mem[2*B*B];
-
 
     int i = threadIdx.x + blockIdx.x * blockDim.x + ((blockIdx.x >= t) ? B : 0);
     int j = threadIdx.y + blockIdx.y * blockDim.y + ((blockIdx.y >= t) ? B : 0);
