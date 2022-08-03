@@ -9,30 +9,29 @@
 #include "../include/host_floyd_warshall.hpp"
 #include "../include/statistical_test.hpp"
 
-bool test_arr_floyd_warshall(
-    void (*function_to_test) (int* arr_matrix, int n, int b), 
-    int *input_instance, int *test_instance_space, 
-    int input_size, int blocking_factor) {
+bool exec_single_single_statistical_test(ExecSingleSizeTestParameters params) {
 
-    //make a copy of input_instance to test_instance
-    memcpy((void*) test_instance_space, (void*) input_instance, input_size*input_size*sizeof(int));
+    //just a rename of the same pointer
+    int *f_input = params.input_instance;
+
+    //define an input copy and allocate memory its memory
+    int *g_input = allocate_arr_matrix(params.input_size, params.input_size);
+
+    //make a copy of f_input to g_input
+    memcpy((void*) g_input, (void*) f_input, params.input_size * params.input_size * sizeof(int));
     
     //classic floyd_warshall on host, used to compare output
-    host_array_floyd_warshall(test_instance_space, input_size);
+    params.f(f_input, params.input_size, params.blocking_factor);
 
     //function to test execution
-    function_to_test(input_instance, input_size, blocking_factor);
+    params.g(g_input, params.input_size, params.blocking_factor);
 
     //return true <==> foreach 0 <= i,j < n : input[i,j] = test[i,j]
-    return same_arr_matrixes(input_instance, test_instance_space, input_size, input_size, false);
+    return same_arr_matrixes(f_input, g_input, params.input_size, params.input_size, false);
 }
 
 
-int do_arr_floyd_warshall_statistical_test(
-    void (*function_to_test) (int* arr_matrix, int n, int b), 
-    int input_size, int blocking_factor, 
-    int n_tests, int use_always_seed, 
-    bool stop_if_fail, int progress_print_fraction, bool print_failed_tests) {
+int call_single_size_statistical_test(CallSingleSizeTestParameters params) {
 
     /*
     printf("Performing statistical test with:\n");
@@ -49,38 +48,47 @@ int do_arr_floyd_warshall_statistical_test(
     int n_wrong = 0;
 
     //matrix initialization
-    int *input_instance = (int *) malloc(sizeof(int *) * input_size * input_size);
-    int *test_instance_space = (int *) malloc(sizeof(int *) * input_size * input_size);
+    int *input_instance = allocate_arr_matrix(params.input_size, params.input_size);
 
-    int i;
-    for (i = 0; i < n_tests; i++)
+    int i = 0;
+    for (; i < params.n_tests; i++)
     {
         // Progression status print
-        if((i > 0) && (i % (n_tests/progress_print_fraction) == 0)) {
-            double perc = ((double) i) / ((double) n_tests);
-            printf("%d%%: %d of %d\n", (int) (perc*100), i, n_tests);
+        if((i > 0) && (i % (params.n_tests / params.print_progress_perc) == 0)) {
+            double perc = ((double) i) / ((double) params.n_tests);
+            printf("%d%%: %d of %d\n", (int) (perc*100), i, params.n_tests);
         }
         
         // if necessary, generate (pseudo) random input instance
-        int seed = (use_always_seed == RANDOM_SEED) ? clock() : use_always_seed;
+        params.seed = (params.seed == RANDOM_SEED) ? clock() : params.seed;
         
-        populate_arr_adj_matrix(input_instance, input_size, seed, false);
+        populate_arr_adj_matrix(input_instance, params.input_size, params.seed, false);
+
+        //define exec single test params
+        ExecSingleSizeTestParameters exec_params;
+        // most of parameters are copied as received:
+        exec_params.f               = params.f;
+        exec_params.g               = params.g;
+        exec_params.input_size      = params.input_size;
+        exec_params.blocking_factor = params.blocking_factor;
+        // input instance is allocated and populated here (based on seed value)
+        exec_params.input_instance  = input_instance; 
 
         // perform test
-        if (!test_arr_floyd_warshall(*function_to_test, input_instance, test_instance_space, input_size, blocking_factor)) {
+        if (!exec_single_single_statistical_test(exec_params)) {
 
             n_wrong++;
 
-            if (print_failed_tests) printf("%d/%d)\tseed: %d --> ERROR!\n", i, n_tests, seed);
+            if (params.print_failed_tests) printf("%d/%d)\tseed: %d --> ERROR!\n", i, params.n_tests, params.seed);
             
-            if (stop_if_fail) break;
+            if (params.stop_current_if_fail) break;
         }
     }
 
     free(input_instance);
-    free(test_instance_space);
 
-    printf("Test ended. Performed %d/%d tests and got %d/%d errors\n", i, n_tests, n_wrong, n_tests);
+    printf("Test ended. Performed %d/%d tests and got %d/%d errors\n", i, params.n_tests, n_wrong, params.n_tests);
+
     return n_wrong;
 }
 
@@ -133,10 +141,22 @@ int multi_size_statistical_test(MultiSizeTestParameters params) {
                 //print n and B
                 printf("n: %d, B: %d\n", n, B);
 
+                //define exec single test params
+                CallSingleSizeTestParameters single_test_params;
+                // most of parameters are copied as received:
+                single_test_params.f                    = params.f;
+                single_test_params.g                    = params.g;
+                single_test_params.seed                 = params.seed;
+                single_test_params.n_tests              = params.n_tests_per_round;
+                single_test_params.print_progress_perc  = params.print_progress_perc;
+                single_test_params.print_failed_tests   = params.print_failed_tests;
+                single_test_params.stop_current_if_fail = params.stop_current_if_fail;
+                // the couple (n,B) is calculated here
+                single_test_params.input_size      = n;
+                single_test_params.blocking_factor = B;
+
                 //execute test
-                int n_err = do_arr_floyd_warshall_statistical_test(
-                    params.function_to_test, n, B, params.n_tests_per_round, params.seed, params.stop_current_if_fail, params.print_progress_perc, params.print_failed_tests);
-                // int n_err = do_arr_floyd_warshall_statistical_test(&arr_floyd_warshall_blocked, n, BLOCKING_FACTOR, 1000, RANDOM_SEED, true, 4, true);
+                int n_err = call_single_size_statistical_test(single_test_params);
                 
                 // count errors
                 n_err_tot += n_err;
@@ -155,7 +175,8 @@ int multi_size_statistical_test(MultiSizeTestParameters params) {
 
 void print_multi_size_test_parameters(MultiSizeTestParameters params) {
     printf("MultiSizeTestParameters:\n");
-    printf("- pointer to test func:\t%p\n", &params.function_to_test);
+    printf("- pointer to test func:\t%p\n", &params.f);
+    printf("- pointer to comp func:\t%p\n", &params.g);
     printf("- start input size:\t%d\n", params.start_input_size);
     printf("- end input size:\t%d\n", params.end_input_size);
     printf("- costant multiplier:\t");
@@ -172,3 +193,30 @@ void print_multi_size_test_parameters(MultiSizeTestParameters params) {
     printf("- blocking factor:\tRANDOM\n");
     printf("\n");
 }
+
+void print_call_single_size_statistical_test_parameters(CallSingleSizeTestParameters params) {
+    printf("CallSingleSizeTestParameters:\n");
+    printf("- pointer to test func:\t%p\n", &params.f);
+    printf("- pointer to comp func:\t%p\n", &params.g);
+    printf("- input size:\t%d\n", params.input_size);
+    printf("- blocking factor:\t%d\n", params.blocking_factor);
+    printf("- seed:\t\t\t");
+    if (params.seed == RANDOM_SEED)     printf("RANDOM\n");
+    else                                printf("%d\n", params.seed);
+    printf("- n tests:\t\t%d\n", params.n_tests);
+    printf("- print progress perc:\t%d%%\n", (100 / params.print_progress_perc));
+    printf("- stop current if fail:\t%s\n", bool_to_string(params.stop_current_if_fail));
+    printf("- print failed tests:\t%s\n", bool_to_string(params.print_failed_tests));
+    printf("\n");
+}
+
+void print_exec_single_size_statistical_test_parameters(ExecSingleSizeTestParameters params) {
+    printf("ExecSingleSizeTestParameters:\n");
+    printf("- pointer to test func:\t%p\n", &params.f);
+    printf("- pointer to comp func:\t%p\n", &params.g);
+    printf("- input size:\t%d\n", params.input_size);
+    printf("- blocking factor:\t%d\n", params.blocking_factor);
+    printf("- pointer to input data:\t%p\n", &params.input_instance);
+    printf("\n");
+}
+

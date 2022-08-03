@@ -25,7 +25,8 @@ __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, in
 int main() {
 
     MultiSizeTestParameters my_params;
-    my_params.function_to_test = &floyd_warshall_blocked_device_v_2_0;
+    my_params.f = &floyd_warshall_blocked_device_v_2_0;
+    my_params.g = &host_array_floyd_warshall_blocked;
     print_multi_size_test_parameters(my_params);
     multi_size_statistical_test(my_params);
     

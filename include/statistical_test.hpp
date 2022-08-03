@@ -6,55 +6,56 @@
 
 
 struct MultiSizeTestParameters {
-    void (*function_to_test) (int* arr_matrix, int n, int b) = NULL;
-    int start_input_size        = 4;                // min n to test
-    int end_input_size          = 1024;             // max n to test
-    double costant_multiplier   = RANDOM_CONSTANT;  // costant used to linearly increase input size (pass RANDOM_CONSTANT to generate a random costant_multiplier)
-    int seed                    = RANDOM_SEED;      // seed for input generation (pass RANDOM_SEED to generate a random seed)
-    int n_tests_per_round       = 500;              // number of different test foreach given couple (n,B)
-    int print_progress_perc     = 1;                // print progress of a test for a given couple (n,B) (for ex. 4 ==> 100/4 = 25% ==> print progress at 25%, 50%, 75%)
-    bool stop_current_if_fail   = true;             // true ==> if found an error for a given couple (n,B): stop test this couple but keep testing other couples
-    bool stop_all_if_fail       = false;            // true ==> if found an error for a given couple (n,B): stop all tests (return) (NB: stop_all_if_fail ==> stop_current_if_fail but not viceversa)
-    bool print_failed_tests     = true;             // true ==> if found an error print seed and the index of the test
+    void (*f) (int* arr_matrix, int n, int b) = NULL;   // test function
+    void (*g) (int* arr_matrix, int n, int b) = NULL;   // compare function
+    int start_input_size        = 4;                    // min n to test
+    int end_input_size          = 1024;                 // max n to test
+    double costant_multiplier   = RANDOM_CONSTANT;      // costant used to linearly increase input size (pass RANDOM_CONSTANT to generate a random costant_multiplier)
+    int seed                    = RANDOM_SEED;          // seed for input generation (pass RANDOM_SEED to generate a random seed)
+    int n_tests_per_round       = 500;                  // number of different test foreach given couple (n,B)
+    int print_progress_perc     = 1;                    // print progress of a test for a given couple (n,B) (for ex. 4 ==> 100/4 = 25% ==> print progress at 25%, 50%, 75%), if 1 is disabled
+    bool stop_current_if_fail   = true;                 // true ==> if found an error for a given couple (n,B): stop test this couple but keep testing other couples
+    bool stop_all_if_fail       = false;                // true ==> if found an error for a given couple (n,B): stop all tests (return control) (NB: stop_all_if_fail ==> stop_current_if_fail but not viceversa)
+    bool print_failed_tests     = true;                 // true ==> if found an error print seed and the index of the test
 };
 
-
-//default parameters
-/*
-extern MultiSizeTestParameters default_params = {
-    .function_to_test       = NULL,
-    .start_input_size       = 4,
-    .end_input_size         = 1024,
-    .costant_multiplier     = RANDOM_CONSTANT,
-    .seed                   = RANDOM_SEED,
-    .n_tests_per_round      = 500,
-    .print_progress_perc    = 4,
-    .stop_current_if_fail   = true,
-    .stop_all_if_fail       = false,
-    .print_failed_tests     = true
-};
-*/
-
-int multi_size_statistical_test(MultiSizeTestParameters params);
+// generates many couples (n,B) and foreach couple generates inputs and executes executes f,g n_tests_per_round times
+// returns: total number of errors of all couples
+int  multi_size_statistical_test(MultiSizeTestParameters params);
 void print_multi_size_test_parameters(MultiSizeTestParameters params);
 
 // -------------------------------------------------------------------------------------------------
-    
-int do_arr_floyd_warshall_statistical_test(
-    void (*function_to_test) (int* arr_matrix, int n, int b), 
-    int input_size, int blocking_factor, 
-    int n_tests, int use_always_seed, 
-    bool stop_if_fail, int progress_print_fraction, bool print_failed_tests);
-    
+
+struct CallSingleSizeTestParameters {
+    void (*f) (int* arr_matrix, int n, int b) = NULL;   // test function
+    void (*g) (int* arr_matrix, int n, int b) = NULL;   // compare function
+    int input_size              = 256;                  // input test size
+    int blocking_factor         = 12;                   // blocking factor test size
+    int seed                    = RANDOM_SEED;          // seed for input generation (pass RANDOM_SEED to generate a random seed)
+    int n_tests                 = 500;                  // number of different tests to do
+    int print_progress_perc     = 1;                    // print progress of a test for a given couple (n,B) (for ex. 4 ==> 100/4 = 25% ==> print progress at 25%, 50%, 75%), if 1 is disabled
+    bool stop_current_if_fail   = true;                 // true ==> if found an error: stop testing (return control)
+    bool print_failed_tests     = true;                 // true ==> if found an error print seed and the index of the test
+};
+
+// given a couple (n,B), generates inputs and executes f,g n_tests_per_round times
+// returns: total number of errors of the given couple
+int  call_single_size_statistical_test(CallSingleSizeTestParameters params);
+void print_call_single_size_statistical_test_parameters(CallSingleSizeTestParameters params);
     
 // -------------------------------------------------------------------------------------------------
 
+struct ExecSingleSizeTestParameters {
+    void (*f) (int* arr_matrix, int n, int b) = NULL;   // test function
+    void (*g) (int* arr_matrix, int n, int b) = NULL;   // compare function
+    int input_size              = 256;                  // input test size
+    int blocking_factor         = 12;                   // blocking factor test size
+    int *input_instance         = NULL;                 // input instance populated
+};
 
-bool test_arr_floyd_warshall(
-    void (*function_to_test) (int* arr_matrix, int n, int b), 
-    int *input_instance, int *test_instance_space, 
-    int input_size, int blocking_factor);
-
-
+// given a couple (n,B) and an an input instance populated executes f,g 1 time
+// returns: f(input) == g(input)
+bool exec_single_single_statistical_test(ExecSingleSizeTestParameters params);
+void print_exec_single_size_statistical_test_parameters(ExecSingleSizeTestParameters params);
 
 #endif
