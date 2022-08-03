@@ -138,3 +138,58 @@ Per fare ciò si sono ri-scritte le procedure <code>execute_round_device_v1_3_ph
 
 La razionalizzazione del numero di blocchi lanciati si paga con una complicazione del metodo di indirizzamento, che diventa più complicato (specie per la fase 2).
 
+## 01/08 - Stato della situazione
+
+### Sperimentazione della struttura dati pitch
+
+Parallelamente a quanto svolto per l'implementazione delle versioni 1.1-1.3, si ha effettuato anche una sperimentazione sulla struttura dati "pitched". Tale struttura dati consiste in una modalità particolare di allocazione della memoria di cuda (in particolare, per l'allocazione di matrici bi-dimensionali) pensata per prevenire il problema del bank conflict. 
+
+In pratica, il "pitch" consiste nell'allocazione di una struttura dati con "un padding" al termine di ogni riga, utile appunto a prevenire il bank conflict in caso di accesso per colonna.
+
+Si è sperimentata la possibilità di allocare e usare spazi pitched, portando alla creazione delle due nuove versioni <code>floyd_warshall_blocked_device_v1_1_pitch</code> e <code>floyd_warshall_blocked_device_v1_3_pitch</code> (che ricalcano come struttura dell'algoritmo le loro corrispondenti normali, ma allocano la memoria in modo pitched e adeguano di conseguenza le tecniche di accesso).
+
+A seguito di un test, tali versioni non si sono dimostrate più efficienti delle loro corrispondenti. Ciò è dovuto al fatto che si sta utilizzando la memoria globale e non la shared.
+
+Probabilmente, neache usando la shared si otterranno risultati tanto migliori (visto che comunque si accede contemporaneamente a tutte le celle della matrice e il conflitto di banco in tanti casi probabilmente sarà inevitabile).
+
+### Razionalizzazione della fase 2 della versione 1.3
+
+Si è creata una nuova versione <code>floyd_warshall_blocked_device_v1_4</code> che segue la stessa struttura della 1.3, ma spezza in due la funzione device della fase 2. Invece di avere una funzione unica che lavora su righe e colonne, si è preferito definire due funzioni distinte, in modo da evitare la prolificazione di strutture decisionali <code>if-else</code> per l'indicizzazione.
+
+## 02/08 - Stato della situazione
+
+### Refactoring del Make, dell'org. dei file e dello statistical test
+
+Per agevolare il lavoro:
+ 
+* è stato riorganizzato il <code>Makefile</code> per fare modo di ri-usare lo stesso comando di compilazione per compilare diversi file (facendo uso di una variabile);
+
+* anche la struttura dei file è stata ri-organizzata per agevolare la gestione delle diverse versioni;
+
+* si è ri-scritto il codice del test statistico, in modo tale da poter effetturare test casuali con input di dimensione e blocking factor che non siano potenze di due
+
+### Versione 2.0 e uso della shared memory
+
+A seguito di numerosi sforzi, si è implementata la prima versione del programma che fa uso di shared memory (<code>floyd_warshall_blocked_device_v2_0</code>). Tale versione:
+
+*    mantiene la stessa struttura di <code>floyd_warshall_blocked_device_v1_4</code>
+
+*   in fase 1, fa uso di uno spazio condiviso nel blocco di dimensione <code>B*B</code> per memorizzare temporaneamente il blocco self-dependend <code>(t,t)</code>. Prima di terminare l'esecuzione su device, si copiano i risultati sulla memoria globale.
+
+*   nelle due funzioni della fase 1 e della fase 2, fa uso di uno spazio shared dinamico di dimensione <code>B*B*2</code> per memorizzare
+    -   il blocco self-dependent <code>(t,t)</code>
+    -   il blocco della riga/della colonna sul quale si sta lavorando.
+
+    Come per la fase 1, prima di terminare l'esecuzione su device, si copiano i risultati sulla memoria globale (ovviamente, si copia solo il blocco della riga/colonna attiva, non il blocco <code>(t,t)</code>).
+
+*   Per quanto riguarda la fase 3, si utilizza sempre uno spazio condiviso di dimensione <code>B*B*2</code>, dove si conservano i due blocchi corrispondenti alla "proiezione" del blocco corrente sulla riga e sulla colonna di <code>(t,t)</code>. 
+
+    Cioè, se si stà lavorando sul blocco <code>(row,col)</code>, allora si copiano <code>(t,col)</code> e <code>(row,t)</code>. Non si memorizza invece nello spazio condiviso il blocco <code>(row,col)</code> in quanto in questa fase ogni thread necessita di accedere soltanto alla sua cella corrispondente, pertanto non avrebbe senso creare uno spazio condiviso; si è preferito quindi usare una variabile locale (e qunidi un resistro dello streaming multi-processor) per memorizzare la singola cella necessaria al thread.
+
+    Al termine della fase 3, ogni thread copia il valore della sua cella corrispondente nella memoria globale.
+
+*   Si noti che in tutto ciò non si avranno mai conflitti in scrittura, in quanto in ogni fase ogni thread scrive solo sulla cella a lui corrispondente.
+
+
+
+
