@@ -123,7 +123,7 @@ void floyd_warshall_blocked_device_v_2_0(int *matrix, int n, int B) {
 
         dim3 num_blocks_phase_3(num_rounds-1, num_rounds-1); 
 
-        execute_round_device_v_2_0_phase_3<<<num_blocks_phase_3, threads_per_block_phase_1, 3*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
+        execute_round_device_v_2_0_phase_3<<<num_blocks_phase_3, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
         HANDLE_ERROR(cudaDeviceSynchronize()); 
     }
 
@@ -314,14 +314,17 @@ __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, in
 
     extern __shared__ int shared_mem[];
 
-    int* block_i_j_shared = &shared_mem[0];
-    int* block_i_t_shared = &shared_mem[B*B];
-    int* block_t_j_shared = &shared_mem[2*B*B];
+    int* block_i_t_shared = &shared_mem[0];
+    int* block_t_j_shared = &shared_mem[B*B];
 
     int i = threadIdx.x + blockIdx.x * blockDim.x + ((blockIdx.x >= t) ? B : 0);
     int j = threadIdx.y + blockIdx.y * blockDim.y + ((blockIdx.y >= t) ? B : 0);
     
-    block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
+    // since the cell i,j is read and written only by this thread
+    // there is no need to copy its value to shared memory we can just us a local variable
+    int cell_i_j = matrix[i*n + j];
+    
+    //block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
     
     block_i_t_shared[threadIdx.x*B + threadIdx.y] = matrix[
         i*n + (BLOCK_START(t, B) + threadIdx.y)
@@ -336,20 +339,20 @@ __global__ void execute_round_device_v_2_0_phase_3(int *matrix, int n, int t, in
     //foreach k: t*B <= t < t+B
     for (int k = 0; k < B; k++) {
 
-        int b = sum_if_not_infinite(
+        int using_k_path = sum_if_not_infinite(
             block_i_t_shared[threadIdx.x*B + k],
             block_t_j_shared[k*B + threadIdx.y],
             INF
         ); 
 
-        if (b < block_i_j_shared[threadIdx.x*B + threadIdx.y]) {
-            block_i_j_shared[threadIdx.x*B + threadIdx.y] = b;
+        if (using_k_path < cell_i_j) {
+            cell_i_j = using_k_path;
         }
 
         __syncthreads();
     }
 
     // copy result in global memory
-    matrix[i*n + j] = block_i_j_shared[threadIdx.x*B + threadIdx.y];
+    matrix[i*n + j] = cell_i_j;
 }
 

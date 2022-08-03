@@ -121,7 +121,7 @@ int multi_size_statistical_test(MultiSizeTestParameters params) {
         int cur_B_idx = -1;
 
         // generate randomly B check if it is a divisor of n and not already used.
-        // generate  maximum 50 random B (necessary to avoid non-termination, maybe n is prime)
+        // generate maximum 50 random B (necessary to avoid non-termination, maybe n is prime)
         for (int tests = 0; tests < 50 && cur_B_idx < 5; tests++) {
 
             // range for b is between 0 and n/2
