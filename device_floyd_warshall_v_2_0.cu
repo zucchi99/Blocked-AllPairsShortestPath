@@ -162,10 +162,10 @@ __global__ void execute_round_device_v_2_0_phase_1(int *matrix, int n, int t, in
     //foreach k: t*B <= t < t+B
     for (int k = 0; k < B; k++) {
 
-        int b = sum_if_not_infinite(block_t_t_shared[tid_x*B + k], block_t_t_shared[k*B + tid_y], INF); 
+        int using_k_path = sum_if_not_infinite(block_t_t_shared[tid_x*B + k], block_t_t_shared[k*B + tid_y], INF); 
 
-        if (b < block_t_t_shared[tid_x*B + tid_y]) {
-            block_t_t_shared[tid_x*B + tid_y] = b;
+        if (using_k_path < block_t_t_shared[tid_x*B + tid_y]) {
+            block_t_t_shared[tid_x*B + tid_y] = using_k_path;
         }
         
         __syncthreads();
@@ -215,14 +215,14 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
         // Because we are doing rows:
         // -    matrix[i,k] is in block_t_t_shared[threadIdx.x,k]
         // -    matrix[k,j] is in block_i_j_shared[k,threadIdx.y]
-        int b = sum_if_not_infinite(
+        int using_k_path = sum_if_not_infinite(
             block_t_t_shared[threadIdx.x*B + k], 
             block_i_j_shared[k*B + threadIdx.y], 
             INF
         ); 
 
-        if (b < block_i_j_shared[threadIdx.x*B + threadIdx.y]) {
-            block_i_j_shared[threadIdx.x*B + threadIdx.y] = b;
+        if (using_k_path < block_i_j_shared[threadIdx.x*B + threadIdx.y]) {
+            block_i_j_shared[threadIdx.x*B + threadIdx.y] = using_k_path;
         }
 
         //printf("i:%d, j:%d, k:%d\n", i, j, k);
@@ -275,14 +275,14 @@ __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t
         // Because we are doing columns:
         // -    matrix[i,k] is in block_i_j_shared[threadIdx.x,k]
         // -    matrix[k,j] is in block_t_t_shared[k,threadIdx.y]
-        int b = sum_if_not_infinite(
+        int using_k_path = sum_if_not_infinite(
             block_i_j_shared[threadIdx.x*B + k], 
             block_t_t_shared[k*B + threadIdx.y], 
             INF
         ); 
 
-        if (b < block_i_j_shared[threadIdx.x*B + threadIdx.y]) {
-            block_i_j_shared[threadIdx.x*B + threadIdx.y] = b;
+        if (using_k_path < block_i_j_shared[threadIdx.x*B + threadIdx.y]) {
+            block_i_j_shared[threadIdx.x*B + threadIdx.y] = using_k_path;
         }
 
         //printf("i:%d, j:%d, k:%d\n", i, j, k);
