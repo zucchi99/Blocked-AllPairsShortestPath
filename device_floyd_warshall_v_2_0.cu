@@ -27,6 +27,11 @@ int main() {
     MultiSizeTestParameters my_params;
     my_params.f = &floyd_warshall_blocked_device_v_2_0;
     my_params.g = &host_array_floyd_warshall_blocked;
+    my_params.start_input_size = 50;
+    my_params.end_input_size = 200;
+    my_params.costant_multiplier = 2;
+
+
     print_multi_size_test_parameters(my_params);
     multi_size_statistical_test(my_params);
     
@@ -111,10 +116,10 @@ void floyd_warshall_blocked_device_v_2_0(int *matrix, int n, int B) {
         //  -   all blocks just above or under t
         //  -   all block at left and at right of t
 
-        dim3 num_blocks_phase_2(1, num_rounds-1);  
+        // dim3 num_blocks_phase_2(1, num_rounds-1);  
 
-        execute_round_device_v_2_0_phase_2_row<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
-        execute_round_device_v_2_0_phase_2_col<<<num_blocks_phase_2, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
+        execute_round_device_v_2_0_phase_2_row<<<num_rounds-1, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
+        execute_round_device_v_2_0_phase_2_col<<<num_rounds-1, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, B);
 
 
         HANDLE_ERROR(cudaDeviceSynchronize());
@@ -181,7 +186,8 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
     //  -   blockIdx.y says something about which row or col)
     //  -   threadIdx.x and threadIdx.y are relative position of cell in block
 
-    //  L1  L2  L3  R1  R2
+    //  L1  L2  L3  R1  R2      
+    //  (trasposed)
 
     //  .   .   .   U1  .   .
     //  .   .   .   U2  .   .
@@ -199,7 +205,7 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
 
     // it's a row ...
     i = BLOCK_START(t, B) + threadIdx.x;
-    j = BLOCK_START(blockIdx.y, B) + threadIdx.y + ((blockIdx.y >= t) ? B : 0);
+    j = BLOCK_START(blockIdx.x, B) + threadIdx.y + ((blockIdx.x >= t) ? B : 0);
 
     block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
 
@@ -242,6 +248,7 @@ __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t
     //  -   threadIdx.x and threadIdx.y are relative position of cell in block
 
     //  U1  U2  U3  D1  D2
+    //  (trasposed)
 
     //  .   .   .   U1  .   .
     //  .   .   .   U2  .   .
@@ -258,7 +265,7 @@ __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t
     int i, j;
 
     // it's a column ...
-    i = BLOCK_START(blockIdx.y, B) + threadIdx.x + ((blockIdx.y >= t) ? B : 0);
+    i = BLOCK_START(blockIdx.x, B) + threadIdx.x + ((blockIdx.x >= t) ? B : 0);
     j = BLOCK_START(t, B) + threadIdx.y;
 
     block_i_j_shared[threadIdx.x*B + threadIdx.y] = matrix[i*n + j];
