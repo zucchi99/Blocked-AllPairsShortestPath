@@ -178,10 +178,10 @@ __global__ void execute_round_device_v_1_2_phase_3(int *matrix, int n, int t, in
             ( i<BLOCK_START(t,B) && (j<BLOCK_START(t,B) || j>=BLOCK_END(t,B)) ) 
             ) {
 
-            int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
+            int using_k_path = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
 
-            if (b < matrix[i*n + j]) {
-                matrix[i*n + j] = b;
+            if (using_k_path < matrix[i*n + j]) {
+                matrix[i*n + j] = using_k_path;
             }
         }
 

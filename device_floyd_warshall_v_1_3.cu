@@ -230,10 +230,10 @@ __global__ void execute_round_device_v_1_3_phase_3(int *matrix, int n, int t, in
     //foreach k: t*B <= t < t+B
     for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
 
-        int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
+        int using_k_path = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
 
-        if (b < matrix[i*n + j]) {
-                matrix[i*n + j] = b;
+        if (using_k_path < matrix[i*n + j]) {
+            matrix[i*n + j] = using_k_path;
         }
 
         __syncthreads();
