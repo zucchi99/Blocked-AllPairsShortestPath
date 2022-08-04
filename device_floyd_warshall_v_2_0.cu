@@ -27,9 +27,9 @@ int main() {
     MultiSizeTestParameters my_params;
     my_params.f = &floyd_warshall_blocked_device_v_2_0;
     my_params.g = &host_array_floyd_warshall_blocked;
-    my_params.start_input_size = 50;
+    my_params.start_input_size = 30;
     my_params.end_input_size = 200;
-    my_params.costant_multiplier = 2;
+    my_params.costant_multiplier = 1.4;
 
 
     print_multi_size_test_parameters(my_params);
