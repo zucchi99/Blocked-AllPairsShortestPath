@@ -183,10 +183,7 @@ __global__ void execute_round_device_v_2_0_phase_1(int *matrix, int n, int t) {
 
 __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t) {
 
-    // Launched blocks and correspondent position in the matrix
-    //  -   blockIdx.x says if I am iterating row or cols, 
-    //  -   blockIdx.y says something about which row or col)
-    //  -   threadIdx.x and threadIdx.y are relative position of cell in block
+    // Launched block and correspondent position in the matrix
 
     //  L1  L2  L3  R1  R2      
     //  (trasposed)
@@ -248,10 +245,7 @@ __global__ void execute_round_device_v_2_0_phase_2_row(int *matrix, int n, int t
 
 __global__ void execute_round_device_v_2_0_phase_2_col(int *matrix, int n, int t) {
 
-    // Launched blocks and correspondent position in the matrix
-    //  -   blockIdx.x says if I am iterating row or cols, 
-    //  -   blockIdx.y says something about which row or col)
-    //  -   threadIdx.x and threadIdx.y are relative position of cell in block
+    // Launched block and correspondent position in the matrix
 
     //  U1  U2  U3  D1  D2
     //  (trasposed)
