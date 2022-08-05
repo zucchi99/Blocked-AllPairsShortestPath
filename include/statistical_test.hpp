@@ -17,6 +17,7 @@ struct MultiSizeTestParameters {
     bool stop_current_if_fail   = true;                 // true ==> if found an error for a given couple (n,B): stop test this couple but keep testing other couples
     bool stop_all_if_fail       = false;                // true ==> if found an error for a given couple (n,B): stop all tests (return control) (NB: stop_all_if_fail ==> stop_current_if_fail but not viceversa)
     bool print_failed_tests     = true;                 // true ==> if found an error print seed and the index of the test
+    int min_blocking_factor     = 2;                    // the minimum blocking factor you are intrested testing
 };
 
 // generates many couples (n,B) and foreach couple generates inputs and executes executes f,g n_tests_per_round times

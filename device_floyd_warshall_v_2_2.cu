@@ -33,6 +33,7 @@ int main() {
     my_params.start_input_size = 30;
     my_params.end_input_size = 150;
     my_params.costant_multiplier = 1.4;
+    my_params.min_blocking_factor = 10;
 
     print_multi_size_test_parameters(my_params);
     multi_size_statistical_test(my_params);
