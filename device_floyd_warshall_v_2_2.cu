@@ -162,7 +162,7 @@ __global__ void execute_round_device_v_2_2_phase_2_row(int *matrix, int n, int t
     block_i_j_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[ARR_MATRIX_INDEX(i, j, n)];
 
     // the self-dependent block already calculated in this round
-    block_t_t_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[
+    block_t_t_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[
         ARR_MATRIX_INDEX(
             (BLOCK_START(t, blockDim.x) + threadIdx.x), 
             (BLOCK_START(t, blockDim.x) + threadIdx.y), 
@@ -181,7 +181,7 @@ __global__ void execute_round_device_v_2_2_phase_2_row(int *matrix, int n, int t
         // -    matrix[i,abs_k] is in block_t_t_shared[threadIdx.x,k]
         // -    matrix[abs_k,j] is in block_i_j_shared[k,threadIdx.y]
         int using_k_path = sum_if_not_infinite(
-            block_t_t_shared[ARR_MATRIX_INDEX(threadIdx.x, k, blockDim.x)], 
+            block_t_t_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, k, blockDim.x)], 
             block_i_j_shared[ARR_MATRIX_INDEX(k, threadIdx.y, blockDim.x)], 
             INF
         ); 
@@ -226,7 +226,7 @@ __global__ void execute_round_device_v_2_2_phase_2_col(int *matrix, int n, int t
     int j = BLOCK_START(t, blockDim.x) + threadIdx.y;
 
     // the block where I am working
-    block_i_j_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[ARR_MATRIX_INDEX(i, j, n)];
+    block_i_j_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[ARR_MATRIX_INDEX(i, j, n)];
 
     // the self-dependent block already calculated in this round
     block_t_t_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[
@@ -247,13 +247,13 @@ __global__ void execute_round_device_v_2_2_phase_2_col(int *matrix, int n, int t
         // -    matrix[i,k] is in block_i_j_shared[threadIdx.x,k]
         // -    matrix[k,j] is in block_t_t_shared[k,threadIdx.y]
         int using_k_path = sum_if_not_infinite(
-            block_i_j_shared[ARR_MATRIX_INDEX(threadIdx.x, k, blockDim.x)], 
+            block_i_j_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, k, blockDim.x)], 
             block_t_t_shared[ARR_MATRIX_INDEX(k, threadIdx.y, blockDim.x)], 
             INF
         ); 
 
-        if (using_k_path < block_i_j_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)]) {
-            block_i_j_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = using_k_path;
+        if (using_k_path < block_i_j_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, threadIdx.y, blockDim.x)]) {
+            block_i_j_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, threadIdx.y, blockDim.x)] = using_k_path;
         }
 
         //printf("i:%d, j:%d, k:%d\n", i, j, k);
@@ -262,7 +262,7 @@ __global__ void execute_round_device_v_2_2_phase_2_col(int *matrix, int n, int t
     }
 
     // copy result in global memory
-    matrix[ARR_MATRIX_INDEX(i, j, n)] = block_i_j_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)];
+    matrix[ARR_MATRIX_INDEX(i, j, n)] = block_i_j_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, threadIdx.y, blockDim.x)];
 }
 
 
