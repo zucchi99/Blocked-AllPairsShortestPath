@@ -31,7 +31,7 @@ int main() {
     my_params.f = &floyd_warshall_blocked_device_v_2_2;
     my_params.g = &host_array_floyd_warshall_blocked;
     my_params.start_input_size = 30;
-    my_params.end_input_size = 200;
+    my_params.end_input_size = 150;
     my_params.costant_multiplier = 1.4;
 
     print_multi_size_test_parameters(my_params);
@@ -298,10 +298,10 @@ __global__ void execute_round_device_v_2_2_phase_3(int *matrix, int n, int t) {
         
     // In phase 3 I copy in two portions of my shared memory
     // the block corresponding to (t, this column) and (this row, t)
-    block_i_t_shared[threadIdx.x*blockDim.x + threadIdx.y] = matrix[
+    block_i_t_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[
         ARR_MATRIX_INDEX(i, (BLOCK_START(t, blockDim.x) + threadIdx.y), n)
     ];
-    block_t_j_shared[threadIdx.x*blockDim.x + threadIdx.y] = matrix[
+    block_t_j_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[
         ARR_MATRIX_INDEX((BLOCK_START(t, blockDim.x) + threadIdx.x), j, n)
     ];
     
