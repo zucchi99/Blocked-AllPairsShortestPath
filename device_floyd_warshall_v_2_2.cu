@@ -298,8 +298,11 @@ __global__ void execute_round_device_v_2_2_phase_3(int *matrix, int n, int t) {
     int cell_i_j = matrix[ARR_MATRIX_INDEX(i, j, n)];
         
     // In phase 3 I copy in two portions of my shared memory
-    // the block corresponding to (t, this column) and (this row, t)
-    block_i_t_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[
+    // the block corresponding to (t, this column) and (this row, t). 
+
+    // (this row, t) is transposed to prevent bank conflict
+
+    block_i_t_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[
         ARR_MATRIX_INDEX(i, (BLOCK_START(t, blockDim.x) + threadIdx.y), n)
     ];
     block_t_j_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[
@@ -313,7 +316,7 @@ __global__ void execute_round_device_v_2_2_phase_3(int *matrix, int n, int t) {
     for (int k = 0; k < blockDim.x; k++) {
 
         int using_k_path = sum_if_not_infinite(
-            block_i_t_shared[ARR_MATRIX_INDEX(threadIdx.x, k, blockDim.x)],
+            block_i_t_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, k, blockDim.x)],
             block_t_j_shared[ARR_MATRIX_INDEX(k, threadIdx.y, blockDim.x)],
             INF
         ); 
