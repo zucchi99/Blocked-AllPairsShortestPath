@@ -12,15 +12,20 @@
 #include "include/macros.hpp"
 #include "include/performance_test.cuh"
 #include "include/statistical_test.hpp"
+#include "include/lcm.hpp"
 
 #define ARR_MATRIX_INDEX(i,j,n) (i*n+j)
 #define ARR_MATRIX_INDEX_TRASP(i,j,n) (i+n*j)
+
+#define SHARED_BANK_N_INT 32
+#define ARR_MATRIX_INDEX_BANK_CONFLICT(i, j, n, handle_bank_conflict) (i*n + j + (handle_bank_conflict ? i : 0))
+#define ARR_MATRIX_SIZE_BANK_CONFICT(B,handle_bank_conflict) (B*B + (handle_bank_conflict ? (B-1) : 0))
 
 //main device code
 void floyd_warshall_blocked_device_v_2_2(int *matrix, int n, int B);
 
 //rounds code
-__global__ void execute_round_device_v_2_2_phase_1(int *matrix, int n, int t);
+__global__ void execute_round_device_v_2_2_phase_1(int *matrix, int n, int t, bool handle_bank_conflict);
 __global__ void execute_round_device_v_2_2_phase_2_row(int *matrix, int n, int t);
 __global__ void execute_round_device_v_2_2_phase_2_col(int *matrix, int n, int t);
 __global__ void execute_round_device_v_2_2_phase_3(int *matrix, int n, int t);
@@ -33,7 +38,7 @@ int main() {
     my_params.start_input_size = 30;
     my_params.end_input_size = 150;
     my_params.costant_multiplier = 1.4;
-    my_params.min_blocking_factor = 10;
+    my_params.min_blocking_factor = 2;
 
     print_multi_size_test_parameters(my_params);
     multi_size_statistical_test(my_params);
@@ -47,10 +52,12 @@ void floyd_warshall_blocked_device_v_2_2(int *matrix, int n, int B) {
     assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
 
     int *dev_rand_matrix;
-    HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n * n* sizeof(int)));
+    HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n*n*sizeof(int)));
     HANDLE_ERROR(cudaMemcpy(dev_rand_matrix, matrix, n*n*sizeof(int), cudaMemcpyHostToDevice));
 
     int num_rounds = n/B;
+
+    bool bank_conflict_phase_1 = lcm(SHARED_BANK_N_INT, B) <= (B-1)*B;
      
     for(int t = 0; t < num_rounds; t++) { 
 
@@ -60,7 +67,12 @@ void floyd_warshall_blocked_device_v_2_2(int *matrix, int n, int B) {
         dim3 num_blocks_phase_1(1, 1);
         dim3 threads_per_block_phase_1(B, B);
 
-        execute_round_device_v_2_2_phase_1<<<num_blocks_phase_1, threads_per_block_phase_1, B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
+        execute_round_device_v_2_2_phase_1<<<
+            num_blocks_phase_1, 
+            threads_per_block_phase_1, 
+            ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int)
+            >>>(dev_rand_matrix, n, t, bank_conflict_phase_1);
+
         HANDLE_ERROR(cudaDeviceSynchronize());
 
         // phase 2: all blocks that share a row or a column with the self dependent, so
@@ -90,7 +102,7 @@ void floyd_warshall_blocked_device_v_2_2(int *matrix, int n, int B) {
 }
 
 
-__global__ void execute_round_device_v_2_2_phase_1(int *matrix, int n, int t) {
+__global__ void execute_round_device_v_2_2_phase_1(int *matrix, int n, int t, bool handle_bank_conflict) {
 
     // Launched block and correspondent position in the matrix
 
@@ -108,7 +120,7 @@ __global__ void execute_round_device_v_2_2_phase_1(int *matrix, int n, int t) {
     int i = threadIdx.x + t * blockDim.x;  // row abs index
     int j = threadIdx.y + t * blockDim.x;  // col abs index
 
-    block_t_t_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[ARR_MATRIX_INDEX(i, j, n)];
+    block_t_t_shared[ARR_MATRIX_INDEX_BANK_CONFLICT(threadIdx.x, threadIdx.y, blockDim.x, handle_bank_conflict)] = matrix[ARR_MATRIX_INDEX(i, j, n)];
 
     __syncthreads();
 
@@ -117,19 +129,19 @@ __global__ void execute_round_device_v_2_2_phase_1(int *matrix, int n, int t) {
     for (int k = 0; k < blockDim.x; k++) {
 
         int using_k_path = sum_if_not_infinite(
-            block_t_t_shared[ARR_MATRIX_INDEX(threadIdx.x, k, blockDim.x)], 
-            block_t_t_shared[ARR_MATRIX_INDEX(k, threadIdx.y, blockDim.x)], 
+            block_t_t_shared[ARR_MATRIX_INDEX_BANK_CONFLICT(threadIdx.x, k, blockDim.x, handle_bank_conflict)], 
+            block_t_t_shared[ARR_MATRIX_INDEX_BANK_CONFLICT(k, threadIdx.y, blockDim.x, handle_bank_conflict)], 
             INF
         ); 
 
-        if (using_k_path < block_t_t_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)]) {
-            block_t_t_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = using_k_path;
+        if (using_k_path < block_t_t_shared[ARR_MATRIX_INDEX_BANK_CONFLICT(threadIdx.x, threadIdx.y, blockDim.x, handle_bank_conflict)]) {
+            block_t_t_shared[ARR_MATRIX_INDEX_BANK_CONFLICT(threadIdx.x, threadIdx.y, blockDim.x, handle_bank_conflict)] = using_k_path;
         }
         
         __syncthreads();
     }
 
-    matrix[ARR_MATRIX_INDEX(i, j, n)] = block_t_t_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)];
+    matrix[ARR_MATRIX_INDEX(i, j, n)] = block_t_t_shared[ARR_MATRIX_INDEX_BANK_CONFLICT(threadIdx.x, threadIdx.y, blockDim.x, handle_bank_conflict)];
 }
 
 __global__ void execute_round_device_v_2_2_phase_2_row(int *matrix, int n, int t) {
