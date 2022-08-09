@@ -204,7 +204,7 @@ Prima di procedere, si è fatta un po' di pulizia sulla versione 2.0. Prevalente
 
 ### Versione 2.1f - Parallelizzazione della prima fase
 
-Successivamente al refactoring, si ha sperimentato lo svolgimento in parallelo di tutti i blocchi self-dependent <code>(t,t)</code> in modo indipendente (<code>floyd_warshall_blocked_device_v2_1f</code>). In pratica, invece di lanciare la fase uno all'inizio di ogni round, si lancia un unico kernel con <code>n/B<code> blocchi (ciascuno che svolge la fase uno su un blocco della shared).
+Successivamente al refactoring, si ha sperimentato lo svolgimento in parallelo di tutti i blocchi self-dependent <code>(t,t)</code> in modo indipendente (<code>floyd_warshall_blocked_device_v2_1f</code>). In pratica, invece di lanciare la fase uno all'inizio di ogni round, si lancia un unico kernel con <code>n/B</code> blocchi (ciascuno che svolge la fase uno su un blocco della shared).
 
 A seguito di un test statistico basato su set di 500 esecuzioni (di diverse dimensioni e con diversi blocking factor), la funzione risulta però non funzionare. Questa è una dimostrazione che i blocchi self-dipendenti - per qualche motivo non ancora noto - non possono essere eseguiti concorrentemente prima del resto del programma.
 
