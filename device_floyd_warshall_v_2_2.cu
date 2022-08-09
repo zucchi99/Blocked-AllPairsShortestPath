@@ -173,7 +173,7 @@ __global__ void execute_round_device_v_2_2_phase_2_row(int *matrix, int n, int t
     // the block where I am working
     block_i_j_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[ARR_MATRIX_INDEX(i, j, n)];
 
-    // the self-dependent block already calculated in this round
+    // the self-dependent block already calculated in this round (transposed to avoid bank conflict)
     block_t_t_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[
         ARR_MATRIX_INDEX(
             (BLOCK_START(t, blockDim.x) + threadIdx.x), 
@@ -237,10 +237,10 @@ __global__ void execute_round_device_v_2_2_phase_2_col(int *matrix, int n, int t
     // abs col index 
     int j = BLOCK_START(t, blockDim.x) + threadIdx.y;
 
-    // the block where I am working
+    // the block where I am working (transposed to avoid bank conflict)
     block_i_j_shared[ARR_MATRIX_INDEX_TRASP(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[ARR_MATRIX_INDEX(i, j, n)];
 
-    // the self-dependent block already calculated in this round
+    // the self-dependent block already calculated in this round 
     block_t_t_shared[ARR_MATRIX_INDEX(threadIdx.x, threadIdx.y, blockDim.x)] = matrix[
         ARR_MATRIX_INDEX(
             (BLOCK_START(t, blockDim.x) + threadIdx.x), 
