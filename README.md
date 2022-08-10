@@ -206,7 +206,72 @@ Prima di procedere, si è fatta un po' di pulizia sulla versione 2.0. Prevalente
 
 Successivamente al refactoring, si ha sperimentato lo svolgimento in parallelo di tutti i blocchi self-dependent <code>(t,t)</code> in modo indipendente (<code>floyd_warshall_blocked_device_v2_1f</code>). In pratica, invece di lanciare la fase uno all'inizio di ogni round, si lancia un unico kernel con <code>n/B</code> blocchi (ciascuno che svolge la fase uno su un blocco della shared).
 
-A seguito di un test statistico basato su set di 500 esecuzioni (di diverse dimensioni e con diversi blocking factor), la funzione risulta però non funzionare. Questa è una dimostrazione che i blocchi self-dipendenti - per qualche motivo non ancora noto - non possono essere eseguiti concorrentemente prima del resto del programma.
+A seguito di un test statistico basato su set di 500 esecuzioni (di diverse dimensioni e con diversi blocking factor), la procedura definita risulta però non essere corretta. A meno che non siano stati fatti degli errori, questa è una dimostrazione che i blocchi self-dipendenti - per qualche motivo non ancora noto - non possono essere eseguiti concorrentemente prima del resto del programma.
+
+
+## 09/08 - Stato della situazione
+
+### V 2.2: proposta di mitigazione dei conflitti di banco
+
+Nella versione 2.2 (<code>floyd_warshall_blocked_device_v2_2</code>), si prende il codice che lavora con la shared memory e lo si adatta per prevenire alcuni (supposti) conflitti di banco. L'effettiva maggiore efficacia del codice va verificata empiricamente.
+
+I conflitti di banco si suppone si verifichino in tutte quelle situazioni dove i thread di un blocco accedono "per colonna" ad una matrice vettorizzata della shared memory. Di seguito si elencano le varie situazioni in cui si potrebbero verificare conflitti di banco e le strategie che si potrebbero attuare per prevenirli.
+
+*   Quando ciascun thread <code>(i,j)</code> accede alla sua corrispondente cella di memoria, si verifica inevitabilmente un conflitto di banco e la lettura avviene per forza in <code>O(BankSize)</code> cicli di clock (nel migliore dei casi, la lettura è "una riga alla volta").
+
+*   In fase tre, ad ogni iterazione del ciclo for (quindi per ogni <code>t</code>), ogni thread <code>(i,j)</code> accede alla cella <code>(i,t)</code> della propria copia in shared; tale accesso, essendo "per colonna", richiede <code>O(BankSize)</code> cicli di clock (si legge una cella alla volta). 
+
+    Questo problema si può facilmente risolvere copiando il blocco contentente <code>(i,t)</code> nella shared in forma trasposta (tutti gli accessi a tale blocco avvengono "per colonna", per questo motivo salvando la matrice trasposta si rendono tutti gli accessi "per riga" e si prevengono i conflitti di banco).
+
+    La porzione di shared che invece contiene i vari <code>(t,j)</code> viene acceduta sempre per riga, pertanto non ha il problema del bank conflict.
+
+*   anche in fase due, ad ogni iterazione del ciclo for (quindi per ogni <code>t</code>), i thread (i,j) accedono "per colonna" alle varie celle <code>(i,t)</code>, scatenando quindi conflitti di banco. A seconda che si stia lavorando sulla riga o sulla colonna di <code>(T,T)</code> i conflitti possono avvenire nella copia sulla shared dell'area di <code>(T,T)</code> o di <code>(row,col)</code> (ciò dipende da dove si effettuano le letture per colonna del tipo <code>(i,t)</code>):
+
+    -   per i thread disposti in colonna rispetto al blocco <code>(T,T)</code>, il conflitto avviene sulla copia dell'area di memoria corrispondente al blocco <code>(row,col)=(row,T)</code>; 
+
+    -   per i thread disposti in riga rispetto al blocco <code>(T,T)</code>, il conflitto avviene sulla copia dell'area di memoria corrispondente al blocco <code>(T,T)</code>.
+
+    Come per la fase tre, per risolvere il problema, è sufficente memorizzare e indicizzare le matrici soggette a bank conflict in forma trasposta (così da avere tutti gli accessi per riga). 
+    
+    Similmente a quanto accade per la fase tre invece le altre matrici (quindi le porzioni di shared corrispondenti a <code>(row,col)=(T,col)</code> per i blocchi in riga e <code>(T,T)</code> per i blocchi in colonna) si lasciano in forma normale (in quanto vengono invece accedute sempre per righe)
+    
+*   in fase uno si lavora con un unica matrice, cioè la copia in shared corrispondente al blocco <code>(T,T)</code>. Tale matrice viene acceduta sia per righe che per colonne, pertanto la soluzione della memorizzazione in forma trasposta non aiuta a risolvere il bank conflict; per questo motivo, in questo caso specifico, per prevenire il bank conflict è necessario implementare la soluzione del padding (aggiungendo un <code>padding=1</code> al termine di ogni riga).
+
+### Quando attuare le strategie di prevenzione del bank conflict
+
+Quando attuare tali strategie?
+
+Mentre le strategie di usare le trasposte nella fase due e della fase tre possono essere attuate in tutti i casi (senza il rischio che ciò porti ad una riduzione delle performance), per la fase uno è diverso. La strategia del padding difatti:
+
+*   porta sempre ad un aumento dello spazio di memoria richiesto (trascurabile)
+*   in certi casi, può portare da passare da una situazione di assenza di bank conflict ad una di presenza.
+
+Per comprendere questo ultimo punto si riporta un esempio: immaginiamo di avere l'algoritmo con un blocking factor = 15. Facendo qualche prova, ci si accorge che non si avrebbe alcun conflitto nell'accesso alle colonne <code>(i,t)</code>; aggiungendo un padding di 1 invece si nota che si avrebbe bank conflict.
+
+Per prevenire situazioni come questa, si applica il padding soltanto nelle situazioni nelle quali ci si aspetta di avere bank conflict. In quali situazioni quindi ci si aspetta di avere un bank conflict? Quando <code>mcm(BlockingFactor, BankSize)<=BlockingFactor*(BlockingFactor-1)</code>. 
+
+Dimostrazione (dimostrazione che quando si ha questa condizione, c'è bank conflict):
+
+*   assumiamo di prendere due indici della matrice vettorizzata <code>i*BlockingFactor+j</code> e <code>i'*BlockingFactor+j'</code>
+*   per ciò che ci si abbia un bank conflict, si deve avere lo stesso valore dei due indici in <code>(mod BankSize)</code>, quindi <code>i*B+j = i'*B+j' (mod BankSize)</code>
+*   se l'accesso è in colonna (e quindi <code>j=j'=t</code>), applicando l'algebra dei calcoli in modulo si può semplificare la condizione in <code>i*B=i'*B (mod BankSize)</code>
+*   prendiamo <code>i=0</code> e <code>i'=mcm(BlockingFactor, BankSize)/BlockingFactor</code>; Se <code>mcm(BlockingFactor, BankSize)<=BlockingFactor*(BlockingFactor-1)</code>, allora <code>i'<=(BlockingFactor-1)<code> e quindi è ammissibile come indice
+*   chiaramente, <code>i*B=0 (mod BankSize)</code>
+*   per quanto riguarda l'altro lato dell'equazione invece <code>i'*B=mcm(BlockingFactor, BankSize)/BlockingFactor*BlockingFactor=mcm(BlockingFactor, BankSize)</code>
+*   visto che il minimo comune multiplo è certamente un multiplo di <code>BankSize</code>, allora anche <code>i'=0 (mod BankSize)</code>. Si ha quindi conflitto di banco
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
