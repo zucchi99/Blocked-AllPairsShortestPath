@@ -95,16 +95,16 @@ void floyd_warshall_blocked_device_v_3_0(int *matrix, int n, int B) {
         // execute_round_device_v_3_0_phase_3<<<num_blocks_phase_3, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
 
         dim3 num_blocks_phase_3_ul(t, t);
-        if (t>0)    execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_ul, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, 0, 0);
+        execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_ul, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, 0, 0);
 
         dim3 num_blocks_phase_3_dr(num_rounds-t-1, num_rounds-t-1); 
-        if (t<num_rounds-1)    execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_dr, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, t+1, t+1);
+        execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_dr, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, t+1, t+1);
 
         dim3 num_blocks_phase_3_ur(t, num_rounds-t-1); 
-        if (t>0 && t<num_rounds-1)  execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_ur, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, 0, t+1);
+        execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_ur, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, 0, t+1);
 
         dim3 num_blocks_phase_3_dl(num_rounds-t-1, t); 
-        if (t>0 && t<num_rounds-1)  execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_dl, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, t+1, 0);
+        execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_dl, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, t+1, 0);
 
         HANDLE_ERROR(cudaDeviceSynchronize()); 
     }
