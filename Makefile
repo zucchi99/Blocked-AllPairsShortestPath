@@ -11,7 +11,7 @@ header_path=include
 
 dev:
 	@echo "version:" $(VERSION)
-	nvcc -rdc=true -o bin/fwa_dev_v_$(VERSION).out \
+	nvcc -rdc=true -std=c++17 -o bin/fwa_dev_v_$(VERSION).out \
 		device_floyd_warshall_v_$(VERSION).cu \
 		src/adj_matrix_utils.cu \
 		src/adj_matrix_utils.cpp \

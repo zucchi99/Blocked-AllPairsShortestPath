@@ -1,6 +1,12 @@
+// c libraries
 #include <stdlib.h>
 #include <stdio.h>
+
+// c++ libraries
+// for assertions
 #include <cassert>
+// for std::lcm
+#include <numeric>
 
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
@@ -12,7 +18,6 @@
 #include "include/macros.hpp"
 #include "include/performance_test.cuh"
 #include "include/statistical_test.hpp"
-#include "include/lcm.hpp"
 
 #define ARR_MATRIX_INDEX(i,j,n) (i*n+j)
 #define ARR_MATRIX_INDEX_TRASP(i,j,n) (i+n*j)
@@ -57,7 +62,7 @@ void floyd_warshall_blocked_device_v_2_2(int *matrix, int n, int B) {
 
     int num_rounds = n/B;
 
-    bool bank_conflict_phase_1 = lcm(SHARED_BANK_N_INT, B) <= (B-1)*B;
+    bool bank_conflict_phase_1 = std::lcm(SHARED_BANK_N_INT, B) <= (B-1)*B;
      
     for(int t = 0; t < num_rounds; t++) { 
 
