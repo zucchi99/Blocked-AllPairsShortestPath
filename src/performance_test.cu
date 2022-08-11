@@ -11,7 +11,7 @@ void do_nvprof_performance_test(void (*floyd_warshall_arr_algorithm)(int* matrix
 
     int* arr_matrix = allocate_arr_matrix(input_size, input_size);
 
-    for (int i=0; i<number_of_tests; i++) {
+    for (int i=0; i < number_of_tests; i++) {
 
         populate_arr_adj_matrix(arr_matrix, input_size, seed*(i+1), false);
 
@@ -21,4 +21,6 @@ void do_nvprof_performance_test(void (*floyd_warshall_arr_algorithm)(int* matrix
 
         printf("Performed test number %d\n", i);
     }
+
+    free(arr_matrix);
 }
