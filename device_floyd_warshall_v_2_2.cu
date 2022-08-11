@@ -35,18 +35,58 @@ __global__ void execute_round_device_v_2_2_phase_2_row(int *matrix, int n, int t
 __global__ void execute_round_device_v_2_2_phase_2_col(int *matrix, int n, int t);
 __global__ void execute_round_device_v_2_2_phase_3(int *matrix, int n, int t);
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    MultiSizeTestParameters my_params;
-    my_params.f = &floyd_warshall_blocked_device_v_2_2;
-    my_params.g = &host_array_floyd_warshall_blocked;
-    my_params.start_input_size = 30;
-    my_params.end_input_size = 150;
-    my_params.costant_multiplier = 1.4;
-    my_params.min_blocking_factor = 2;
+    //std::vector<std::string> allArgs(argv, argv + argc);
 
-    print_multi_size_test_parameters(my_params);
-    multi_size_statistical_test(my_params);
+    if (argc < 2 || argv[1] == "--help") {
+        printf("Usage: %s <exec_option> [-n=<n>, -b=<b>, -t=<n_tests>]:\n", argv[0]);
+        printf(" where <exec_option>=test for statistical testing or <exec_option>=perf for nvprof profiling\n");
+        printf("If <exec_option>=perf then specify n (matrix dimension), b (blocking factor), t (number of tests)\n");
+        return 1;
+    }
+
+    switch (argv[1]) {
+        case "test" :
+            MultiSizeTestParameters my_params;
+            my_params.f = &floyd_warshall_blocked_device_v_2_2;
+            my_params.g = &host_array_floyd_warshall_blocked;
+            my_params.start_input_size = 30;
+            my_params.end_input_size = 150;
+            my_params.costant_multiplier = 1.4;
+            my_params.min_blocking_factor = 2;
+
+            print_multi_size_test_parameters(my_params);
+            multi_size_statistical_test(my_params);
+            break;
+
+        case "perf" : 
+            int n = -1, b = -1, n_tests = -1;
+            for (int i = 2; i < argc; i++) {
+                if (argv[i][0] == '-') {
+                    switch(argv[i][1]) {
+                        char* val = argv[i][2];
+                        case "n" :
+                            n = (int) val;
+                        case "b" :
+                            b = (int) val;
+                        case "n_tests" :
+                            n_tests = (int) val;
+                            
+                    }    
+                }
+            }
+            if (n < 0 || b < 0 || n_tests < 0) {
+                printf("n, b, n_tests must all be specified and must be positive integers");
+                return 1;
+            }
+            printf("rand_seed: %d\n", rand_seed);
+            do_nvprof_performance_test(&floyd_warshall_blocked_device_v_2_2, n, B, n_tests, rand_seed);
+
+        default : 
+            printf("<exec_option>=%s not recognised, try run: %s --help\n", argv[0]);
+            return 21;
+    }
 
     return 0;
 }
