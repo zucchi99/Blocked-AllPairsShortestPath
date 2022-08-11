@@ -18,8 +18,7 @@ dev:
 		src/cuda_errors_utils.cu \
 		src/performance_test.cu \
 		src/statistical_test.cpp \
-		src/host_floyd_warshall.cpp \
-		src/lcm.cpp
+		src/host_floyd_warshall.cpp
 
 
 read_matrix :	
@@ -44,9 +43,3 @@ dev_test:
 	nvcc -rdc=true -o bin/dev_test.out \
 		device_test.cu \
 		src/cuda_errors_utils.cu
-
-lcm:
-	g++ -o bin/lcm.out \
-	test_lcm.cpp \
-	src/lcm.cpp
-
