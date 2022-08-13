@@ -49,6 +49,14 @@ int main() {
     return 0;
 }
 
+cudaGraphNode_t get_cuda_graph_node(void* function, 
+    dim3 gridBlock, dim3 threadBlock, 
+    unsigned int sharedMemBytes) {
+    
+    
+}
+
+
 void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
     assert(n%B == 0);                       // B must divide n
@@ -80,7 +88,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         dim3 threads_per_block_phase_1(B, B);
 
         cudaKernelNodeParams phase1KernelParams = { 0 };
-        
+
         phase1KernelParams.func = (void*) execute_round_device_v_3_1_phase_1;
         phase1KernelParams.gridDim = num_blocks_phase_1;
         phase1KernelParams.blockDim = threads_per_block_phase_1;
@@ -103,34 +111,10 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase1KernelParams));
 
-        cudaGraphExec_t instance;
 
-        HANDLE_ERROR(cudaGraphInstantiate(&instance, roundGraph, NULL, NULL, 0));
 
-        HANDLE_ERROR(cudaGraphLaunch(instance, streams[0]));
-        HANDLE_ERROR(cudaStreamSynchronize(streams[0]));
+        
 
-        // Clean up
-        HANDLE_ERROR(cudaGraphExecDestroy(instance));
-        HANDLE_ERROR(cudaGraphDestroy(roundGraph));
-
-        /*
-        execute_round_device_v_3_1_phase_1<<<
-            num_blocks_phase_1, 
-            threads_per_block_phase_1, 
-            ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int), 
-            streams[0]>>>(dev_rand_matrix, n, t, bank_conflict_phase_1); */
-
-        // HANDLE_ERROR(cudaDeviceSynchronize());
-
-        // phase 2: all blocks that share a row or a column with the self dependent, so
-        //  -   all blocks just above or under t
-        //  -   all block at left and at right of t
-
-        // dim3 num_blocks_phase_2(1, num_rounds-1);  
-
-        // execute_round_device_v_3_1_phase_2_row<<<num_rounds-1, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
-        // execute_round_device_v_3_1_phase_2_col<<<num_rounds-1, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
 
         // up 
         execute_round_device_v_3_1_phase_2_col_portion<<<
@@ -158,6 +142,31 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
 
         HANDLE_ERROR(cudaDeviceSynchronize());
+
+
+
+
+
+
+
+
+
+        cudaGraphExec_t instance;
+
+        HANDLE_ERROR(cudaGraphInstantiate(&instance, roundGraph, NULL, NULL, 0));
+
+        HANDLE_ERROR(cudaGraphLaunch(instance, streams[0]));
+        HANDLE_ERROR(cudaStreamSynchronize(streams[0]));
+
+        // Clean up
+        HANDLE_ERROR(cudaGraphExecDestroy(instance));
+        HANDLE_ERROR(cudaGraphDestroy(roundGraph));
+
+        // phase 2: all blocks that share a row or a column with the self dependent, so
+        //  -   all blocks just above or under t
+        //  -   all block at left and at right of t
+
+        
 
         // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
 
