@@ -53,6 +53,11 @@ void floyd_warshall_blocked_device_v_3_0(int *matrix, int n, int B) {
     assert(n%B == 0);                       // B must divide n
     assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
 
+    cudaStream_t streams[4];
+    for (int i=0; i<4; i++) {
+        cudaStreamCreate(&streams[i]);
+    }
+
     int *dev_rand_matrix;
     HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n*n*sizeof(int)));
     HANDLE_ERROR(cudaMemcpy(dev_rand_matrix, matrix, n*n*sizeof(int), cudaMemcpyHostToDevice));
@@ -72,8 +77,8 @@ void floyd_warshall_blocked_device_v_3_0(int *matrix, int n, int B) {
         execute_round_device_v_3_0_phase_1<<<
             num_blocks_phase_1, 
             threads_per_block_phase_1, 
-            ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int)
-            >>>(dev_rand_matrix, n, t, bank_conflict_phase_1);
+            ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int), 
+            streams[0]>>>(dev_rand_matrix, n, t, bank_conflict_phase_1);
 
         HANDLE_ERROR(cudaDeviceSynchronize());
 
@@ -87,16 +92,28 @@ void floyd_warshall_blocked_device_v_3_0(int *matrix, int n, int B) {
         // execute_round_device_v_3_0_phase_2_col<<<num_rounds-1, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
 
         // up 
-        execute_round_device_v_3_0_phase_2_col_portion<<<t, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, 0);
+        execute_round_device_v_3_0_phase_2_col_portion<<<
+            t, threads_per_block_phase_1, 
+            2*B*B*sizeof(int), 
+            streams[0]>>>(dev_rand_matrix, n, t, 0);
 
         // left
-        execute_round_device_v_3_0_phase_2_row_portion<<<t, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, 0);
+        execute_round_device_v_3_0_phase_2_row_portion<<<
+            t, threads_per_block_phase_1, 
+            2*B*B*sizeof(int), 
+            streams[1]>>>(dev_rand_matrix, n, t, 0);
 
         // down
-        execute_round_device_v_3_0_phase_2_col_portion<<<num_rounds-1-t, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, t+1);
+        execute_round_device_v_3_0_phase_2_col_portion<<<
+            num_rounds-1-t, threads_per_block_phase_1, 
+            2*B*B*sizeof(int), 
+            streams[2]>>>(dev_rand_matrix, n, t, t+1);
 
         // right
-        execute_round_device_v_3_0_phase_2_row_portion<<<num_rounds-1-t, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, t+1);
+        execute_round_device_v_3_0_phase_2_row_portion<<<
+            num_rounds-1-t, threads_per_block_phase_1, 
+            2*B*B*sizeof(int), 
+            streams[3]>>>(dev_rand_matrix, n, t, t+1);
 
 
         HANDLE_ERROR(cudaDeviceSynchronize());
@@ -107,16 +124,28 @@ void floyd_warshall_blocked_device_v_3_0(int *matrix, int n, int B) {
         // execute_round_device_v_3_0_phase_3<<<num_blocks_phase_3, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
 
         dim3 num_blocks_phase_3_ul(t, t);
-        execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_ul, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, 0, 0);
+        execute_round_device_v_3_0_phase_3_portion<<<
+            num_blocks_phase_3_ul, threads_per_block_phase_1, 
+            2*B*B*sizeof(int), 
+            streams[0]>>>(dev_rand_matrix, n, t, 0, 0);
 
         dim3 num_blocks_phase_3_dr(num_rounds-t-1, num_rounds-t-1); 
-        execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_dr, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, t+1, t+1);
+        execute_round_device_v_3_0_phase_3_portion<<<
+            num_blocks_phase_3_dr, threads_per_block_phase_1, 
+            2*B*B*sizeof(int), 
+            streams[1]>>>(dev_rand_matrix, n, t, t+1, t+1);
 
         dim3 num_blocks_phase_3_ur(t, num_rounds-t-1); 
-        execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_ur, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, 0, t+1);
+        execute_round_device_v_3_0_phase_3_portion<<<
+            num_blocks_phase_3_ur, threads_per_block_phase_1, 
+            2*B*B*sizeof(int), 
+            streams[2]>>>(dev_rand_matrix, n, t, 0, t+1);
 
         dim3 num_blocks_phase_3_dl(num_rounds-t-1, t); 
-        execute_round_device_v_3_0_phase_3_portion<<<num_blocks_phase_3_dl, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t, t+1, 0);
+        execute_round_device_v_3_0_phase_3_portion<<<
+            num_blocks_phase_3_dl, threads_per_block_phase_1, 
+            2*B*B*sizeof(int), 
+            streams[3]>>>(dev_rand_matrix, n, t, t+1, 0);
 
         HANDLE_ERROR(cudaDeviceSynchronize()); 
     }
@@ -125,6 +154,10 @@ void floyd_warshall_blocked_device_v_3_0(int *matrix, int n, int B) {
 
     HANDLE_ERROR(cudaMemcpy(matrix, dev_rand_matrix, n*n*sizeof(int), cudaMemcpyDeviceToHost));
     HANDLE_ERROR(cudaFree(dev_rand_matrix));
+
+    for (int i=0; i<4; i++) {
+        HANDLE_ERROR(cudaStreamDestroy(streams[i]));
+    }
 }
 
 
