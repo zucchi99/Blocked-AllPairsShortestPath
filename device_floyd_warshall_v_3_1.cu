@@ -69,10 +69,8 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
     assert(n%B == 0);                       // B must divide n
     assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
 
-    cudaStream_t streams[4];
-    for (int i=0; i<4; i++) {
-        cudaStreamCreate(&streams[i]);
-    }
+    cudaStream_t graph_stream;
+    cudaStreamCreate(&graph_stream);
 
     int *dev_rand_matrix;
     HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n*n*sizeof(int)));
@@ -85,8 +83,6 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
          
     for(int t = 0; t < num_rounds; t++) { 
 
-        //arr_execute_round(int *matrix, int n, int t, int row, int col, int B)
-
         cudaGraph_t roundGraph;
         cudaGraphCreate(&roundGraph, 0);
 
@@ -98,11 +94,14 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         dim3 num_blocks(max(num_rounds-1, 1), max(num_rounds-1, 1));
         dim3 threads_per_block(B, B);
 
+        int zero = 0;
+        int t_plus_1 = t+1;
+
         // execute_round_device_v_3_1_phase_1<<<
         //     num_blocks, 
         //     threads_per_block, 
         //     ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int), 
-        //     streams[0]>>>(dev_rand_matrix, n, t, bank_conflict_phase_1);
+        //     graph_stream>>>(dev_rand_matrix, n, t, bank_conflict_phase_1);
 
         // HANDLE_ERROR(cudaDeviceSynchronize());
 
@@ -135,27 +134,6 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         //  -   all blocks just above or under t
         //  -   all block at left and at right of t
 
-
-        // execute_round_device_v_3_1_phase_2_col_portion<<<
-        //     num_blocks, threads_per_block, 
-        //     2*B*B*sizeof(int), 
-        //     streams[0]>>>(dev_rand_matrix, n, t, 0, t);
-
-        // execute_round_device_v_3_1_phase_2_row_portion<<<
-        //     num_blocks, threads_per_block, 
-        //     2*B*B*sizeof(int), 
-        //     streams[1]>>>(dev_rand_matrix, n, t, 0, t);
-
-        // execute_round_device_v_3_1_phase_2_col_portion<<<
-        //     num_blocks, threads_per_block, 
-        //     2*B*B*sizeof(int), 
-        //     streams[2]>>>(dev_rand_matrix, n, t, t+1, num_rounds);
-
-        // execute_round_device_v_3_1_phase_2_row_portion<<<
-        //     num_blocks, threads_per_block, 
-        //     2*B*B*sizeof(int), 
-        //     streams[3]>>>(dev_rand_matrix, n, t, t+1, num_rounds);
-
         // HANDLE_ERROR(cudaDeviceSynchronize()); 
 
         // nodeDependencies.clear();
@@ -163,14 +141,12 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
         // up 
         // execute_round_device_v_3_1_phase_2_col_portion<<<
-        //     t, threads_per_block, 
+        //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
-        //     streams[0]>>>(dev_rand_matrix, n, t, 0);
+        //     graph_stream>>>(dev_rand_matrix, n, t, 0, t);
 
-        int start_up_left = 0;
-        int end_up_left = t;
         void* phase2_up_left_args[5] = { (void*) &dev_rand_matrix, 
-            &n, &t, &start_up_left, &end_up_left };
+            &n, &t, &zero, &t };
 
         cudaKernelNodeParams phase2_up_params = cuda_graph_node_params_copy(phase1_params);
 
@@ -188,9 +164,9 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
         // left
         // execute_round_device_v_3_1_phase_2_row_portion<<<
-        //     t, threads_per_block, 
+        //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
-        //     streams[1]>>>(dev_rand_matrix, n, t, 0);
+        //     graph_stream>>>(dev_rand_matrix, n, t, 0, t);
 
         cudaKernelNodeParams phase2_left_params = cuda_graph_node_params_copy(phase2_up_params);
         phase2_left_params.func = (void*) execute_round_device_v_3_1_phase_2_row_portion;
@@ -204,16 +180,13 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
         // down
         // execute_round_device_v_3_1_phase_2_col_portion<<<
-        //     num_rounds-1-t, threads_per_block, 
+        //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
-        //     streams[2]>>>(dev_rand_matrix, n, t, t+1);
-
-        int start_down_right = t+1;
-        int end_down_right = num_rounds;
+        //     graph_stream>>>(dev_rand_matrix, n, t, t+1, num_blocks);
 
         cudaKernelNodeParams phase2_down_params = cuda_graph_node_params_copy(phase2_up_params);
         void* phase2_down_right_args[5] = { (void*) &dev_rand_matrix, 
-            &n, &t, &start_down_right, &end_down_right};
+            &n, &t, &t_plus_1, &num_rounds};
         phase2_down_params.kernelParams = (void**) phase2_down_right_args;
 
         cudaGraphNode_t phase2_down_node;
@@ -225,9 +198,9 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
         // right
         // execute_round_device_v_3_1_phase_2_row_portion<<<
-        //     num_rounds-1-t, threads_per_block, 
+        //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
-        //     streams[3]>>>(dev_rand_matrix, n, t, t+1);
+        //     graph_stream>>>(dev_rand_matrix, n, t, t+1, num_blocks);
 
         cudaKernelNodeParams phase2_right_params = cuda_graph_node_params_copy(phase2_down_params);
         phase2_right_params.func = (void*) execute_round_device_v_3_1_phase_2_row_portion;
@@ -240,50 +213,119 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
             &phase2_right_params));
 
         // HANDLE_ERROR(cudaDeviceSynchronize());
+        
+        // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
+
+        // dim3 num_blocks_phase_3(num_rounds-1, num_rounds-1); 
+        // execute_round_device_v_3_1_phase_3<<<num_blocks_phase_3, threads_per_block, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
+        
+        // up-left
+        // execute_round_device_v_3_1_phase_3_portion<<<
+        //     num_blocks, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     graph_stream>>>(dev_rand_matrix, n, t, 0, 0, t, t);
+
+        void* phase3_up_left_args[7] = {(void*) &dev_rand_matrix, 
+            &n, &t, &zero, &zero, &t, &t};
+
+        cudaKernelNodeParams phase3_up_left_params = cuda_graph_node_params_copy(phase2_up_params);
+
+        phase3_up_left_params.func = (void*) execute_round_device_v_3_1_phase_3_portion;
+        phase3_up_left_params.kernelParams = (void**) phase3_up_left_args;
+
+        nodeDependencies.clear();
+        nodeDependencies.push_back(phase2_up_node);
+        nodeDependencies.push_back(phase2_left_node);
+
+        cudaGraphNode_t phase3_up_left_node;
+
+        HANDLE_ERROR(cudaGraphAddKernelNode(
+            &phase3_up_left_node, roundGraph, 
+            nodeDependencies.data(), nodeDependencies.size(), 
+            &phase3_up_left_params));
+
+        // up-right
+        // execute_round_device_v_3_1_phase_3_portion<<<
+        //     num_blocks, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     graph_stream>>>(dev_rand_matrix, n, t, 0, t+1, t, num_rounds);
+
+        void* phase3_up_right_args[7] = {(void*) &dev_rand_matrix, 
+            &n, &t, &zero, &t_plus_1, &t, &num_rounds};
+
+        cudaKernelNodeParams phase3_up_right_params = cuda_graph_node_params_copy(phase3_up_left_params);
+        phase3_up_right_params.kernelParams = (void**) phase3_up_right_args;
+
+        nodeDependencies.clear();
+        nodeDependencies.push_back(phase2_up_node);
+        nodeDependencies.push_back(phase2_right_node);
+
+        cudaGraphNode_t phase3_up_right_node;
+
+        HANDLE_ERROR(cudaGraphAddKernelNode(
+            &phase3_up_right_node, roundGraph, 
+            nodeDependencies.data(), nodeDependencies.size(), 
+            &phase3_up_right_params));
+
+        // down-right
+        // execute_round_device_v_3_1_phase_3_portion<<<
+        //     num_blocks, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     graph_stream>>>(dev_rand_matrix, n, t, t+1, t+1, num_rounds, num_rounds);
+
+        void* phase3_down_right_args[7] = {(void*) &dev_rand_matrix, 
+            &n, &t, &t_plus_1, &t_plus_1, &num_rounds, &num_rounds};
+
+        cudaKernelNodeParams phase3_down_right_params = cuda_graph_node_params_copy(phase3_up_left_params);
+        phase3_down_right_params.kernelParams = (void**) phase3_down_right_args;
+
+        nodeDependencies.clear();
+        nodeDependencies.push_back(phase2_down_node);
+        nodeDependencies.push_back(phase2_right_node);
+
+        cudaGraphNode_t phase3_down_right_node;
+
+        HANDLE_ERROR(cudaGraphAddKernelNode(
+            &phase3_down_right_node, roundGraph, 
+            nodeDependencies.data(), nodeDependencies.size(), 
+            &phase3_down_right_params));
+
+        // down-left
+        // execute_round_device_v_3_1_phase_3_portion<<<
+        //     num_blocks, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     graph_stream>>>(dev_rand_matrix, n, t, t+1, 0, num_rounds, t);
+        
+        void* phase3_down_left_args[7] = {(void*) &dev_rand_matrix, 
+            &n, &t, &t_plus_1, &zero, &num_rounds, &t};
+
+        cudaKernelNodeParams phase3_down_left_params = cuda_graph_node_params_copy(phase3_up_left_params);
+        phase3_down_left_params.kernelParams = (void**) phase3_down_left_args;
+
+        nodeDependencies.clear();
+        nodeDependencies.push_back(phase2_down_node);
+        nodeDependencies.push_back(phase2_left_node);
+
+        cudaGraphNode_t phase3_down_left_node;
+
+        HANDLE_ERROR(cudaGraphAddKernelNode(
+            &phase3_down_left_node, roundGraph, 
+            nodeDependencies.data(), nodeDependencies.size(), 
+            &phase3_down_left_params));
 
         cudaGraphExec_t instance;
         
         HANDLE_ERROR(cudaGraphInstantiate(&instance, roundGraph, NULL, NULL, 0));
 
-        HANDLE_ERROR(cudaGraphLaunch(instance, streams[1]));
-        HANDLE_ERROR(cudaStreamSynchronize(streams[1]));
+        HANDLE_ERROR(cudaGraphLaunch(instance, graph_stream));
+        HANDLE_ERROR(cudaStreamSynchronize(graph_stream));
 
         // Clean up
         HANDLE_ERROR(cudaGraphExecDestroy(instance));
         HANDLE_ERROR(cudaGraphDestroy(roundGraph));
 
-        HANDLE_ERROR(cudaDeviceSynchronize()); 
 
-        // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
-
-        // dim3 num_blocks_phase_3(num_rounds-1, num_rounds-1); 
-        // execute_round_device_v_3_1_phase_3<<<num_blocks_phase_3, threads_per_block, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
-
-        dim3 num_blocks_phase_3_ul(t, t);
-        execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks, threads_per_block, 
-            2*B*B*sizeof(int), 
-            streams[0]>>>(dev_rand_matrix, n, t, 0, 0, t, t);
-
-        dim3 num_blocks_phase_3_dr(num_rounds-t-1, num_rounds-t-1); 
-        execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks, threads_per_block, 
-            2*B*B*sizeof(int), 
-            streams[1]>>>(dev_rand_matrix, n, t, t+1, t+1, num_rounds, num_rounds);
-
-        dim3 num_blocks_phase_3_ur(t, num_rounds-t-1); 
-        execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks, threads_per_block, 
-            2*B*B*sizeof(int), 
-            streams[2]>>>(dev_rand_matrix, n, t, 0, t+1, t, num_rounds);
-
-        dim3 num_blocks_phase_3_dl(num_rounds-t-1, t); 
-        execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks, threads_per_block, 
-            2*B*B*sizeof(int), 
-            streams[3]>>>(dev_rand_matrix, n, t, t+1, 0, num_rounds, t);
-
-        HANDLE_ERROR(cudaDeviceSynchronize()); 
+        // HANDLE_ERROR(cudaDeviceSynchronize());         
     }
 
     // HANDLE_ERROR(cudaDeviceSynchronize());  
@@ -291,9 +333,8 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
     HANDLE_ERROR(cudaMemcpy(matrix, dev_rand_matrix, n*n*sizeof(int), cudaMemcpyDeviceToHost));
     HANDLE_ERROR(cudaFree(dev_rand_matrix));
 
-    for (int i=0; i<4; i++) {
-        HANDLE_ERROR(cudaStreamDestroy(streams[i]));
-    }
+    HANDLE_ERROR(cudaStreamDestroy(graph_stream));
+
 }
 
 
