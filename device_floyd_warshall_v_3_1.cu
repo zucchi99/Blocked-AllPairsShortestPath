@@ -76,26 +76,37 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
     HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n*n*sizeof(int)));
     HANDLE_ERROR(cudaMemcpy(dev_rand_matrix, matrix, n*n*sizeof(int), cudaMemcpyHostToDevice));
 
+    // number of rounds that will be executed
     int num_rounds = n/B;
 
+    // check if there will be bank conflict in phase 1
     bool bank_conflict_phase_1 = lcm(SHARED_BANK_N_INT, B) <= (B-1)*B;
 
+    // number of threads launched at each kernel 
+    // (it has to be the same number because of the cuda graphs, 
+    // the exceeding threads will end as firtst instruction)
+    dim3 num_blocks(max(num_rounds-1, 1), max(num_rounds-1, 1));
+    dim3 threads_per_block(B, B);
+
+    // a variable needed for calls which requires pointer args
+    int zero = 0;
+
+    // init the graph i will use to do all rounds
+    cudaGraph_t graph;
+    cudaGraphCreate(&graph, 0);
+    std::vector<cudaGraphNode_t> nodeDependencies = {}; // Dependency vector 
+
+    // previous round nodes (so i can add them as dependency for the next)
+    cudaGraphNode_t prev_phase3_up_left_node,   prev_phase3_up_right_node, 
+                    prev_phase3_down_left_node, prev_phase3_down_right_node;
          
     for(int t = 0; t < num_rounds; t++) { 
 
-        cudaGraph_t roundGraph;
-        cudaGraphCreate(&roundGraph, 0);
-
-        std::vector<cudaGraphNode_t> nodeDependencies = {}; // Dependency vector 
+        // a variable needed for calls which requires pointer args
+        int t_plus_1 = t+1;
 
         // ----------------------------------------------------------------------
         // phase 1: self-dependent block
-
-        dim3 num_blocks(max(num_rounds-1, 1), max(num_rounds-1, 1));
-        dim3 threads_per_block(B, B);
-
-        int zero = 0;
-        int t_plus_1 = t+1;
 
         // execute_round_device_v_3_1_phase_1<<<
         //     num_blocks, 
@@ -120,13 +131,22 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         phase1_params.kernelParams = (void**) phase1_args;
         phase1_params.extra = NULL;
 
+        nodeDependencies.clear(); 
+        if (t > 0) {
+            nodeDependencies.push_back(prev_phase3_up_left_node);
+            nodeDependencies.push_back(prev_phase3_up_right_node);
+            nodeDependencies.push_back(prev_phase3_down_right_node);
+            nodeDependencies.push_back(prev_phase3_down_left_node);
+        }
+
         cudaGraphNode_t phase1_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
-            &phase1_node, roundGraph, 
+            &phase1_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase1_params));
-        
+
+        // HANDLE_ERROR(cudaDeviceSynchronize());
 
         // ----------------------------------------------------------------------
         // phase 2: row and cols
@@ -134,9 +154,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         //  -   all blocks just above or under t
         //  -   all block at left and at right of t
 
-        // HANDLE_ERROR(cudaDeviceSynchronize()); 
-
-        // nodeDependencies.clear();
+        nodeDependencies.clear();
         nodeDependencies.push_back(phase1_node);
 
         // up 
@@ -157,7 +175,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         cudaGraphNode_t phase2_up_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
-            &phase2_up_node, roundGraph, 
+            &phase2_up_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase2_up_params
         ));
@@ -174,7 +192,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         cudaGraphNode_t phase2_left_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
-            &phase2_left_node, roundGraph, 
+            &phase2_left_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase2_left_params));
 
@@ -192,7 +210,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         cudaGraphNode_t phase2_down_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
-            &phase2_down_node, roundGraph, 
+            &phase2_down_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase2_down_params));
 
@@ -208,16 +226,13 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         cudaGraphNode_t phase2_right_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
-            &phase2_right_node, roundGraph, 
+            &phase2_right_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase2_right_params));
 
         // HANDLE_ERROR(cudaDeviceSynchronize());
         
         // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
-
-        // dim3 num_blocks_phase_3(num_rounds-1, num_rounds-1); 
-        // execute_round_device_v_3_1_phase_3<<<num_blocks_phase_3, threads_per_block, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
         
         // up-left
         // execute_round_device_v_3_1_phase_3_portion<<<
@@ -240,7 +255,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         cudaGraphNode_t phase3_up_left_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
-            &phase3_up_left_node, roundGraph, 
+            &phase3_up_left_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase3_up_left_params));
 
@@ -263,7 +278,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         cudaGraphNode_t phase3_up_right_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
-            &phase3_up_right_node, roundGraph, 
+            &phase3_up_right_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase3_up_right_params));
 
@@ -286,7 +301,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         cudaGraphNode_t phase3_down_right_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
-            &phase3_down_right_node, roundGraph, 
+            &phase3_down_right_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase3_down_right_params));
 
@@ -309,24 +324,28 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         cudaGraphNode_t phase3_down_left_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
-            &phase3_down_left_node, roundGraph, 
+            &phase3_down_left_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase3_down_left_params));
 
-        cudaGraphExec_t instance;
-        
-        HANDLE_ERROR(cudaGraphInstantiate(&instance, roundGraph, NULL, NULL, 0));
+        // HANDLE_ERROR(cudaDeviceSynchronize());   
 
-        HANDLE_ERROR(cudaGraphLaunch(instance, graph_stream));
-        HANDLE_ERROR(cudaStreamSynchronize(graph_stream));
-
-        // Clean up
-        HANDLE_ERROR(cudaGraphExecDestroy(instance));
-        HANDLE_ERROR(cudaGraphDestroy(roundGraph));
-
-
-        // HANDLE_ERROR(cudaDeviceSynchronize());         
+        // save phase 3 nodes
+        prev_phase3_up_left_node    = phase3_up_left_node;
+        prev_phase3_up_right_node   = phase3_up_right_node;
+        prev_phase3_down_right_node = phase3_down_right_node;
+        prev_phase3_down_left_node  = phase3_down_left_node;
     }
+
+    // Instanciate and run graph
+    cudaGraphExec_t instance;
+    HANDLE_ERROR(cudaGraphInstantiate(&instance, graph, NULL, NULL, 0));
+    HANDLE_ERROR(cudaGraphLaunch(instance, graph_stream));
+    HANDLE_ERROR(cudaStreamSynchronize(graph_stream));
+
+    // Clean up
+    HANDLE_ERROR(cudaGraphExecDestroy(instance));
+    HANDLE_ERROR(cudaGraphDestroy(graph));
 
     // HANDLE_ERROR(cudaDeviceSynchronize());  
 
