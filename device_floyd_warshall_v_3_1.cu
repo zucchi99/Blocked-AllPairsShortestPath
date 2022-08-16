@@ -117,6 +117,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
             ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int), 
             2*B*B*sizeof(int)
         );
+        phase1_params.sharedMemBytes = ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int);
         phase1_params.kernelParams = (void**) phase1_args;
         phase1_params.extra = NULL;
 
@@ -174,7 +175,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         cudaKernelNodeParams phase2_up_params = cuda_graph_node_params_copy(phase1_params);
 
         phase2_up_params.func = (void*) execute_round_device_v_3_1_phase_2_col_portion;
-        // phase2_up_params.sharedMemBytes = 2*B*B*sizeof(int);
+        phase2_up_params.sharedMemBytes = 2*B*B*sizeof(int);
         phase2_up_params.kernelParams = (void**) phase2_up_left_args;
 
         cudaGraphNode_t phase2_up_node;
