@@ -87,39 +87,36 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
         //arr_execute_round(int *matrix, int n, int t, int row, int col, int B)
 
-        /*
         cudaGraph_t roundGraph;
         cudaGraphCreate(&roundGraph, 0);
 
-        std::vector<cudaGraphNode_t> nodeDependencies = {}; // Dependency vector
-        */ 
+        std::vector<cudaGraphNode_t> nodeDependencies = {}; // Dependency vector 
 
         // ----------------------------------------------------------------------
         // phase 1: self-dependent block
 
-        dim3 num_blocks_phase_1(max(num_rounds-1, 1), max(num_rounds-1, 1));
+        dim3 num_blocks(max(num_rounds-1, 1), max(num_rounds-1, 1));
         dim3 threads_per_block(B, B);
 
-        execute_round_device_v_3_1_phase_1<<<
-            num_blocks_phase_1, 
-            threads_per_block, 
-            ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int), 
-            streams[0]>>>(dev_rand_matrix, n, t, bank_conflict_phase_1);
+        // execute_round_device_v_3_1_phase_1<<<
+        //     num_blocks, 
+        //     threads_per_block, 
+        //     ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int), 
+        //     streams[0]>>>(dev_rand_matrix, n, t, bank_conflict_phase_1);
 
-        HANDLE_ERROR(cudaDeviceSynchronize());
+        // HANDLE_ERROR(cudaDeviceSynchronize());
 
-        /*
-
-        dim3 num_blocks_phase_1(1);
-        dim3 threads_per_block(B, B);
         void* phase1_args[4] = { (void*) &dev_rand_matrix, (void*) &n, (void*) &t, (void*) &bank_conflict_phase_1 };
 
         cudaKernelNodeParams phase1_params;
 
         phase1_params.func = (void*) execute_round_device_v_3_1_phase_1;
-        phase1_params.gridDim = num_blocks_phase_1;
+        phase1_params.gridDim = num_blocks;
         phase1_params.blockDim = threads_per_block;
-        phase1_params.sharedMemBytes = ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int);
+        phase1_params.sharedMemBytes = max(
+            ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int), 
+            2*B*B*sizeof(int)
+        );
         phase1_params.kernelParams = (void**) phase1_args;
         phase1_params.extra = NULL;
 
@@ -129,7 +126,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
             &phase1_node, roundGraph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase1_params));
-        */
+        
 
         // ----------------------------------------------------------------------
         // phase 2: row and cols
@@ -138,29 +135,27 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         //  -   all block at left and at right of t
 
 
-        execute_round_device_v_3_1_phase_2_col_portion<<<
-            num_blocks_phase_1, threads_per_block, 
-            2*B*B*sizeof(int), 
-            streams[0]>>>(dev_rand_matrix, n, t, 0, t);
+        // execute_round_device_v_3_1_phase_2_col_portion<<<
+        //     num_blocks, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     streams[0]>>>(dev_rand_matrix, n, t, 0, t);
 
-        execute_round_device_v_3_1_phase_2_row_portion<<<
-            num_blocks_phase_1, threads_per_block, 
-            2*B*B*sizeof(int), 
-            streams[1]>>>(dev_rand_matrix, n, t, 0, t);
+        // execute_round_device_v_3_1_phase_2_row_portion<<<
+        //     num_blocks, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     streams[1]>>>(dev_rand_matrix, n, t, 0, t);
 
-        execute_round_device_v_3_1_phase_2_col_portion<<<
-            num_blocks_phase_1, threads_per_block, 
-            2*B*B*sizeof(int), 
-            streams[2]>>>(dev_rand_matrix, n, t, t+1, num_rounds);
+        // execute_round_device_v_3_1_phase_2_col_portion<<<
+        //     num_blocks, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     streams[2]>>>(dev_rand_matrix, n, t, t+1, num_rounds);
 
-        execute_round_device_v_3_1_phase_2_row_portion<<<
-            num_blocks_phase_1, threads_per_block, 
-            2*B*B*sizeof(int), 
-            streams[3]>>>(dev_rand_matrix, n, t, t+1, num_rounds);
+        // execute_round_device_v_3_1_phase_2_row_portion<<<
+        //     num_blocks, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     streams[3]>>>(dev_rand_matrix, n, t, t+1, num_rounds);
 
-        HANDLE_ERROR(cudaDeviceSynchronize()); 
-
-        /*
+        // HANDLE_ERROR(cudaDeviceSynchronize()); 
 
         // nodeDependencies.clear();
         nodeDependencies.push_back(phase1_node);
@@ -171,19 +166,16 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         //     2*B*B*sizeof(int), 
         //     streams[0]>>>(dev_rand_matrix, n, t, 0);
 
-        cudaKernelNodeParams phase2_up_params;
-
-
-        dim3 num_blocks_phase_2(t);
         int start_up_left = 0;
-        void* phase2_up_left_args[4] = { (void*) &dev_rand_matrix, (void*) &n, (void*) &t, (void*) &start_up_left };
+        int end_up_left = t;
+        void* phase2_up_left_args[5] = { (void*) &dev_rand_matrix, 
+            &n, &t, &start_up_left, &end_up_left };
+
+        cudaKernelNodeParams phase2_up_params = cuda_graph_node_params_copy(phase1_params);
 
         phase2_up_params.func = (void*) execute_round_device_v_3_1_phase_2_col_portion;
-        phase2_up_params.gridDim = num_blocks_phase_2;
-        phase2_up_params.blockDim = threads_per_block;
-        phase2_up_params.sharedMemBytes = 2*B*B*sizeof(int);
+        // phase2_up_params.sharedMemBytes = 2*B*B*sizeof(int);
         phase2_up_params.kernelParams = (void**) phase2_up_left_args;
-        phase2_up_params.extra = NULL;
 
         cudaGraphNode_t phase2_up_node;
 
@@ -215,10 +207,12 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         //     2*B*B*sizeof(int), 
         //     streams[2]>>>(dev_rand_matrix, n, t, t+1);
 
-        cudaKernelNodeParams phase2_down_params = cuda_graph_node_params_copy(phase2_up_params);
-        phase2_down_params.gridDim = num_rounds-1-t;
         int start_down_right = t+1;
-        void* phase2_down_right_args[4] = { (void*) &dev_rand_matrix, &n, &t, &start_down_right};
+        int end_down_right = num_rounds;
+
+        cudaKernelNodeParams phase2_down_params = cuda_graph_node_params_copy(phase2_up_params);
+        void* phase2_down_right_args[5] = { (void*) &dev_rand_matrix, 
+            &n, &t, &start_down_right, &end_down_right};
         phase2_down_params.kernelParams = (void**) phase2_down_right_args;
 
         cudaGraphNode_t phase2_down_node;
@@ -235,7 +229,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         //     streams[3]>>>(dev_rand_matrix, n, t, t+1);
 
         cudaKernelNodeParams phase2_right_params = cuda_graph_node_params_copy(phase2_down_params);
-        phase2_right_params.func = (void*) execute_round_device_v_3_1_phase_2_col_portion;
+        phase2_right_params.func = (void*) execute_round_device_v_3_1_phase_2_row_portion;
 
         cudaGraphNode_t phase2_right_node;
 
@@ -247,17 +241,17 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         // HANDLE_ERROR(cudaDeviceSynchronize());
 
         cudaGraphExec_t instance;
-
+        
         HANDLE_ERROR(cudaGraphInstantiate(&instance, roundGraph, NULL, NULL, 0));
 
-        HANDLE_ERROR(cudaGraphLaunch(instance, streams[0]));
-        HANDLE_ERROR(cudaStreamSynchronize(streams[0]));
+        HANDLE_ERROR(cudaGraphLaunch(instance, streams[1]));
+        HANDLE_ERROR(cudaStreamSynchronize(streams[1]));
 
         // Clean up
         HANDLE_ERROR(cudaGraphExecDestroy(instance));
         HANDLE_ERROR(cudaGraphDestroy(roundGraph));
 
-        */
+        HANDLE_ERROR(cudaDeviceSynchronize()); 
 
         // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
 
@@ -266,25 +260,25 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
         dim3 num_blocks_phase_3_ul(t, t);
         execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks_phase_1, threads_per_block, 
+            num_blocks, threads_per_block, 
             2*B*B*sizeof(int), 
             streams[0]>>>(dev_rand_matrix, n, t, 0, 0, t, t);
 
         dim3 num_blocks_phase_3_dr(num_rounds-t-1, num_rounds-t-1); 
         execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks_phase_1, threads_per_block, 
+            num_blocks, threads_per_block, 
             2*B*B*sizeof(int), 
             streams[1]>>>(dev_rand_matrix, n, t, t+1, t+1, num_rounds, num_rounds);
 
         dim3 num_blocks_phase_3_ur(t, num_rounds-t-1); 
         execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks_phase_1, threads_per_block, 
+            num_blocks, threads_per_block, 
             2*B*B*sizeof(int), 
             streams[2]>>>(dev_rand_matrix, n, t, 0, t+1, t, num_rounds);
 
         dim3 num_blocks_phase_3_dl(num_rounds-t-1, t); 
         execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks_phase_1, threads_per_block, 
+            num_blocks, threads_per_block, 
             2*B*B*sizeof(int), 
             streams[3]>>>(dev_rand_matrix, n, t, t+1, 0, num_rounds, t);
 
