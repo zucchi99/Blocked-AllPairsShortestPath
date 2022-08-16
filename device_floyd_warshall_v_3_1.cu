@@ -28,9 +28,9 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B);
 //rounds code
 __global__ void execute_round_device_v_3_1_phase_1(int *matrix, int n, int t, bool handle_bank_conflict);
 
-__global__ void execute_round_device_v_3_1_phase_2_row_portion(int *matrix, int n, int t, int start_col);
-__global__ void execute_round_device_v_3_1_phase_2_col_portion(int *matrix, int n, int t, int start_row);
-__global__ void execute_round_device_v_3_1_phase_3_portion(int *matrix, int n, int t, int start_row, int start_col);
+__global__ void execute_round_device_v_3_1_phase_2_row_portion(int *matrix, int n, int t, int start_col, int end_col);
+__global__ void execute_round_device_v_3_1_phase_2_col_portion(int *matrix, int n, int t, int start_row, int end_row);
+__global__ void execute_round_device_v_3_1_phase_3_portion(int *matrix, int n, int t, int start_row, int start_col, int end_row, int end_col);
 
 
 int main() {
@@ -49,11 +49,18 @@ int main() {
     return 0;
 }
 
-cudaGraphNode_t get_cuda_graph_node(void* function, 
-    dim3 gridBlock, dim3 threadBlock, 
-    unsigned int sharedMemBytes) {
+cudaKernelNodeParams cuda_graph_node_params_copy(cudaKernelNodeParams params) {
     
-    
+    cudaKernelNodeParams newParams = { 0 };
+
+    newParams.func = params.func;
+    newParams.blockDim = params.blockDim;
+    newParams.gridDim = params.gridDim;
+    newParams.kernelParams = params.kernelParams;
+    newParams.sharedMemBytes = params.sharedMemBytes;
+    newParams.extra = params.extra;
+
+    return newParams;
 }
 
 
@@ -74,82 +81,170 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
     int num_rounds = n/B;
 
     bool bank_conflict_phase_1 = lcm(SHARED_BANK_N_INT, B) <= (B-1)*B;
-     
+
+         
     for(int t = 0; t < num_rounds; t++) { 
 
         //arr_execute_round(int *matrix, int n, int t, int row, int col, int B)
 
+        /*
         cudaGraph_t roundGraph;
         cudaGraphCreate(&roundGraph, 0);
+
         std::vector<cudaGraphNode_t> nodeDependencies = {}; // Dependency vector
+        */ 
 
-        //phase 1: self-dependent block
-        dim3 num_blocks_phase_1(1, 1);
-        dim3 threads_per_block_phase_1(B, B);
+        // ----------------------------------------------------------------------
+        // phase 1: self-dependent block
 
-        cudaKernelNodeParams phase1KernelParams = { 0 };
+        dim3 num_blocks_phase_1(max(num_rounds-1, 1), max(num_rounds-1, 1));
+        dim3 threads_per_block(B, B);
 
-        phase1KernelParams.func = (void*) execute_round_device_v_3_1_phase_1;
-        phase1KernelParams.gridDim = num_blocks_phase_1;
-        phase1KernelParams.blockDim = threads_per_block_phase_1;
-        phase1KernelParams.sharedMemBytes = ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int);
+        execute_round_device_v_3_1_phase_1<<<
+            num_blocks_phase_1, 
+            threads_per_block, 
+            ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int), 
+            streams[0]>>>(dev_rand_matrix, n, t, bank_conflict_phase_1);
 
-        void* kernelArgs[4] = { 
-            (void*) &dev_rand_matrix, 
-            (void*) &n, 
-            (void*) &t, 
-            (void*) &bank_conflict_phase_1 
-        };
+        HANDLE_ERROR(cudaDeviceSynchronize());
 
-        phase1KernelParams.kernelParams = (void **) kernelArgs;
-        phase1KernelParams.extra = NULL;
+        /*
+
+        dim3 num_blocks_phase_1(1);
+        dim3 threads_per_block(B, B);
+        void* phase1_args[4] = { (void*) &dev_rand_matrix, (void*) &n, (void*) &t, (void*) &bank_conflict_phase_1 };
+
+        cudaKernelNodeParams phase1_params;
+
+        phase1_params.func = (void*) execute_round_device_v_3_1_phase_1;
+        phase1_params.gridDim = num_blocks_phase_1;
+        phase1_params.blockDim = threads_per_block;
+        phase1_params.sharedMemBytes = ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int);
+        phase1_params.kernelParams = (void**) phase1_args;
+        phase1_params.extra = NULL;
 
         cudaGraphNode_t phase1_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
             &phase1_node, roundGraph, 
             nodeDependencies.data(), nodeDependencies.size(), 
-            &phase1KernelParams));
+            &phase1_params));
+        */
+
+        // ----------------------------------------------------------------------
+        // phase 2: row and cols
+        // all blocks that share a row or a column with the self dependent, so
+        //  -   all blocks just above or under t
+        //  -   all block at left and at right of t
 
 
+        execute_round_device_v_3_1_phase_2_col_portion<<<
+            num_blocks_phase_1, threads_per_block, 
+            2*B*B*sizeof(int), 
+            streams[0]>>>(dev_rand_matrix, n, t, 0, t);
 
-        
+        execute_round_device_v_3_1_phase_2_row_portion<<<
+            num_blocks_phase_1, threads_per_block, 
+            2*B*B*sizeof(int), 
+            streams[1]>>>(dev_rand_matrix, n, t, 0, t);
 
+        execute_round_device_v_3_1_phase_2_col_portion<<<
+            num_blocks_phase_1, threads_per_block, 
+            2*B*B*sizeof(int), 
+            streams[2]>>>(dev_rand_matrix, n, t, t+1, num_rounds);
+
+        execute_round_device_v_3_1_phase_2_row_portion<<<
+            num_blocks_phase_1, threads_per_block, 
+            2*B*B*sizeof(int), 
+            streams[3]>>>(dev_rand_matrix, n, t, t+1, num_rounds);
+
+        HANDLE_ERROR(cudaDeviceSynchronize()); 
+
+        /*
+
+        // nodeDependencies.clear();
+        nodeDependencies.push_back(phase1_node);
 
         // up 
-        execute_round_device_v_3_1_phase_2_col_portion<<<
-            t, threads_per_block_phase_1, 
-            2*B*B*sizeof(int), 
-            streams[0]>>>(dev_rand_matrix, n, t, 0);
+        // execute_round_device_v_3_1_phase_2_col_portion<<<
+        //     t, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     streams[0]>>>(dev_rand_matrix, n, t, 0);
+
+        cudaKernelNodeParams phase2_up_params;
+
+
+        dim3 num_blocks_phase_2(t);
+        int start_up_left = 0;
+        void* phase2_up_left_args[4] = { (void*) &dev_rand_matrix, (void*) &n, (void*) &t, (void*) &start_up_left };
+
+        phase2_up_params.func = (void*) execute_round_device_v_3_1_phase_2_col_portion;
+        phase2_up_params.gridDim = num_blocks_phase_2;
+        phase2_up_params.blockDim = threads_per_block;
+        phase2_up_params.sharedMemBytes = 2*B*B*sizeof(int);
+        phase2_up_params.kernelParams = (void**) phase2_up_left_args;
+        phase2_up_params.extra = NULL;
+
+        cudaGraphNode_t phase2_up_node;
+
+        HANDLE_ERROR(cudaGraphAddKernelNode(
+            &phase2_up_node, roundGraph, 
+            nodeDependencies.data(), nodeDependencies.size(), 
+            &phase2_up_params
+        ));
 
         // left
-        execute_round_device_v_3_1_phase_2_row_portion<<<
-            t, threads_per_block_phase_1, 
-            2*B*B*sizeof(int), 
-            streams[1]>>>(dev_rand_matrix, n, t, 0);
+        // execute_round_device_v_3_1_phase_2_row_portion<<<
+        //     t, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     streams[1]>>>(dev_rand_matrix, n, t, 0);
+
+        cudaKernelNodeParams phase2_left_params = cuda_graph_node_params_copy(phase2_up_params);
+        phase2_left_params.func = (void*) execute_round_device_v_3_1_phase_2_row_portion;
+
+        cudaGraphNode_t phase2_left_node;
+
+        HANDLE_ERROR(cudaGraphAddKernelNode(
+            &phase2_left_node, roundGraph, 
+            nodeDependencies.data(), nodeDependencies.size(), 
+            &phase2_left_params));
 
         // down
-        execute_round_device_v_3_1_phase_2_col_portion<<<
-            num_rounds-1-t, threads_per_block_phase_1, 
-            2*B*B*sizeof(int), 
-            streams[2]>>>(dev_rand_matrix, n, t, t+1);
+        // execute_round_device_v_3_1_phase_2_col_portion<<<
+        //     num_rounds-1-t, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     streams[2]>>>(dev_rand_matrix, n, t, t+1);
+
+        cudaKernelNodeParams phase2_down_params = cuda_graph_node_params_copy(phase2_up_params);
+        phase2_down_params.gridDim = num_rounds-1-t;
+        int start_down_right = t+1;
+        void* phase2_down_right_args[4] = { (void*) &dev_rand_matrix, &n, &t, &start_down_right};
+        phase2_down_params.kernelParams = (void**) phase2_down_right_args;
+
+        cudaGraphNode_t phase2_down_node;
+
+        HANDLE_ERROR(cudaGraphAddKernelNode(
+            &phase2_down_node, roundGraph, 
+            nodeDependencies.data(), nodeDependencies.size(), 
+            &phase2_down_params));
 
         // right
-        execute_round_device_v_3_1_phase_2_row_portion<<<
-            num_rounds-1-t, threads_per_block_phase_1, 
-            2*B*B*sizeof(int), 
-            streams[3]>>>(dev_rand_matrix, n, t, t+1);
+        // execute_round_device_v_3_1_phase_2_row_portion<<<
+        //     num_rounds-1-t, threads_per_block, 
+        //     2*B*B*sizeof(int), 
+        //     streams[3]>>>(dev_rand_matrix, n, t, t+1);
 
+        cudaKernelNodeParams phase2_right_params = cuda_graph_node_params_copy(phase2_down_params);
+        phase2_right_params.func = (void*) execute_round_device_v_3_1_phase_2_col_portion;
 
-        HANDLE_ERROR(cudaDeviceSynchronize());
+        cudaGraphNode_t phase2_right_node;
 
+        HANDLE_ERROR(cudaGraphAddKernelNode(
+            &phase2_right_node, roundGraph, 
+            nodeDependencies.data(), nodeDependencies.size(), 
+            &phase2_right_params));
 
-
-
-
-
-
-
+        // HANDLE_ERROR(cudaDeviceSynchronize());
 
         cudaGraphExec_t instance;
 
@@ -162,40 +257,36 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         HANDLE_ERROR(cudaGraphExecDestroy(instance));
         HANDLE_ERROR(cudaGraphDestroy(roundGraph));
 
-        // phase 2: all blocks that share a row or a column with the self dependent, so
-        //  -   all blocks just above or under t
-        //  -   all block at left and at right of t
-
-        
+        */
 
         // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
 
         // dim3 num_blocks_phase_3(num_rounds-1, num_rounds-1); 
-        // execute_round_device_v_3_1_phase_3<<<num_blocks_phase_3, threads_per_block_phase_1, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
+        // execute_round_device_v_3_1_phase_3<<<num_blocks_phase_3, threads_per_block, 2*B*B*sizeof(int)>>>(dev_rand_matrix, n, t);
 
         dim3 num_blocks_phase_3_ul(t, t);
         execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks_phase_3_ul, threads_per_block_phase_1, 
+            num_blocks_phase_1, threads_per_block, 
             2*B*B*sizeof(int), 
-            streams[0]>>>(dev_rand_matrix, n, t, 0, 0);
+            streams[0]>>>(dev_rand_matrix, n, t, 0, 0, t, t);
 
         dim3 num_blocks_phase_3_dr(num_rounds-t-1, num_rounds-t-1); 
         execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks_phase_3_dr, threads_per_block_phase_1, 
+            num_blocks_phase_1, threads_per_block, 
             2*B*B*sizeof(int), 
-            streams[1]>>>(dev_rand_matrix, n, t, t+1, t+1);
+            streams[1]>>>(dev_rand_matrix, n, t, t+1, t+1, num_rounds, num_rounds);
 
         dim3 num_blocks_phase_3_ur(t, num_rounds-t-1); 
         execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks_phase_3_ur, threads_per_block_phase_1, 
+            num_blocks_phase_1, threads_per_block, 
             2*B*B*sizeof(int), 
-            streams[2]>>>(dev_rand_matrix, n, t, 0, t+1);
+            streams[2]>>>(dev_rand_matrix, n, t, 0, t+1, t, num_rounds);
 
         dim3 num_blocks_phase_3_dl(num_rounds-t-1, t); 
         execute_round_device_v_3_1_phase_3_portion<<<
-            num_blocks_phase_3_dl, threads_per_block_phase_1, 
+            num_blocks_phase_1, threads_per_block, 
             2*B*B*sizeof(int), 
-            streams[3]>>>(dev_rand_matrix, n, t, t+1, 0);
+            streams[3]>>>(dev_rand_matrix, n, t, t+1, 0, num_rounds, t);
 
         HANDLE_ERROR(cudaDeviceSynchronize()); 
     }
@@ -215,7 +306,12 @@ __global__ void execute_round_device_v_3_1_phase_1(int *matrix, int n, int t, bo
 
     // Launched block and correspondent position in the matrix
 
-    //  t
+    //  t   -   -   -   -
+    //  -   -   -   -   -
+    //  -   -   -   -   -
+    //  -   -   -   -   -
+    //  -   -   -   -   -
+    
 
     //  .   .   .   .   .   . 
     //  .   .   .   .   .   . 
@@ -223,6 +319,10 @@ __global__ void execute_round_device_v_3_1_phase_1(int *matrix, int n, int t, bo
     //  .   .   .   t   .   .
     //  .   .   .   .   .   . 
     //  .   .   .   .   .   . 
+
+    if (blockIdx.x > 0 || blockIdx.y > 0)   return;
+
+    // if (threadIdx.x == 0 && threadIdx.y == 0) printf("(%d,%d) ", blockIdx.x, blockIdx.y);
 
     extern __shared__ int block_t_t_shared[];
 
@@ -254,8 +354,11 @@ __global__ void execute_round_device_v_3_1_phase_1(int *matrix, int n, int t, bo
 }
 
 
-__global__ void execute_round_device_v_3_1_phase_2_row_portion(int *matrix, int n, int t, int start_col) {
-extern __shared__ int shared_mem[];
+__global__ void execute_round_device_v_3_1_phase_2_row_portion(int *matrix, int n, int t, int start_col, int end_col) {
+    
+    if (blockIdx.x >= end_col-start_col)    return;
+    
+    extern __shared__ int shared_mem[];
     
     int* block_i_j_shared = &shared_mem[0];
     int* block_t_t_shared = &shared_mem[(blockDim.x * blockDim.x)];
@@ -309,8 +412,11 @@ extern __shared__ int shared_mem[];
 }
 
 
-__global__ void execute_round_device_v_3_1_phase_2_col_portion(int *matrix, int n, int t, int start_row) {
-extern __shared__ int shared_mem[];
+__global__ void execute_round_device_v_3_1_phase_2_col_portion(int *matrix, int n, int t, int start_row, int end_row) {
+    
+    if (blockIdx.x >= end_row-start_row)    return;
+    
+    extern __shared__ int shared_mem[];
 
     int* block_i_j_shared = &shared_mem[0];
     int* block_t_t_shared = &shared_mem[blockDim.x*blockDim.x];
@@ -364,8 +470,10 @@ extern __shared__ int shared_mem[];
 
 
 
-__global__ void execute_round_device_v_3_1_phase_3_portion(int *matrix, int n, int t, int start_row, int start_col) {
+__global__ void execute_round_device_v_3_1_phase_3_portion(int *matrix, int n, int t, int start_row, int start_col, int end_row, int end_col) {
 
+    if (blockIdx.x >= end_row-start_row || blockIdx.y >= end_col-start_col)    return;
+    
     extern __shared__ int shared_mem[];
 
     int* block_i_t_shared = &shared_mem[0];
