@@ -69,12 +69,14 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
     assert(n%B == 0);                       // B must divide n
     assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
 
-    cudaStream_t graph_stream;
-    cudaStreamCreate(&graph_stream);
-
     int *dev_rand_matrix;
     HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n*n*sizeof(int)));
     HANDLE_ERROR(cudaMemcpy(dev_rand_matrix, matrix, n*n*sizeof(int), cudaMemcpyHostToDevice));
+
+    // init the graph i will use to do all rounds
+    cudaGraph_t graph;
+    cudaGraphCreate(&graph, 0);
+    std::vector<cudaGraphNode_t> nodeDependencies = {}; // Dependency vector 
 
     // number of rounds that will be executed
     int num_rounds = n/B;
@@ -90,11 +92,6 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
     // a variable needed for calls which requires pointer args
     int zero = 0;
-
-    // init the graph i will use to do all rounds
-    cudaGraph_t graph;
-    cudaGraphCreate(&graph, 0);
-    std::vector<cudaGraphNode_t> nodeDependencies = {}; // Dependency vector 
 
     // previous round nodes (so i can add them as dependency for the next)
     cudaGraphNode_t prev_phase3_up_left_node,   prev_phase3_up_right_node, 
@@ -336,6 +333,10 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         prev_phase3_down_right_node = phase3_down_right_node;
         prev_phase3_down_left_node  = phase3_down_left_node;
     }
+
+    // stream used for executing graph
+    cudaStream_t graph_stream;
+    cudaStreamCreate(&graph_stream);
 
     // Instanciate and run graph
     cudaGraphExec_t instance;
