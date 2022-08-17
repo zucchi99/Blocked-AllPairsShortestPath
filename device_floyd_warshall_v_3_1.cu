@@ -87,7 +87,6 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
     copy_host_to_dev_params.dstArray = NULL;
     copy_host_to_dev_params.dstPos = make_cudaPos(0, 0, 0);
     copy_host_to_dev_params.dstPtr = make_cudaPitchedPtr((void*) dev_matrix, n*n*sizeof(int), n*n, 1);
-
     copy_host_to_dev_params.extent = make_cudaExtent(n*n*sizeof(float), 1, 1);
     copy_host_to_dev_params.kind = cudaMemcpyHostToDevice;
 
