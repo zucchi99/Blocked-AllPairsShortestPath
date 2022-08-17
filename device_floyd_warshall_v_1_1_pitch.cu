@@ -29,7 +29,7 @@ int main() {
 
     // for (size_t n = 10; n < 200; n += 2) {
 
-    //     int MAX_B = min(32, n);
+    //     int MAX_B = mmin(32, n);
     
     //     for (int BLOCKING_FACTOR = 1; BLOCKING_FACTOR < MAX_B; BLOCKING_FACTOR += 2) {
 
@@ -68,7 +68,7 @@ int main() {
 void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
     
     assert(n%B == 0);                       // B must divide n
-    assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
+    assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed mmax block size
 
     int *dev_rand_matrix;
     size_t pitch;                          //size in bytes of memory allocated to guarantee alignment
@@ -197,7 +197,7 @@ __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row,
             *cell_i_j = using_k_path;
         }
 
-        //printf("i:%d, j:%d, k:%d, max_k:%d, ik:%02d, kj:%02d, ij_bef:%02d, ij_aft:%02d\n", i, j, k, (t+1)*B, (min(*cell_i_k, 99)), (min(*cell_k_j, 99)), (min(cell_i_j_bef, 99)), (min(*cell_i_j, 99)));
+        //printf("i:%d, j:%d, k:%d, max_k:%d, ik:%02d, kj:%02d, ij_bef:%02d, ij_aft:%02d\n", i, j, k, (t+1)*B, (mmin(*cell_i_k, 99)), (mmin(*cell_k_j, 99)), (mmin(cell_i_j_bef, 99)), (mmin(*cell_i_j, 99)));
         // if (tid_x==0 && tid_y==0) printf("i:%d, j:%d, k:%d, max_k:%d\n", i, j, k, (t+1)*B);      
         
         __syncthreads();

@@ -10,7 +10,7 @@ void host_matrix_floyd_warshall(int **matrix, int n) {
             for(int j = 0; j < n; j++) {
                 int a = matrix[i][j];
                 int b = sum_if_not_infinite(matrix[i][k], matrix[k][j], INF);
-                matrix[i][j] = min(a, b);
+                matrix[i][j] = mmin(a, b);
             }
         }
     }
@@ -94,7 +94,7 @@ void host_matrix_execute_round(int **matrix, int n, int t, int row, int col, int
                 int x1 = matrix[i][k];
                 int x2 =  matrix[k][j];
                 int b = sum_if_not_infinite(matrix[i][k], matrix[k][j], INF);
-                matrix[i][j] = min(a, b);
+                matrix[i][j] = mmin(a, b);
                 //print_matrix(matrix, n, n);
             }
         }
@@ -110,7 +110,7 @@ void host_array_floyd_warshall(int *matrix, int n) {
             for(int j = 0; j < n; j++) {
                 int a = matrix[i*n + j];
                 int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF);
-                matrix[i*n + j] = min(a, b);
+                matrix[i*n + j] = mmin(a, b);
             }
         }
     }
@@ -192,7 +192,7 @@ void host_array_execute_round(int *matrix, int n, int t, int row, int col, int B
                 int x1 = matrix[i*n + k];
                 int x2 =  matrix[k*n + j];
                 int b = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF);
-                matrix[i*n + j] = min(a, b);
+                matrix[i*n + j] = mmin(a, b);
                 //print_arr_matrix(matrix, n, n);
             }
         }

@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
         }
         for (int i = 2; i < argc; i++) {
             if(str_args[i].size() < 4) {
-                //min size for n,b,t parameters is 4 (ex. -n=5)
+                //mmin size for n,b,t parameters is 4 (ex. -n=5)
                 printf("Uncorrect syntax parameter, use -<param>=<value>\n");
                 return 3;
             }
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
 void floyd_warshall_blocked_device_v_2_2(int *matrix, int n, int B) {
 
     assert(n%B == 0);                       // B must divide n
-    assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
+    assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed mmax block size
 
     int *dev_rand_matrix;
     HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n*n*sizeof(int)));

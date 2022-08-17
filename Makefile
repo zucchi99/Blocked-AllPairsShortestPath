@@ -20,7 +20,6 @@ dev:
 		src/statistical_test.cpp \
 		src/host_floyd_warshall.cpp
 
-
 read_matrix :	
 	nvcc -rdc=true -o bin/read_matrix.out \
 		main.cpp \
@@ -43,3 +42,8 @@ dev_test:
 	nvcc -rdc=true -o bin/dev_test.out \
 		device_test.cu \
 		src/cuda_errors_utils.cu
+
+generate_n_b:
+	g++ -o bin/generate_and_print_n_b.out \
+		generate_and_print_n_b.cpp \
+		src/generate_n_b_couples.cpp

@@ -6,6 +6,7 @@
 #include <cstring>
 
 #include "../include/adj_matrix_utils.hpp"
+#include "../include/generate_n_b_couples.hpp"
 #include "../include/host_floyd_warshall.hpp"
 #include "../include/statistical_test.hpp"
 
@@ -99,7 +100,9 @@ int multi_size_statistical_test(MultiSizeTestParameters params) {
     params.stop_current_if_fail = params.stop_current_if_fail || params.stop_all_if_fail;
     
     // outputs a random number between 1.300 and 1.600
-    srand(time(NULL));
+    int seed = time(NULL);
+    srand(seed);
+    
     double rand_costant_multiplier = ((double) ((rand() % 300) + 1300)) / ((double) 1000);
     params.costant_multiplier = (params.costant_multiplier == RANDOM_CONSTANT) ? rand_costant_multiplier : params.costant_multiplier;
 
@@ -110,64 +113,41 @@ int multi_size_statistical_test(MultiSizeTestParameters params) {
 
     int n_err_tot = 0;
 
-    for (int n = params.start_input_size; n <= params.end_input_size; n = max(((int) (params.costant_multiplier * (double) n)), (n+1)) ) { // n *= 2
+    std::vector<std::pair<int, int>> list_of_all_n_b;
+    list_of_all_n_b = generate_list_of_all_n_b(params.start_input_size, params.end_input_size, 5, params.costant_multiplier, params.min_blocking_factor, 50, seed);
 
-        // use max 5 different blocking factors
-        int B_used[5];
-        // initially all are -1
-        for (int i = 0; i < 5; i++) B_used[i] = -1;
+    for (int i = 0; i < list_of_all_n_b.size(); i++) {
 
-        // index of the currently used B 
-        int cur_B_idx = -1;
+        int n = list_of_all_n_b[i].first;
+        int B = list_of_all_n_b[i].second;
 
-        // generate randomly B check if it is a divisor of n and not already used.
-        // generate maximum 50 random B (necessary to avoid non-termination, maybe n is prime)
-        for (int tests = 0; tests < 50 && cur_B_idx < 5; tests++) {
+        printf("n: %d, B: %d\n", n, B);
 
-            // range for b is between 0 and n/2
-            int B = rand() % min(n/2, MAX_BLOCKING_FACTOR);
-            // but if it is zero then use B=n
-            B = (B == 0) ? n : B; 
+        //define exec single test params
+        CallSingleSizeTestParameters single_test_params;
+        // most of parameters are copied as received:
+        single_test_params.f                    = params.f;
+        single_test_params.g                    = params.g;
+        single_test_params.seed                 = params.seed;
+        single_test_params.n_tests              = params.n_tests_per_round;
+        single_test_params.print_progress_perc  = params.print_progress_perc;
+        single_test_params.print_failed_tests   = params.print_failed_tests;
+        single_test_params.stop_current_if_fail = params.stop_current_if_fail;
+        // the couple (n,B) is calculated here
+        single_test_params.input_size      = n;
+        single_test_params.blocking_factor = B;
 
-            // test if it is ok to be executed (b is a new divisor)
-            bool exec_cond = (n % B == 0) && (B <= MAX_BLOCKING_FACTOR) && (B>=params.min_blocking_factor); 
-            for (int i = 0; (i <= cur_B_idx) && exec_cond; i++) exec_cond = (B != B_used[i]);
-
-            // if((n % BLOCKING_FACTOR) == 0) {
-            if (exec_cond) {
-
-                // add b to the list of B used
-                B_used[++cur_B_idx] = B;
-                //print n and B
-                printf("n: %d, B: %d\n", n, B);
-
-                //define exec single test params
-                CallSingleSizeTestParameters single_test_params;
-                // most of parameters are copied as received:
-                single_test_params.f                    = params.f;
-                single_test_params.g                    = params.g;
-                single_test_params.seed                 = params.seed;
-                single_test_params.n_tests              = params.n_tests_per_round;
-                single_test_params.print_progress_perc  = params.print_progress_perc;
-                single_test_params.print_failed_tests   = params.print_failed_tests;
-                single_test_params.stop_current_if_fail = params.stop_current_if_fail;
-                // the couple (n,B) is calculated here
-                single_test_params.input_size      = n;
-                single_test_params.blocking_factor = B;
-
-                //execute test
-                int n_err = call_single_size_statistical_test(single_test_params);
-                
-                // count errors
-                n_err_tot += n_err;
-                if (n_err > 0 && params.stop_all_if_fail) {
-                    return n_err_tot;
-                }
-                
-                printf("Cumulative errors at size=%d, blocking_factor=%d: %d (%d new ones)\n\n", n, B, n_err_tot, n_err);
-            }
-
+        //execute test
+        int n_err = call_single_size_statistical_test(single_test_params);
+        
+        // count errors
+        n_err_tot += n_err;
+        if (n_err > 0 && params.stop_all_if_fail) {
+            return n_err_tot;
         }
+        
+        printf("Cumulative errors at size=%d, blocking_factor=%d: %d (%d new ones)\n\n", n, B, n_err_tot, n_err);
+        
     }
 
     return n_err_tot;

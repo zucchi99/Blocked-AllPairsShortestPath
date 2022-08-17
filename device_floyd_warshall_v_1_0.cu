@@ -30,7 +30,7 @@ int main() {
 
     // for (size_t n = 10; n < 200; n += 2) {
 
-    //     int MAX_B = min(32, n);
+    //     int MAX_B = mmin(32, n);
     
     //     for (int BLOCKING_FACTOR = 1; BLOCKING_FACTOR < MAX_B; BLOCKING_FACTOR += 2) {
 
@@ -94,7 +94,7 @@ __global__ void execute_round_device_v_1_0(int *matrix, int n, int t, int row, i
 
 
         if (run_this) {
-            matrix[i*n + j] = min(a, b);
+            matrix[i*n + j] = mmin(a, b);
         }
         
         __syncthreads();

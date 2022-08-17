@@ -51,7 +51,7 @@ int main() {
 
     for (int n = 6; n <= 1024; n = (int) (linear_increase * (double) n)) {
         
-        // use max 5 different blocking factors
+        // use mmax 5 different blocking factors
         int B[5];
         for (int i = 0; i < 5; i++) B[i] = -1;
 
@@ -93,7 +93,7 @@ int main() {
 void floyd_warshall_blocked_device_v_2_0(int *matrix, int n, int B) {
 
     assert(n%B == 0);                       // B must divide n
-    assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
+    assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed mmax block size
 
     int *dev_rand_matrix;
     HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n * n* sizeof(int)));
