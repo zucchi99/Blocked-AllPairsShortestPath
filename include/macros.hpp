@@ -5,7 +5,7 @@
 #define INF __INT16_MAX__
 
 /// Get minimum or maximum of two values
-// renamed from mmin and mmax to avoid overload with std::mmin and std::mmax
+// renamed from min and max to avoid overload with std::min and std::max
 #define mmin(a,b) ((a < b) ? a : b)
 #define mmax(a,b) ((a > b) ? a : b)
 

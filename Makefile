@@ -16,9 +16,10 @@ dev:
 		src/adj_matrix_utils.cu \
 		src/adj_matrix_utils.cpp \
 		src/cuda_errors_utils.cu \
+		src/generate_n_b_couples.cpp \
+		src/host_floyd_warshall.cpp \
 		src/performance_test.cu \
-		src/statistical_test.cpp \
-		src/host_floyd_warshall.cpp
+		src/statistical_test.cpp
 
 read_matrix :	
 	nvcc -rdc=true -o bin/read_matrix.out \

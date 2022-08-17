@@ -23,24 +23,31 @@ fw_bin='bin/device_floyd_warshall_v_'"$version"'.out'
 
 #define parameters
 exec_option='perf'
-t=50
+t=10
 
+#row index
 i=0
+
+#define csv output file name
+csv_output='csv/fwa_dev_v_'"$version"'__'$(date "+%Y_%m_%d-%H_%M")'__'
+echo "$csv_output"
 
 while read line; do
 
-#skip row header
-if test $i -gt 0
-then
-    n=`echo "$line" | sed s/,.*//`
-    b=`echo "$line" | sed s/.*,//`
+    #skip row header
+    if test $i -gt 0
+    then
+        n=`echo "$line" | sed s/,.*//`
+        b=`echo "$line" | sed s/.*,//`
 
-    #echo n: $n, b: $b
-    ./fw_bin $exec_option -t="$t" -n="$n" -b="$b"
+        cur_csv_out="$csv_output"'n'$n'__b'$b'.csv'
 
-fi
+        #echo n: $n, b: $b
+        nvprof --csv --log-file "$cur_csv_out" ./$fw_bin "$exec_option" -t="$t" -n="$n" -b="$b"
 
-i=$(($i+1))
+    fi
+
+    i=$(($i+1))
 
 
 done < $n_b_file
