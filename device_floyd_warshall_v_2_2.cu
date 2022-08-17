@@ -92,9 +92,13 @@ int main(int argc, char *argv[]) {
                 }
             } 
         }
-        if (n < 0 || b < 0 || t < 0) {
+        if (n <= 0 || b <= 0 || t <= 0) {
             printf("n, b, t must all be specified and must be positive integers\n");
             return 5;
+        }
+        if (b > n || (n % b > 0)) {
+            printf("b must be a divisor of n\n");
+            return 6;
         }
         int rand_seed = time(NULL);
         printf("rand_seed: %d\n", rand_seed);
@@ -102,7 +106,7 @@ int main(int argc, char *argv[]) {
 
     } else {
         printf("<exec_option>=%s not recognised, try run: %s --help\n", argv[1], argv[0]);
-        return 6;
+        return 7;
     }
 
     return 0;
