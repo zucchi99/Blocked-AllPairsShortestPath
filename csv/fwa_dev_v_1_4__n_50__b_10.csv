@@ -1,0 +1,24 @@
+==235== NVPROF is profiling process 235, command: ./bin/fwa_dev_v_1_4.out perf -n=50 -b=10 -t=5
+==235== Profiling application: ./bin/fwa_dev_v_1_4.out perf -n=50 -b=10 -t=5
+==235== Profiling result:
+"Type","Time(%)","Time","Calls","Avg","Min","Max","Name"
+,%,us,,us,us,us,
+"GPU activities",26.574376,180.963000,25,7.238000,6.560000,8.000000,"execute_round_device_v_1_4_phase_2_col(int*, int, int, int)"
+"GPU activities",26.504035,180.484000,25,7.219000,6.720000,8.224000,"execute_round_device_v_1_4_phase_3(int*, int, int, int)"
+"GPU activities",22.941313,156.223000,25,6.248000,5.664000,7.456000,"execute_round_device_v_1_4_phase_2_row(int*, int, int, int)"
+"GPU activities",20.808320,141.698000,25,5.667000,4.704000,7.168000,"execute_round_device_v_1_4_phase_1(int*, int, int, int)"
+"GPU activities",1.771596,12.064000,5,2.412000,2.400000,2.432000,"[CUDA memcpy HtoD]"
+"GPU activities",1.400359,9.536000,5,1.907000,1.856000,1.984000,"[CUDA memcpy DtoH]"
+"API calls",96.096290,205791.675000,1,205791.675000,205791.675000,205791.675000,"cudaProfilerStart"
+"API calls",2.268203,4857.391000,5,971.478000,153.830000,1402.763000,"cudaMalloc"
+"API calls",0.397868,852.040000,75,11.360000,8.814000,20.925000,"cudaDeviceSynchronize"
+"API calls",0.387801,830.481000,5,166.096000,113.597000,236.780000,"cudaFree"
+"API calls",0.385878,826.363000,100,8.263000,3.609000,87.289000,"cudaLaunchKernel"
+"API calls",0.192883,413.062000,1,413.062000,413.062000,413.062000,"cuDeviceTotalMem"
+"API calls",0.160261,343.202000,10,34.320000,19.516000,51.930000,"cudaMemcpy"
+"API calls",0.091696,196.368000,101,1.944000,0.135000,91.133000,"cuDeviceGetAttribute"
+"API calls",0.013756,29.458000,1,29.458000,29.458000,29.458000,"cuDeviceGetName"
+"API calls",0.003745,8.020000,1,8.020000,8.020000,8.020000,"cuDeviceGetPCIBusId"
+"API calls",0.000862,1.846000,3,0.615000,0.179000,1.375000,"cuDeviceGetCount"
+"API calls",0.000627,1.343000,2,0.671000,0.300000,1.043000,"cuDeviceGet"
+"API calls",0.000131,0.281000,1,0.281000,0.281000,0.281000,"cuDeviceGetUuid"

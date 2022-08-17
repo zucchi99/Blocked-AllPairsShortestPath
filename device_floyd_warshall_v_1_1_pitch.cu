@@ -2,19 +2,19 @@
 
 
 //main device code
-void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B);
+void floyd_warshall_blocked_device_v_1_1_pitch(int *matrix, int n, int B);
 
 //rounds code
-__global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row, int col, int B, size_t pitch);
+__global__ void execute_round_device_v_1_1_pitch(int *matrix, int n, int t, int row, int col, int B, size_t pitch);
 
 int main(int argc, char *argv[]) {
 
-    return handle_arguments_and_execute(argc, argv, &floyd_warshall_blocked_device_v_1_1_pitch);
+    return handle_arguments_and_execute(argc, argv, (void(*) (int*, int, int)) &floyd_warshall_blocked_device_v_1_1_pitch);
 
 }
 
 
-void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
+void floyd_warshall_blocked_device_v_1_1_pitch(int *matrix, int n, int B) {
     
     assert(n%B == 0);                       // B must divide n
     assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed mmax block size
@@ -42,34 +42,34 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
         dim3 threads_per_block_phase_1(B, B);
 
         // printf("start self dependent, t:%d, row:%d, col:%d\n",t,t,t);
-        execute_round_device_v_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, t, t, B, pitch);
+        execute_round_device_v_1_1_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, t, t, B, pitch);
         HANDLE_ERROR(cudaDeviceSynchronize());
 
         //phase 2 blocks left
         for (int j = t-1; j >= 0; j--) {
             // printf("start phase 2 blocks left, t:%d, row:%d, col:%d\n",t,t,j);
-            execute_round_device_v_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, t, j, B, pitch);
+            execute_round_device_v_1_1_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, t, j, B, pitch);
             // HANDLE_ERROR(cudaDeviceSynchronize());  
         }
 
         //phase 2 blocks above
         for (int i = t-1; i >= 0; i--) {
             // printf("start phase 2 blocks above, t:%d, row:%d, col:%d\n",t,i,t);
-            execute_round_device_v_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, t, B, pitch);
+            execute_round_device_v_1_1_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, t, B, pitch);
             // HANDLE_ERROR(cudaDeviceSynchronize());  
         }
 
         //phase 2 blocks below
         for (int i = t+1; i < num_rounds; i++) {
             // printf("start phase 2 blocks below, t:%d, row:%d, col:%d\n",t,i,t);
-            execute_round_device_v_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, t, B, pitch);
+            execute_round_device_v_1_1_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, t, B, pitch);
             // HANDLE_ERROR(cudaDeviceSynchronize());  
         }
 
         //phase 2 blocks right
         for (int j = t+1; j < num_rounds; j++) {
             // printf("start phase 2 blocks right, t:%d, row:%d, col:%d\n",t,t,j);
-            execute_round_device_v_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, t, j, B, pitch);
+            execute_round_device_v_1_1_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, t, j, B, pitch);
             // HANDLE_ERROR(cudaDeviceSynchronize());  
         }
 
@@ -79,7 +79,7 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t-1; i >= 0; i--) {
                 // printf("start phase 3 blocks above and right, t:%d, row:%d, col:%d\n",t,i,j);
-                execute_round_device_v_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B, pitch);
+                execute_round_device_v_1_1_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B, pitch);
                 // HANDLE_ERROR(cudaDeviceSynchronize());  
             }
         }
@@ -87,7 +87,7 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
         for (int j = t-1; j >= 0; j--) {
             for (int i = t-1; i >= 0; i--) {
                 // printf("start phase 3 blocks above and left, t:%d, row:%d, col:%d\n",t,i,j);
-                execute_round_device_v_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B, pitch);
+                execute_round_device_v_1_1_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B, pitch);
                 // HANDLE_ERROR(cudaDeviceSynchronize());  
             }
         }
@@ -95,7 +95,7 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
         for (int j = t-1; j >= 0; j--) {
             for (int i = t+1; i < num_rounds; i++) {
                 // printf("start phase 3 blocks below and left, t:%d, row:%d, col:%d\n",t,i,j);
-                execute_round_device_v_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B, pitch);
+                execute_round_device_v_1_1_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B, pitch);
                 // HANDLE_ERROR(cudaDeviceSynchronize());  
             }
         }      
@@ -103,7 +103,7 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
         for (int j = t+1; j < num_rounds; j++) {
             for (int i = t+1; i < num_rounds; i++) {
                 // printf("start phase 3 blocks below and right, t:%d, row:%d, col:%d\n",t,i,j);
-                execute_round_device_v_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B, pitch);
+                execute_round_device_v_1_1_pitch<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, i, j, B, pitch);
                 // HANDLE_ERROR(cudaDeviceSynchronize());  
             }
         }
@@ -116,7 +116,7 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B) {
     HANDLE_ERROR(cudaFree(dev_rand_matrix));
 }
 
-__global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row, int col, int B, size_t pitch) {
+__global__ void execute_round_device_v_1_1_pitch(int *matrix, int n, int t, int row, int col, int B, size_t pitch) {
 
     int tid_x = threadIdx.x + blockIdx.x * blockDim.x;
     int tid_y = threadIdx.y + blockIdx.y * blockDim.y;

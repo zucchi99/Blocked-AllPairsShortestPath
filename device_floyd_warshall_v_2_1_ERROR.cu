@@ -11,7 +11,7 @@ __global__ void execute_round_device_v_2_1f_phase_3(int *matrix, int n, int t);
 
 int main(int argc, char *argv[]) {
 
-    return handle_arguments_and_execute(argc, argv, &floyd_warshall_blocked_device_v_2_1f);
+    return handle_arguments_and_execute(argc, argv, (void(*) (int*, int, int)) &floyd_warshall_blocked_device_v_2_1f);
 
 }
 
