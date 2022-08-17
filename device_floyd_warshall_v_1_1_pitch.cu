@@ -1,23 +1,5 @@
+#include "include/include_needed_libraries.cuh"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-#include <math.h>
-#include <stdbool.h>
-
-#include <ctime>
-#include <cassert>
-
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-#include "include/adj_matrix_utils.cuh"
-#include "include/adj_matrix_utils.hpp"
-#include "include/cuda_errors_utils.cuh"
-#include "include/host_floyd_warshall.hpp"
-#include "include/macros.hpp"
-#include "include/performance_test.cuh"
-#include "include/statistical_test.hpp"
 
 //main device code
 void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B);
@@ -25,43 +7,10 @@ void floyd_warshall_blocked_device_v_pitch(int *matrix, int n, int B);
 //rounds code
 __global__ void execute_round_device_v_pitch(int *matrix, int n, int t, int row, int col, int B, size_t pitch);
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    // for (size_t n = 10; n < 200; n += 2) {
+    return handle_arguments_and_execute(argc, argv, &floyd_warshall_blocked_device_v_1_1_pitch);
 
-    //     int MAX_B = mmin(32, n);
-    
-    //     for (int BLOCKING_FACTOR = 1; BLOCKING_FACTOR < MAX_B; BLOCKING_FACTOR += 2) {
-
-    //         if((n % BLOCKING_FACTOR) == 0) {
-                
-    //             printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
-    //             int n_err = do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v1_0, n, BLOCKING_FACTOR, 1000, RANDOM_SEED, true, 4, true);
-    //             // int n_err = do_arr_floyd_warshall_statistical_test(&arr_floyd_warshall_blocked, n, BLOCKING_FACTOR, 1000, RANDOM_SEED, true, 4, true);
-
-    //             if (n_err>0) return;
-    //         }
-    //     }
-    // }
-
-    //multi_size_statistical_test(&floyd_warshall_blocked_device_v_pitch, 128, 256, 8, 32, 100, RANDOM_SEED, false, false);
-
-    int n = 256;
-    int B = 32;
-    //int *test_instance = allocate_arr_matrix(n, n);
-    //int *input_instance = allocate_arr_matrix(n, n);
-    int rand_seed = time(NULL);
-    printf("rand_seed: %d\n", rand_seed);
-    //populate_arr_adj_matrix(input_instance, n, rand_seed, false);
-    do_nvprof_performance_test(&floyd_warshall_blocked_device_v_pitch, n, B, 10, rand_seed);
-    //printf("input matrix:\n");
-    //print_arr_matrix(input_instance, n, n);
-    //printf("\n\n");
-    //floyd_warshall_blocked_device_v_pitch(input_instance, n, B);
-    //bool result = test_arr_floyd_warshall(&floyd_warshall_blocked_device_v_pitch, input_instance, test_instance, n, BLOCKING_FACTOR);
-    //printf("Corretto: %s\n", bool_to_string(result));
-
-    return 0;
 }
 
 

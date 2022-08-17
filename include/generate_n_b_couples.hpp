@@ -1,9 +1,6 @@
 #ifndef GENERATE_N_B_COUPLES
 #define GENERATE_N_B_COUPLES
 
-#undef mmax
-#undef mmin
-
 // c++ libraries
 // for std::vector
 #include <vector>

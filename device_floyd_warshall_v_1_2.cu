@@ -1,17 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <cassert>
-
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-#include "include/adj_matrix_utils.cuh"
-#include "include/adj_matrix_utils.hpp"
-#include "include/cuda_errors_utils.cuh"
-#include "include/host_floyd_warshall.hpp"
-#include "include/macros.hpp"
-#include "include/performance_test.cuh"
-#include "include/statistical_test.hpp"
+#include "include/include_needed_libraries.cuh"
 
 //main device code
 void floyd_warshall_blocked_device_v_1_2(int *matrix, int n, int B);
@@ -21,20 +8,10 @@ __global__ void execute_round_device_v_1_2_phase_1(int *matrix, int n, int t, in
 __global__ void execute_round_device_v_1_2_phase_2(int *matrix, int n, int t, int B);
 __global__ void execute_round_device_v_1_2_phase_3(int *matrix, int n, int t, int B);
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    multi_size_statistical_test(&floyd_warshall_blocked_device_v_1_2, 8, 256, 8, 32, 1000, RANDOM_SEED, false, true);
+    return handle_arguments_and_execute(argc, argv, &floyd_warshall_blocked_device_v_1_2);
 
-    //single test
-    /*
-    size_t n = 6;
-    int BLOCKING_FACTOR = 2;
-    printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
-    int n_err = do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v_1_2, n, BLOCKING_FACTOR, 1, RANDOM_SEED, true, 4, true);
-    printf("n_err:%d\n", n_err);
-    */
-
-    return 0;
 }
 
 

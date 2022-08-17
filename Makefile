@@ -17,6 +17,7 @@ dev:
 		src/adj_matrix_utils.cpp \
 		src/cuda_errors_utils.cu \
 		src/generate_n_b_couples.cpp \
+		src/handle_arguments_and_execute.cu \
 		src/host_floyd_warshall.cpp \
 		src/performance_test.cu \
 		src/statistical_test.cpp

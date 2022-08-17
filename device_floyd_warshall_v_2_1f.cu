@@ -1,17 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <cassert>
-
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-#include "include/adj_matrix_utils.cuh"
-#include "include/adj_matrix_utils.hpp"
-#include "include/cuda_errors_utils.cuh"
-#include "include/host_floyd_warshall.hpp"
-#include "include/macros.hpp"
-#include "include/performance_test.cuh"
-#include "include/statistical_test.hpp"
+#include "include/include_needed_libraries.cuh"
 
 //main device code
 void floyd_warshall_blocked_device_v_2_1f(int *matrix, int n, int B);
@@ -22,73 +9,10 @@ __global__ void execute_round_device_v_2_1f_phase_2_row(int *matrix, int n, int 
 __global__ void execute_round_device_v_2_1f_phase_2_col(int *matrix, int n, int t);
 __global__ void execute_round_device_v_2_1f_phase_3(int *matrix, int n, int t);
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    MultiSizeTestParameters my_params;
-    my_params.f = &floyd_warshall_blocked_device_v_2_1f;
-    my_params.g = &host_array_floyd_warshall_blocked;
-    my_params.start_input_size = 50;
-    my_params.end_input_size = 200;
-    my_params.costant_multiplier = 1.4;
-    my_params.stop_current_if_fail = false;
+    return handle_arguments_and_execute(argc, argv, &floyd_warshall_blocked_device_v_2_1f);
 
-
-    print_multi_size_test_parameters(my_params);
-    multi_size_statistical_test(my_params);
-    
-    // int n = 256;
-    // int B = 32;
-
-    /*
-    
-    int rand_seed = time(NULL);
-    srand(rand_seed);
-    printf("rand_seed: %d\n", rand_seed);
-
-    // outputs a random number between 1.100 and 1.600
-    double linear_increase = ((double) ((rand() % 500) + 1100)) / ((double) 1000);
-    
-    printf("constant of linear increase for n: %f\n", linear_increase);
-
-    for (int n = 6; n <= 1024; n = (int) (linear_increase * (double) n)) {
-        
-        // use mmax 5 different blocking factors
-        int B[5];
-        for (int i = 0; i < 5; i++) B[i] = -1;
-
-        // index of the currently used B 
-        int cur_B_idx = -1;
-
-        // try maximum 15 random B 
-        for (int tests = 0; tests < 50 && cur_B_idx < 5; tests++) {
-
-            int B = rand() % (n/2);
-            B = (B == 0) ? n : B;       
-
-            bool test_cond = (n%B == 0);
-            for (int i = 0; (i <= cur_B_idx) && test_cond; i++) test_cond = (B != B[i]);
-
-            if (test_cond) {
-                printf("n: %d, B: %d\n", n, B);
-                B[++cur_B_idx] = B;
-                do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v_2_1f, n, B, 500, RANDOM_SEED, true, 4, true);
-            }
-                
-        }
-    }
-
-    */
-    
-    //single test
-    /*
-    size_t n = 6;
-    int BLOCKING_FACTOR = 2;
-    printf("n: %ld, B: %d\n", n, BLOCKING_FACTOR);
-    int n_err = do_arr_floyd_warshall_statistical_test(&floyd_warshall_blocked_device_v_2_1f, n, BLOCKING_FACTOR, 1, RANDOM_SEED, true, 4, true);
-    printf("n_err:%d\n", n_err);
-    */
-
-    return 0;
 }
 
 void floyd_warshall_blocked_device_v_2_1f(int *matrix, int n, int B) {
