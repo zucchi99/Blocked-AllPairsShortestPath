@@ -43,7 +43,12 @@ while read line; do
         cur_csv_out="$csv_output"'n'$n'__b'$b'.csv'
 
         #echo n: $n, b: $b
-        nvprof --csv --log-file "$cur_csv_out" ./$fw_bin "$exec_option" -t="$t" -n="$n" -b="$b"
+        # options:
+        #   --csv                     ==> print as csv style
+        #   --log-file <file>         ==> output to <file>
+        #   --normalized-time-unit us ==> print all data with specified time unit (us = microseconds)
+        #   --profile-from-start off  ==> disable profiler at start, profiles only the code inside the cudaProfilerStart() and cudaProfilerEnd() (by default is on)
+        nvprof --csv --log-file "$cur_csv_out" --normalized-time-unit us --profile-from-start off ./$fw_bin "$exec_option" -t="$t" -n="$n" -b="$b"
 
     fi
 
