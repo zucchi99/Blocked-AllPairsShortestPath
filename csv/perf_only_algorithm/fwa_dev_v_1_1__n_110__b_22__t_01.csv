@@ -1,0 +1,14 @@
+==4091== NVPROF is profiling process 4091, command: ./bin/fwa_dev_v_1_1.out perf -t=1 -n=110 -b=22
+==4091== Profiling application: ./bin/fwa_dev_v_1_1.out perf -t=1 -n=110 -b=22
+==4091== Profiling result:
+"Type","Time(%)","Time","Calls","Avg","Min","Max","Name"
+,%,us,,us,us,us,
+"GPU activities",99.512582,2325.820000,125,18.606000,16.129000,19.745000,"execute_round_device_v_1_1(int*, int, int, int, int, int)"
+"GPU activities",0.291630,6.816000,1,6.816000,6.816000,6.816000,"[CUDA memcpy HtoD]"
+"GPU activities",0.195789,4.576000,1,4.576000,4.576000,4.576000,"[CUDA memcpy DtoH]"
+"API calls",48.420707,2170.848000,125,17.366000,3.418000,1608.634000,"cudaLaunchKernel"
+"API calls",43.277448,1940.260000,15,129.350000,6.220000,260.813000,"cudaDeviceSynchronize"
+"API calls",3.710499,166.353000,1,166.353000,166.353000,166.353000,"cudaMalloc"
+"API calls",2.946309,132.092000,1,132.092000,132.092000,132.092000,"cudaFree"
+"API calls",1.611869,72.265000,2,36.132000,32.209000,40.056000,"cudaMemcpy"
+"API calls",0.033167,1.487000,1,1.487000,1.487000,1.487000,"cuDeviceGetCount"
