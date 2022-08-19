@@ -1,17 +1,4 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <cassert>
-
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
-#include "include/adj_matrix_utils.cuh"
-#include "include/adj_matrix_utils.hpp"
-#include "include/cuda_errors_utils.cuh"
-#include "include/host_floyd_warshall.hpp"
-#include "include/macros.hpp"
-#include "include/performance_test.cuh"
-#include "include/statistical_test.hpp"
+#include "include/include_needed_libraries.cuh"
 #include "include/lcm.hpp"
 
 #define ARR_MATRIX_INDEX(i,j,n) (i*n+j)
@@ -32,20 +19,9 @@ __global__ void execute_round_device_v_3_0_phase_2_col_portion(int *matrix, int 
 __global__ void execute_round_device_v_3_0_phase_3_portion(int *matrix, int n, int t, int start_row, int start_col);
 
 
-int main() {
+int main(int argc, char *argv[]) {
 
-    MultiSizeTestParameters my_params;
-    my_params.f = &floyd_warshall_blocked_device_v_3_0;
-    my_params.g = &host_array_floyd_warshall_blocked;
-    my_params.start_input_size = 4;
-    my_params.end_input_size = 100;
-    my_params.costant_multiplier = 1.4;
-    my_params.min_blocking_factor = 2;
-
-    print_multi_size_test_parameters(my_params);
-    multi_size_statistical_test(my_params);
-
-    return 0;
+    return handle_arguments_and_execute(argc, argv, (void(*) (int*, int, int)) &floyd_warshall_blocked_device_v_3_0);
 }
 
 void floyd_warshall_blocked_device_v_3_0(int *matrix, int n, int B) {
@@ -62,7 +38,7 @@ void floyd_warshall_blocked_device_v_3_0(int *matrix, int n, int B) {
     HANDLE_ERROR(cudaMalloc( (void**) &dev_rand_matrix, n*n*sizeof(int)));
     HANDLE_ERROR(cudaMemcpy(dev_rand_matrix, matrix, n*n*sizeof(int), cudaMemcpyHostToDevice));
 
-    int num_rounds = n/B;
+    int num_rounds = n/B; 
 
     bool bank_conflict_phase_1 = lcm(SHARED_BANK_N_INT, B) <= (B-1)*B;
      
