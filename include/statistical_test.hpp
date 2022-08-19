@@ -2,7 +2,7 @@
 #define STATISTICAL_TEST_HPP
 
 #define RANDOM_SEED     0
-#define RANDOM_CONSTANT 0.0
+#define RANDOM_CONSTANT -1
 
 
 struct MultiSizeTestParameters {
@@ -10,7 +10,8 @@ struct MultiSizeTestParameters {
     void (*g) (int* arr_matrix, int n, int b) = NULL;   // compare function
     int start_input_size        = 4;                    // min n to test
     int end_input_size          = 1024;                 // max n to test
-    double costant_multiplier   = RANDOM_CONSTANT;      // costant used to linearly increase input size (pass RANDOM_CONSTANT to generate a random costant_multiplier)
+    double to_multiply          = RANDOM_CONSTANT;      // used to linearly increase input size: { next_size = cur_size * to_multiply + to_sum } (pass RANDOM_CONSTANT to generate a random value)
+    int to_sum                  = RANDOM_CONSTANT;      // used to linearly increase input size: { next_size = cur_size * to_multiply + to_sum } (pass RANDOM_CONSTANT to generate a random value)
     int seed                    = RANDOM_SEED;          // seed for input generation (pass RANDOM_SEED to generate a random seed)
     int n_tests_per_round       = 500;                  // number of different test foreach given couple (n,B)
     int print_progress_perc     = 1;                    // print progress of a test for a given couple (n,B) (for ex. 4 ==> 100/4 = 25% ==> print progress at 25%, 50%, 75%), if 1 is disabled

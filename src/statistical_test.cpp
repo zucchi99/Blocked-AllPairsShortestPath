@@ -99,22 +99,28 @@ int multi_size_statistical_test(MultiSizeTestParameters params) {
     // stop_all_if_fail ==> stop_current_if_fail
     params.stop_current_if_fail = params.stop_current_if_fail || params.stop_all_if_fail;
     
-    // outputs a random number between 1.300 and 1.600
     int seed = time(NULL);
     srand(seed);
     
-    double rand_costant_multiplier = ((double) ((rand() % 300) + 1300)) / ((double) 1000);
-    params.costant_multiplier = (params.costant_multiplier == RANDOM_CONSTANT) ? rand_costant_multiplier : params.costant_multiplier;
+    // calculate default values
+    double rand_to_multiply = OBTAIN_VAL_TO_MULTIPLY(rand());
+    int rand_to_sum = OBTAIN_VAL_TO_SUM(rand());
+    // if parameter is random then use calculated values, else use parameter
+    params.to_multiply = (params.to_multiply == RANDOM_CONSTANT) ? rand_to_multiply : params.to_multiply;
+    params.to_sum =      (params.to_sum      == RANDOM_CONSTANT) ? rand_to_sum      : params.to_sum;
+    // in case is used the parameter value, check if it is non-negative
+    assert(params.to_multiply >= 0);
+    assert(params.to_sum      >= 0);
 
     printf("Performing Multi-size statistical test:\n");
-    printf("- Input sizes between %d and %d, increase is linear, using %f as costant multiplier\n", params.start_input_size, params.end_input_size, params.costant_multiplier);
+    printf("- Input sizes between %d and %d, increase is linear, using %f as costant multiplier\n", params.start_input_size, params.end_input_size, params.to_multiply);
     printf("- Blocking factor are generated randomly between [1, n/2] U {n}\n");
     printf("- Number of executions for each couple (n,B) used: %d\n\n", params.n_tests_per_round);
 
     int n_err_tot = 0;
 
     std::vector<std::pair<int, int>> list_of_all_n_b;
-    list_of_all_n_b = generate_list_of_all_n_b(params.start_input_size, params.end_input_size, 5, params.costant_multiplier, params.min_blocking_factor, 50, seed);
+    list_of_all_n_b = generate_list_of_all_n_b(params.start_input_size, params.end_input_size, 5, params.to_multiply, params.to_sum, params.min_blocking_factor, 50, seed);
 
     for (int i = 0; i < list_of_all_n_b.size(); i++) {
 
@@ -161,7 +167,7 @@ void print_multi_size_test_parameters(MultiSizeTestParameters params) {
     printf("- end input size:\t%d\n", params.end_input_size);
     printf("- costant multiplier:\t");
     if (params.seed == RANDOM_CONSTANT) printf("RANDOM\n");
-    else                                printf("%f\n", params.costant_multiplier);
+    else                                printf("%f\n", params.to_multiply);
     printf("- seed:\t\t\t");
     if (params.seed == RANDOM_SEED)     printf("RANDOM\n");
     else                                printf("%d\n", params.seed);

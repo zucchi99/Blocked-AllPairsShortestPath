@@ -1,5 +1,4 @@
 #include "../include/generate_n_b_couples.hpp"
-
 #include "../include/macros.hpp"
 
 // c library
@@ -10,14 +9,14 @@
 // c++ library for file stream
 #include <fstream>
 
-std::vector<std::pair<int, int>> generate_list_of_all_n_b(int min_input_size, int max_input_size, int max_num_of_b_per_n, double costant_multiplier, int min_blocking_factor, int max_num_tests, int seed) {
+std::vector<std::pair<int, int>> generate_list_of_all_n_b(int min_input_size, int max_input_size, int max_num_of_b_per_n, double to_multiply, int to_sum, int min_blocking_factor, int max_num_tests, int seed) {
 
     // initialize seed
     srand(seed);
 
     std::vector<std::pair<int, int>> list_of_all_n_b;
 
-    for (int n = min_input_size; n <= max_input_size; n = mmax(((int) (costant_multiplier * (double) n)), (n+1)) ) {
+    for (int n = min_input_size; n <= max_input_size; n = mmax(((int) (to_multiply * (double) n)) + to_sum, (n+1)) ) {
 
         // use mmax 5 different blocking factors
         int B_used[max_num_of_b_per_n];
@@ -43,6 +42,7 @@ std::vector<std::pair<int, int>> generate_list_of_all_n_b(int min_input_size, in
             if (is_ok) {
                 B_used[++cur_B_idx] = B;
                 list_of_all_n_b.push_back(std::make_pair(n, B));
+                //printf("n: %d, b: %d\n", n, B);
             }
         }
     }

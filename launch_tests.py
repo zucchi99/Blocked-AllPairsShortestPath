@@ -1,21 +1,22 @@
 import re #regex
 import os #operating system
-import sys
 import pandas as pd
-
+import random
 
 # INPUT TEST DIMENSIONS
 
-#define and print command for compiling test dimension cpp file
+# define and print command for compiling test dimension cpp file
 make_test_dim_cmd = "make generate_n_b"
 print(make_test_dim_cmd)
 # compile test dimension cpp file to bin file
 os.system(make_test_dim_cmd)
 print()
 
-# execute test dimension bin file
-os.system("bin/generate_and_print_n_b.out")
+# generate all test dimensions
+os.system("bin/generate_and_print_n_b.out 8 16 24 32")
+print()
 
+# store test dimensions to csv and print them
 test_dimensions = pd.read_csv('csv/list_of_n_b.csv')
 print("test_dimensions:")
 print(test_dimensions)
@@ -23,16 +24,26 @@ print()
 
 # -----------------------------------------------------------------
 
-# ALGORTIHM EXECUTION
+# ALGORITHM EXECUTION
 
 cuda_files = os.listdir()
 #print(files)
 
+# calculate and print the list of all random seeds
+all_seeds = []
+print("seeds:")
+for i in range(len(test_dimensions)) :
+    rand = random.randint(0,9999999)
+    all_seeds.append(rand)
+    print(i, rand)
+print()
+
+# test each version
 for file in cuda_files :
 
-    if re.match("device_floyd_warshall_v_.*\.cu", file) and (not re.match("device_floyd_warshall_v_.*_ERROR.cu", file)):
+    if re.match("device_floyd_warshall_v_.*\.cu", file) and (not re.match("device_floyd_warshall_v_.*_ERROR\.cu", file)):
 
-        # is a floy_warshall cuda file
+        # is a floyd_warshall cuda file
 
         # obtain cuda file version
         version = re.sub("^device_floyd_warshall_v_", "", file)
@@ -71,7 +82,7 @@ for file in cuda_files :
             csv_output = 'csv/fwa_dev_v_' + str(version) + '__n_' + str(n).zfill(3) + '__b_' + str(b).zfill(2) + "__t_" + str(t).zfill(2) + ".csv"
             print(f"out file {i:02}: {csv_output}")
 
-            launch_cmd = "nvprof --csv --log-file " + csv_output + " --normalized-time-unit us --profile-from-start off ./" + fw_bin + " " + exec_option + " -t=" + str(t) + " -n=" + str(n) + " -b=" + str(b)
+            launch_cmd = "nvprof --csv --log-file " + csv_output + " --normalized-time-unit us --profile-from-start off ./" + fw_bin + " " + exec_option + " -t=" + str(t) + " -n=" + str(n) + " -b=" + str(b) + " -s=" + str(all_seeds[i])
             print(launch_cmd)
             os.system(launch_cmd)
             print()

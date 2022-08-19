@@ -28,9 +28,9 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
     if (argc > 1) exec_option = str_args[1];
 
     if (argc == 1 || exec_option == "--help") {
-        printf("Usage: %s <exec_option> [-n=<n>, -b=<b>, -t=<t>]:\n", argv[0]);
+        printf("Usage: %s <exec_option> [-n=<n>, -b=<b>, -t=<t> [-s=<s>]]:\n", argv[0]);
         printf(" where <exec_option>=test for statistical testing or <exec_option>=perf for nvprof profiling\n");
-        printf("If <exec_option>=perf then specify n (matrix dimension), b (blocking factor), t (number of tests)\n");
+        printf("If <exec_option>=perf then specify n (matrix dimension), b (blocking factor), t (number of tests), [ s (seed), by default is random ]\n");
         return 1;
     }
 
@@ -41,7 +41,8 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
         my_params.g = &host_array_floyd_warshall_blocked;
         my_params.start_input_size = 30;
         my_params.end_input_size = 150;
-        my_params.costant_multiplier = RANDOM_CONSTANT;
+        my_params.to_multiply = RANDOM_CONSTANT;
+        my_params.to_sum      = RANDOM_CONSTANT;
         my_params.min_blocking_factor = 2;
 
         print_multi_size_test_parameters(my_params);
@@ -50,7 +51,7 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
 
     } else if (exec_option == "perf") {
         
-        int n = -1, b = -1, t = -1;
+        int n = -1, b = -1, t = -1, s = -1;
         if (str_args.size() < 5) {
             printf("Missing n,t,b parameters\n");
             return 2;
@@ -63,9 +64,10 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             }
             if(str_args[i][0] == '-' && str_args[i][2] == '=') {
                 int val = std::stoi((str_args[i]).substr(3));
-                if(     str_args[i][1] == 'n') n = val;
-                else if(str_args[i][1] == 'b') b = val;
-                else if(str_args[i][1] == 't') t = val;                        
+                if(     str_args[i][1] == 'n') n = val; // mandatory: matrix size
+                else if(str_args[i][1] == 'b') b = val; // mandatory: blocking factor size
+                else if(str_args[i][1] == 't') t = val; // mandatory: number of tests to execute
+                else if(str_args[i][1] == 's') s = val; // optional:  seed
                 else {
                     printf("Parameter not recognised\n");
                     return 4;
@@ -76,13 +78,13 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             printf("n, b, t must all be specified and must be positive integers\n");
             return 5;
         }
-        if (b > n || (n % b > 0)) {
+        if ((b > n) || (n % b > 0)) {
             printf("b must be a divisor of n\n");
             return 6;
         }
-        int rand_seed = time(NULL);
-        printf("rand_seed: %d\n", rand_seed);
-        do_nvprof_performance_test(f, n, b, t, rand_seed);
+        if (s == -1) s = time(NULL);
+        printf("seed: %d\n", s);
+        do_nvprof_performance_test(f, n, b, t, s);
 
     } else {
         printf("<exec_option>=%s not recognised, try run: %s --help\n", argv[1], argv[0]);
