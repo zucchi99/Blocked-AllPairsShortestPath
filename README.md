@@ -255,10 +255,10 @@ Dimostrazione (dimostrazione che quando si ha questa condizione, c'è bank confl
 *   assumiamo di prendere due indici della matrice vettorizzata <code>i*BlockingFactor+j</code> e <code>i'*BlockingFactor+j'</code>
 *   per ciò che ci si abbia un bank conflict, si deve avere lo stesso valore dei due indici in <code>(mod BankSize)</code>, quindi <code>i*B+j = i'*B+j' (mod BankSize)</code>
 *   se l'accesso è in colonna (e quindi <code>j=j'=t</code>), applicando l'algebra dei calcoli in modulo si può semplificare la condizione in <code>i*B=i'*B (mod BankSize)</code>
-*   prendiamo <code>i=0</code> e <code>i'=mcm(BlockingFactor, BankSize)/BlockingFactor</code>; Se <code>mcm(BlockingFactor, BankSize)<=BlockingFactor*(BlockingFactor-1)</code>, allora <code>i'<=(BlockingFactor-1)<code> e quindi è ammissibile come indice
+*   prendiamo <code>i=0</code> e <code>i'=mcm(BlockingFactor, BankSize)/BlockingFactor</code>; Se <code>mcm(BlockingFactor, BankSize)<=BlockingFactor*(BlockingFactor-1)</code>, allora <code>i'<=(BlockingFactor-1)</code> e quindi è ammissibile come indice
 *   chiaramente, <code>i*B=0 (mod BankSize)</code>
 *   per quanto riguarda l'altro lato dell'equazione invece <code>i'*B=mcm(BlockingFactor, BankSize)/BlockingFactor*BlockingFactor=mcm(BlockingFactor, BankSize)</code>
-*   visto che il minimo comune multiplo è certamente un multiplo di <code>BankSize</code>, allora anche <code>i'=0 (mod BankSize)</code>. Si ha quindi conflitto di banco
+*   visto che il minimo comune multiplo è certamente un multiplo di <code>BankSize</code>, allora anche <code>i'=0 (mod BankSize)</code>; si ha quindi conflitto di banco
 
 
 
