@@ -260,6 +260,56 @@ Dimostrazione (dimostrazione che quando si ha questa condizione, c'è bank confl
 *   per quanto riguarda l'altro lato dell'equazione invece <code>i'*B=mcm(BlockingFactor, BankSize)/BlockingFactor*BlockingFactor=mcm(BlockingFactor, BankSize)</code>
 *   visto che il minimo comune multiplo è certamente un multiplo di <code>BankSize</code>, allora anche <code>i'=0 (mod BankSize)</code>; si ha quindi conflitto di banco
 
+## 19/08 - Stato della situazione
+
+### Versione 3.0 e sperimentazione con gli stream
+
+Si è sviluppata una nuova versione 3.0 (<code>floyd_warshall_blocked_device_v3_0</code>) che permette di "spezzare" in più chiamate kernel l'esecuzione delle varie fasi, così da poter eseguire separatamete i vari gruppi di blocchi (ad esempio, per chiamare separatamente i quattro "rami" <code>up, down, left, right</code> della fase due). Tutto ciò serve come operazione preliminare per l'introduzione dei grafi CUDA e quindi per la definizione "più fine" di una dipendenza tra pezzi di fasi.
+
+In questa versione si è anche sperimentato l'utilizzo degli stream.
+
+### Versione 3.1 e introduzione dei grafi CUDA
+
+Nella versione 3.1 (<code>floyd_warshall_blocked_device_v3_1</code>) si è introdotto lo strumento dei grafi di cuda. Sostanzialmente, l'algoritmo viene convertito in un grafo che replica a grandi linee il flusso di controllo delle versioni precedenti.
+
+Di seguito si elencano le caratteristiche del grafo definito.
+
+*   Si parte con un nodo che copia dei dati di input nella memoria device.
+*   Per ogni round (ad eccezione del primo):
+    -   la fase 1 è costituita da un nodo kernel dipendente da tutte le "porzioni" delle fase 3 del round precedente
+    -   la fase 2 è costituita da 4 nodi kernel concorrenti rappresentanti le 4 porzioni dei blocchi da processare (quindi, <code>up, down, left, right</code>); essi dipendono tutti dal nodo della fase 1
+    -   la fase 3 è costituita da 4 nodi kernel concorrenti rappresentanti le 4 porzioni dei blocchi da processare (quindi, <code>up-right, down-right, down-left, up-left</code>); ciascuno di essi dipende dai due nodi della fase 2 corrispondenti ai blocchi in riga e in colonna toccati (ad es., <code>up-right</code> dipende dall'esecuzione della fase due dei blocchi sopra e a destra).
+*   Per il primo round, la fase 1 dipende dal nodo di copia su device dei dati di input.
+*   Al termine delle 4 porzioni della fase 3 dell'ultimo round, si esegue la copia del risultato su host con un unico nodo.
+
+Si noti che il flusso del grafo è a grandi linee simile a quello del codice delle versioni precedenti; l'unica differenza sta nel fatto che le diverse porzioni della fase 3 di ogni round ora non devono attendere il completamento di tutta la fase 2 ma solo dei pezzi a cui sono interessate.
+
+Per sfruttare pienamente le potenzialità dei grafi, nelle sotto-versioni successive si prevede di:
+
+*   allentare progressivamente le dipendenze tra un round e il successivo (sostituendo la "linearità" netta tra i round con una più raffinata dipendenza tra porzioni delle fasi);
+
+*   allentare anche le dipendenze tra il primo e l'ultimo round e le operazioni sulla memoria (ad es., si potrebbe fare in modo che alcuni porzioni di fasi del primo round inizino ad eseguire anche prima che la copia della memoria sia completata);
+
+*   spezzare ulteriormente le porzioni di fase per tracciare le dipendenze in modo ancora più fine;
+
+*   arrivare a sperimentare una versione ad ogni fase di un certo round su un certo blocco corrisponda un unico nodo, in modo da tracciare le dipendenze nel modo più fine possibile.
+
+### Revisione della procedura di lancio + test di performance su versioni 1.x e 2.x
+
+A seguito di un importante lavoro di revisione delle procedure di statistical test e performance test, si sono adattate le fuzioni <code>main()</code> di tutte le versioni in modo che attraverso gli argomenti, si possa:
+
+*   eseguire un test statistico oppure un test di performance, 
+*   fissare alcuni parametri (ad es., la dimensione <code>n</code> dell'input e il blocking factor <code>B</code>). 
+
+Tutto ciò è stato svolto al fine di facilitare la stesura del codice, l'esecuzione di test statistici e infine anche la misura della performance. 
+
+A proposito di misura della performance, si è definito uno script python che esegue per le varie versioni un test di performance tramite <code>nvprof</code> per diverse dimensioni dell'input e per diversi blocking factor. L'output finale è una griglia di grafici riportanti:
+
+*   la relazione tra dimensione dell'input e tempo di esecuzione per le diverse versioni (fissato un blocking factor);
+*   la relazione tra dimensione dell'input e tempo di esecuzione per diversi blocking factor (fissata una versione).
+
+
+
 
 
 
