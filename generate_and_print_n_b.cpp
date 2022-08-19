@@ -49,7 +49,9 @@ int main(int argc, char** argv) {
         }
         for (int n = min_input_size; n <= max_input_size; n = mmax(((int) (to_multiply * (double) n)) + to_sum, (n+1)) ) {
             for (int i = 0; i < argc-1; i++) {
-                list_of_all_n_b.push_back(std::make_pair(n, B[i]));
+                if (n % B[i] == 0) {
+                    list_of_all_n_b.push_back(std::make_pair(n, B[i]));
+                }                
             }
         }
     }
