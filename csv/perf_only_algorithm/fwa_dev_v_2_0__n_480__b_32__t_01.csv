@@ -1,0 +1,17 @@
+==7031== NVPROF is profiling process 7031, command: ./bin/fwa_dev_v_2_0.out perf -t=1 -n=480 -b=32 -s=4673305
+==7031== Profiling application: ./bin/fwa_dev_v_2_0.out perf -t=1 -n=480 -b=32 -s=4673305
+==7031== Profiling result:
+"Type","Time(%)","Time","Calls","Avg","Min","Max","Name"
+,%,us,,us,us,us,
+"GPU activities",41.084613,2211.482000,15,147.432000,146.214000,149.254000,"execute_round_device_v_2_0_phase_3(int*, int, int)"
+"GPU activities",18.773657,1010.539000,15,67.369000,66.979000,70.051000,"execute_round_device_v_2_0_phase_2_row(int*, int, int)"
+"GPU activities",18.736761,1008.553000,15,67.236000,67.011000,68.643000,"execute_round_device_v_2_0_phase_2_col(int*, int, int)"
+"GPU activities",18.355097,988.009000,15,65.867000,65.538000,68.227000,"execute_round_device_v_2_0_phase_1(int*, int, int)"
+"GPU activities",1.538024,82.788000,1,82.788000,82.788000,82.788000,"[CUDA memcpy DtoH]"
+"GPU activities",1.511848,81.379000,1,81.379000,81.379000,81.379000,"[CUDA memcpy HtoD]"
+"API calls",60.597600,5282.720000,45,117.393000,66.753000,153.218000,"cudaDeviceSynchronize"
+"API calls",29.429305,2565.560000,60,42.759000,6.197000,2111.411000,"cudaLaunchKernel"
+"API calls",6.045651,527.042000,2,263.521000,232.779000,294.263000,"cudaMemcpy"
+"API calls",1.991052,173.574000,1,173.574000,173.574000,173.574000,"cudaFree"
+"API calls",1.920356,167.411000,1,167.411000,167.411000,167.411000,"cudaMalloc"
+"API calls",0.016036,1.398000,1,1.398000,1.398000,1.398000,"cuDeviceGetCount"
