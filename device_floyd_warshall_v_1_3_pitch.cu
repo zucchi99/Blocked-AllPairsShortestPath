@@ -10,7 +10,15 @@ __global__ void execute_round_device_v_1_3_phase_3(int *matrix, int n, int t, in
 
 int main(int argc, char *argv[]) {
 
-    return handle_arguments_and_execute(argc, argv, (void(*) (int*, int, int)) &floyd_warshall_blocked_device_v_1_3_pitch);
+    //do_nvprof_performance_test(&floyd_warshall_blocked_device_v_1_3_pitch, 50, 10, 1, time(NULL));
+    int n = 10;
+    int b = 2;
+    int* matrix = allocate_arr_matrix(n, n);
+    populate_arr_adj_matrix(matrix, n, time(NULL), true);
+    floyd_warshall_blocked_device_v_1_3_pitch(matrix, n, b);
+    return 0;
+
+    //return handle_arguments_and_execute(argc, argv, (void(*) (int*, int, int)) &floyd_warshall_blocked_device_v_1_3_pitch);
 
 }
 
@@ -34,30 +42,44 @@ void floyd_warshall_blocked_device_v_1_3_pitch(int *matrix, int n, int B) {
      
     for(int t = 0; t < num_rounds; t++) { 
 
+        printf("round %d of %d\n", t, num_rounds);
         //arr_execute_round(int *matrix, int n, int t, int row, int col, int B)
 
         //phase 1: self-dependent block
         dim3 num_blocks_phase_1(1, 1);
         dim3 threads_per_block_phase_1(B, B);
 
+        printf("1 start\n");
+
         execute_round_device_v_1_2_phase_1<<<num_blocks_phase_1, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B, pitch);
         HANDLE_ERROR(cudaDeviceSynchronize());
+        
+        printf("1 end\n");
 
         // phase 2: all blocks that share a row or a column with the self dependent, so
         //  -   all blocks just above or under t
         //  -   all block at left and at right of t
 
+
         dim3 num_blocks_phase_2(2, num_rounds-1);  
+
+        printf("2 start\n");
 
         execute_round_device_v_1_3_phase_2<<<num_blocks_phase_2, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B, pitch);
         HANDLE_ERROR(cudaDeviceSynchronize());
+        
+        printf("2 end\n");
 
         // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
 
         dim3 num_blocks_phase_3(num_rounds-1, num_rounds-1); 
 
+        printf("3 start\n");
+
         execute_round_device_v_1_3_phase_3<<<num_blocks_phase_3, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B, pitch);
         HANDLE_ERROR(cudaDeviceSynchronize()); 
+        
+        printf("3 end\n");
     }
 
     // HANDLE_ERROR(cudaMemcpy(matrix, dev_rand_matrix, n*n*sizeof(int), cudaMemcpyDeviceToHost));
@@ -92,7 +114,7 @@ __global__ void execute_round_device_v_1_2_phase_1(int *matrix, int n, int t, in
 
         int* cell_k_j = pitched_pointer(matrix, k, j, pitch); //(int *)((char*) matrix + k * pitch) + j;
         int* cell_i_k = pitched_pointer(matrix, i, k, pitch); //(int *)((char*) matrix + i * pitch) + k;
-
+    
         int using_k_path = sum_if_not_infinite(*cell_i_k, *cell_k_j, INF); 
 
         if (using_k_path < *cell_i_j) {
