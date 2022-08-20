@@ -1,4 +1,5 @@
 #include "include/include_needed_libraries.cuh"
+#include "include/lcm.hpp"
 
 #define ARR_MATRIX_INDEX(i,j,n) (i*n+j)
 #define ARR_MATRIX_INDEX_TRASP(i,j,n) (i+n*j)

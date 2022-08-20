@@ -59,7 +59,7 @@ for file in cuda_files :
         # print version, cuda file name, bin file name
         print(f"version:   {version}")
         print(f"cuda file: {file}")
-        print(f"bin file:  {fw_bin}\n")
+        print(f"bin  file: {fw_bin}\n")
 
         # define and print command for compiling cuda file to bin file
         make_algorithm_cmd = "make dev VERSION=" + version
