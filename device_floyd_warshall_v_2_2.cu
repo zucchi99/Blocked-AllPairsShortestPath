@@ -32,7 +32,7 @@ void floyd_warshall_blocked_device_v_2_2(int *matrix, int n, int B) {
 
     int num_rounds = n/B;
 
-    bool bank_conflict_phase_1 = std::lcm(SHARED_BANK_N_INT, B) <= (B-1)*B;
+    bool bank_conflict_phase_1 = lcm(SHARED_BANK_N_INT, B) <= (B-1)*B;
      
     for(int t = 0; t < num_rounds; t++) { 
 
