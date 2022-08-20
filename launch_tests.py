@@ -30,13 +30,17 @@ cuda_files = os.listdir()
 #print(files)
 
 # calculate and print the list of all random seeds
-all_seeds = []
-print("seeds:")
-for i in range(len(test_dimensions)) :
-    rand = random.randint(0,9999999)
-    all_seeds.append(rand)
-    print(i, rand)
-print()
+#all_seeds = []
+#print("seeds:")
+#for i in range(len(test_dimensions)) :
+#    rand = random.randint(0,9999999)
+#    all_seeds.append(rand)
+#    print(i, rand)
+#print()
+
+# use just one seed
+rand_seed = random.randint(0,9999999)
+
 
 # test each version
 for file in cuda_files :
@@ -82,7 +86,7 @@ for file in cuda_files :
             csv_output = 'csv/fwa_dev_v_' + str(version) + '__n_' + str(n).zfill(3) + '__b_' + str(b).zfill(2) + "__t_" + str(t).zfill(2) + ".csv"
             print(f"out file {i:02}: {csv_output}")
 
-            launch_cmd = "nvprof --csv --log-file " + csv_output + " --normalized-time-unit us --profile-from-start off ./" + fw_bin + " " + exec_option + " -t=" + str(t) + " -n=" + str(n) + " -b=" + str(b) + " -s=" + str(all_seeds[i])
+            launch_cmd = "nvprof --csv --log-file " + csv_output + " --normalized-time-unit us --profile-from-start off ./" + fw_bin + " " + exec_option + " -t=" + str(t) + " -n=" + str(n) + " -b=" + str(b) + " -s=" + str(rand_seed) #str(all_seeds[i])
             print(launch_cmd)
             os.system(launch_cmd)
             print()
