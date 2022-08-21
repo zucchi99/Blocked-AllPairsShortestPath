@@ -59,11 +59,11 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
     copy_host_to_dev_params.srcArray = NULL;
     copy_host_to_dev_params.srcPos = make_cudaPos(0, 0, 0);
-    copy_host_to_dev_params.srcPtr = make_cudaPitchedPtr((void*) matrix, n*n*sizeof(int), n*n, 1);
+    copy_host_to_dev_params.srcPtr = make_cudaPitchedPtr((void*) matrix, n*sizeof(int), n, n);
     copy_host_to_dev_params.dstArray = NULL;
     copy_host_to_dev_params.dstPos = make_cudaPos(0, 0, 0);
-    copy_host_to_dev_params.dstPtr = make_cudaPitchedPtr((void*) dev_matrix, n*n*sizeof(int), n*n, 1);
-    copy_host_to_dev_params.extent = make_cudaExtent(n*n*sizeof(float), 1, 1);
+    copy_host_to_dev_params.dstPtr = make_cudaPitchedPtr((void*) dev_matrix, n*sizeof(int), n, n);
+    copy_host_to_dev_params.extent = make_cudaExtent(n*sizeof(int), n, 1);
     copy_host_to_dev_params.kind = cudaMemcpyHostToDevice;
 
     cudaGraphNode_t copy_host_to_dev_node;
@@ -342,11 +342,11 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
     copy_dev_to_host_params.srcArray = NULL;
     copy_dev_to_host_params.srcPos = make_cudaPos(0, 0, 0);
-    copy_dev_to_host_params.srcPtr = make_cudaPitchedPtr((void*) dev_matrix, n*n*sizeof(int), n*n, 1);
+    copy_dev_to_host_params.srcPtr = make_cudaPitchedPtr((void*) dev_matrix, n*sizeof(int), n, n);
     copy_dev_to_host_params.dstArray = NULL;
     copy_dev_to_host_params.dstPos = make_cudaPos(0, 0, 0);
-    copy_dev_to_host_params.dstPtr = make_cudaPitchedPtr((void*) matrix, n*n*sizeof(int), n*n, 1);
-    copy_dev_to_host_params.extent = make_cudaExtent(n*n*sizeof(float), 1, 1);
+    copy_dev_to_host_params.dstPtr = make_cudaPitchedPtr((void*) matrix, n*sizeof(int), n, n);
+    copy_dev_to_host_params.extent = make_cudaExtent(n*sizeof(int), n, 1);
     copy_dev_to_host_params.kind = cudaMemcpyDeviceToHost;
 
     nodeDependencies.clear();
