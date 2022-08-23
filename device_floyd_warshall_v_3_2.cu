@@ -58,6 +58,47 @@ cudaMemcpy3DParms cuda_graph_get_memcpy_params(
     return copy_params;
 }
 
+std::vector<cudaGraphNode_t> cuda_graph_memcpy(
+
+    cudaGraph_t* graph, cudaMemcpyKind kind, 
+    int* src, int* dst, int n, 
+    int start_row, int start_col, 
+    int end_row, int end_col, 
+    std::vector<cudaGraphNode_t> dependecies) {
+    
+    // nodes i will push into graph
+    std::vector<cudaGraphNode_t> nodes = {};
+
+    // copy one row per node
+    for (size_t row = start_row; row < end_row; row++)
+    {
+        cudaMemcpy3DParms params;
+
+        params.srcArray = NULL;
+        params.srcPtr = make_cudaPitchedPtr((void*) (src + row*n + start_col), (end_col-start_col)*sizeof(int), 1, 1);
+        params.srcPos = make_cudaPos(0, 0, 0);
+
+        params.dstArray = NULL;
+        params.dstPtr = make_cudaPitchedPtr((void*) (dst + row*n + start_col), (end_col-start_col)*sizeof(int), 1, 1);
+        params.dstPos = make_cudaPos(0, 0, 0);
+
+        params.extent = make_cudaExtent((end_col-start_col)*sizeof(int), 1, 1);
+        params.kind = kind;
+
+        cudaGraphNode_t node;
+
+        HANDLE_ERROR(cudaGraphAddMemcpyNode(
+            &node, *graph, 
+            dependecies.data(), dependecies.size(), 
+            &params
+        ));
+
+        nodes.push_back(node);
+    }
+
+    return nodes;
+}
+
 
 void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
 
@@ -76,27 +117,21 @@ void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
 
     // Memcopy of first self dependent block (0,0)
 
-    cudaMemcpy3DParms copy_host_to_dev_params = 
-        cuda_graph_get_memcpy_params(matrix, dev_matrix, n, 
-        cudaMemcpyHostToDevice, 0, 0, n, n);;
+    // cudaMemcpy3DParms copy_host_to_dev_params = 
+    //     cuda_graph_get_memcpy_params(matrix, dev_matrix, n, 
+    //     cudaMemcpyHostToDevice, 0, 0, n, n);;
 
-    // copy_host_to_dev_params.srcArray = NULL;
-    // copy_host_to_dev_params.srcPos = make_cudaPos(0, 0, 0);
-    // copy_host_to_dev_params.srcPtr = make_cudaPitchedPtr((void*) matrix, n*sizeof(int), n, n);
-    // copy_host_to_dev_params.dstArray = NULL;
-    // copy_host_to_dev_params.dstPos = make_cudaPos(0, 0, 0);
-    // copy_host_to_dev_params.dstPtr = make_cudaPitchedPtr((void*) dev_matrix, n*sizeof(int), n, n);
-    // copy_host_to_dev_params.extent = make_cudaExtent(n*sizeof(int), n, 1);
-    // copy_host_to_dev_params.kind = cudaMemcpyHostToDevice;
+    // cudaGraphNode_t copy_host_to_dev_node;
 
-    cudaGraphNode_t copy_host_to_dev_node;
+    // HANDLE_ERROR(cudaGraphAddMemcpyNode(
+    //     &copy_host_to_dev_node, graph, 
+    //     nodeDependencies.data(), nodeDependencies.size(), 
+    //     &copy_host_to_dev_params
+    //     ));
 
-    HANDLE_ERROR(cudaGraphAddMemcpyNode(
-        &copy_host_to_dev_node, graph, 
-        nodeDependencies.data(), nodeDependencies.size(), 
-        &copy_host_to_dev_params
-        ));
-
+    std::vector<cudaGraphNode_t> memcpy_nodes = 
+        cuda_graph_memcpy(&graph, cudaMemcpyHostToDevice, matrix, dev_matrix, 
+        n, 0, 0, n, n, nodeDependencies);
 
     // number of rounds that will be executed
     int num_rounds = n/B;
@@ -153,8 +188,11 @@ void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
             // round after first should depend from previous phase 3 down-right
             nodeDependencies.push_back(prev_phase3_down_right_node);
         } else {
-            // first round depends 
-            nodeDependencies.push_back(copy_host_to_dev_node);
+
+            // first round phase 1 should depend on copy of block (0,0)
+            for(cudaGraphNode_t node : memcpy_nodes) {
+                nodeDependencies.push_back(node);
+            }
         }
 
         cudaGraphNode_t phase1_node;
