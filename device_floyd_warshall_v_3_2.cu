@@ -69,6 +69,8 @@ std::vector<cudaGraphNode_t> cuda_graph_memcpy(
     // nodes i will push into graph
     std::vector<cudaGraphNode_t> nodes = {};
 
+    if (start_row == end_row || start_col == end_col )  return nodes;
+
     // copy one row per node
     for (size_t row = start_row; row < end_row; row++)
     {
@@ -116,22 +118,24 @@ void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
     // HANDLE_ERROR(cudaMemcpy(dev_matrix, matrix, n*n*sizeof(int), cudaMemcpyHostToDevice));
 
     // Memcopy of first self dependent block (0,0)
-
-    // cudaMemcpy3DParms copy_host_to_dev_params = 
-    //     cuda_graph_get_memcpy_params(matrix, dev_matrix, n, 
-    //     cudaMemcpyHostToDevice, 0, 0, n, n);;
-
-    // cudaGraphNode_t copy_host_to_dev_node;
-
-    // HANDLE_ERROR(cudaGraphAddMemcpyNode(
-    //     &copy_host_to_dev_node, graph, 
-    //     nodeDependencies.data(), nodeDependencies.size(), 
-    //     &copy_host_to_dev_params
-    //     ));
-
-    std::vector<cudaGraphNode_t> memcpy_nodes = 
+    std::vector<cudaGraphNode_t> memcpy_host_to_dev_phase_1_nodes = 
         cuda_graph_memcpy(&graph, cudaMemcpyHostToDevice, matrix, dev_matrix, 
-        n, 0, 0, n, n, nodeDependencies);
+        n, 0, 0, B, B, nodeDependencies);
+
+    // Memcopy of blocks in row with first self dependent (0,*)
+    std::vector<cudaGraphNode_t> memcpy_host_to_dev_phase_2_right_nodes = 
+        cuda_graph_memcpy(&graph, cudaMemcpyHostToDevice, matrix, dev_matrix, 
+        n, 0, B, B, n, nodeDependencies);
+
+    // Memcopy of blocks in column with first self dependent (*,0)
+    std::vector<cudaGraphNode_t> memcpy_host_to_dev_phase_2_down_nodes = 
+        cuda_graph_memcpy(&graph, cudaMemcpyHostToDevice, matrix, dev_matrix, 
+        n, B, 0, n, B, nodeDependencies);
+
+    // Memcopy of remaining blocks (the ones correspondent to first round phase 3)
+    std::vector<cudaGraphNode_t> memcpy_host_to_dev_phase_3_down_right_nodes = 
+        cuda_graph_memcpy(&graph, cudaMemcpyHostToDevice, matrix, dev_matrix, 
+        n, B, B, n, n, nodeDependencies);
 
     // number of rounds that will be executed
     int num_rounds = n/B;
@@ -190,7 +194,7 @@ void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
         } else {
 
             // first round phase 1 should depend on copy of block (0,0)
-            for(cudaGraphNode_t node : memcpy_nodes) {
+            for(cudaGraphNode_t node : memcpy_host_to_dev_phase_1_nodes) {
                 nodeDependencies.push_back(node);
             }
         }
@@ -277,6 +281,14 @@ void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
         nodeDependencies.clear();
         nodeDependencies.push_back(phase1_node);
 
+        if (t==0) {
+
+            // first round phase 2 down should depend on copy of blocks (*,0)
+            for(cudaGraphNode_t node : memcpy_host_to_dev_phase_2_down_nodes) {
+                nodeDependencies.push_back(node);
+            }
+        }
+
         cudaGraphNode_t phase2_down_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
@@ -293,8 +305,16 @@ void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
         cudaKernelNodeParams phase2_right_params = cuda_graph_node_params_copy(phase2_down_params);
         phase2_right_params.func = (void*) execute_round_device_v_3_2_phase_2_row_portion;
 
-        // nodeDependencies.clear();
-        // nodeDependencies.push_back(phase1_node);
+        nodeDependencies.clear();
+        nodeDependencies.push_back(phase1_node);
+
+        if (t==0) {
+
+            // first round phase 2 right should depend on copy of blocks (0,*)
+            for(cudaGraphNode_t node : memcpy_host_to_dev_phase_2_right_nodes) {
+                nodeDependencies.push_back(node);
+            }
+        }
 
         cudaGraphNode_t phase2_right_node;
 
@@ -375,6 +395,14 @@ void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
         nodeDependencies.clear();
         nodeDependencies.push_back(phase2_down_node);
         nodeDependencies.push_back(phase2_right_node);
+
+        if (t==0) {
+
+            // first round's phase 3 down right should depend on the copy of currespondent blocks
+            for(cudaGraphNode_t node : memcpy_host_to_dev_phase_3_down_right_nodes) {
+                nodeDependencies.push_back(node);
+            }
+        }
 
         cudaGraphNode_t phase3_down_right_node;
 
