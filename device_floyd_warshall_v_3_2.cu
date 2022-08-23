@@ -152,9 +152,13 @@ void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
     // a variable needed for calls which requires pointer args
     int zero = 0;
 
-    // previous round nodes (so i can add them as dependency for the next)
+    // previous round nodes (so i can add them as dependency for the next one)
     cudaGraphNode_t prev_phase3_up_left_node,   prev_phase3_up_right_node, 
                     prev_phase3_down_left_node, prev_phase3_down_right_node;
+
+    // last round phase 1 and 2 nodes (used just to save last round nodes and use them as 
+    // memcpy device to host dependencies)
+    cudaGraphNode_t prev_phase1_node, prev_phase2_up_node, prev_phase2_left_node;
          
     for(int t = 0; t < num_rounds; t++) { 
 
@@ -441,29 +445,82 @@ void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
         prev_phase3_up_right_node   = phase3_up_right_node;
         prev_phase3_down_right_node = phase3_down_right_node;
         prev_phase3_down_left_node  = phase3_down_left_node;
+
+        if (t==num_rounds-1) {
+            // if this is last round, I save previous phase 1 and 2 nodes
+            // (needed as dependencies of memcpy operations)
+            prev_phase1_node        = phase1_node;
+            prev_phase2_left_node   = phase2_left_node;
+            prev_phase2_up_node     = phase2_up_node;
+        }
     }
 
 
     // Add copy of final result from device to host (as graph)
     // HANDLE_ERROR(cudaMemcpy(matrix, dev_matrix, n*n*sizeof(int), cudaMemcpyDeviceToHost));
 
-    cudaMemcpy3DParms copy_dev_to_host_params = 
-        cuda_graph_get_memcpy_params(dev_matrix, matrix, n, 
-        cudaMemcpyDeviceToHost, 0, 0, n, n);
+    // cudaMemcpy3DParms copy_dev_to_host_params = 
+    //     cuda_graph_get_memcpy_params(dev_matrix, matrix, n, 
+    //     cudaMemcpyDeviceToHost, 0, 0, n, n);
 
+    // nodeDependencies.clear();
+    // nodeDependencies.push_back(prev_phase3_up_left_node);
+    // nodeDependencies.push_back(prev_phase3_up_right_node);
+    // nodeDependencies.push_back(prev_phase3_down_right_node);
+    // nodeDependencies.push_back(prev_phase3_down_left_node);
+
+    // cudaGraphNode_t copy_dev_to_host_node;
+
+    // HANDLE_ERROR(cudaGraphAddMemcpyNode(
+    //     &copy_dev_to_host_node, graph, 
+    //     nodeDependencies.data(), nodeDependencies.size(), 
+    //     &copy_dev_to_host_params
+    //     ));
+
+
+    // copy results of last phase 1
+    nodeDependencies.clear();
+    nodeDependencies.push_back(prev_phase1_node);
+
+    cuda_graph_memcpy(
+        &graph, cudaMemcpyDeviceToHost, 
+        dev_matrix, matrix, n, 
+        n-B, n-B, n, n, 
+        nodeDependencies
+    );
+
+    // copy results of last phase 2 up
+    nodeDependencies.clear();
+    nodeDependencies.push_back(prev_phase2_up_node);
+
+    cuda_graph_memcpy(
+        &graph, cudaMemcpyDeviceToHost, 
+        dev_matrix, matrix, n, 
+        0, n-B, n-B, n, 
+        nodeDependencies
+    );
+
+    // copy results of last phase 2 left
+    nodeDependencies.clear();
+    nodeDependencies.push_back(prev_phase2_left_node);
+
+    cuda_graph_memcpy(
+        &graph, cudaMemcpyDeviceToHost, 
+        dev_matrix, matrix, n, 
+        n-B, 0, n, n-B,
+        nodeDependencies
+    );
+
+    // copy results of last phase 3 up-left
     nodeDependencies.clear();
     nodeDependencies.push_back(prev_phase3_up_left_node);
-    nodeDependencies.push_back(prev_phase3_up_right_node);
-    nodeDependencies.push_back(prev_phase3_down_right_node);
-    nodeDependencies.push_back(prev_phase3_down_left_node);
 
-    cudaGraphNode_t copy_dev_to_host_node;
-
-    HANDLE_ERROR(cudaGraphAddMemcpyNode(
-        &copy_dev_to_host_node, graph, 
-        nodeDependencies.data(), nodeDependencies.size(), 
-        &copy_dev_to_host_params
-        ));
+    cuda_graph_memcpy(
+        &graph, cudaMemcpyDeviceToHost, 
+        dev_matrix, matrix, n, 
+        0, 0, n-B, n-B,
+        nodeDependencies
+    );
 
     // stream used for executing graph
     cudaStream_t graph_stream;
