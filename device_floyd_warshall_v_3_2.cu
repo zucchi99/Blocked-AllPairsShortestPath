@@ -10,19 +10,19 @@
 #define ARR_MATRIX_SIZE_BANK_CONFICT(B,handle_bank_conflict) (B*B + (handle_bank_conflict ? (B-1) : 0))
 
 //main device code
-void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B);
+void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B);
 
 //rounds code
-__global__ void execute_round_device_v_3_1_phase_1(int *matrix, int n, int t, bool handle_bank_conflict);
+__global__ void execute_round_device_v_3_2_phase_1(int *matrix, int n, int t, bool handle_bank_conflict);
 
-__global__ void execute_round_device_v_3_1_phase_2_row_portion(int *matrix, int n, int t, int start_col, int end_col);
-__global__ void execute_round_device_v_3_1_phase_2_col_portion(int *matrix, int n, int t, int start_row, int end_row);
-__global__ void execute_round_device_v_3_1_phase_3_portion(int *matrix, int n, int t, int start_row, int start_col, int end_row, int end_col);
+__global__ void execute_round_device_v_3_2_phase_2_row_portion(int *matrix, int n, int t, int start_col, int end_col);
+__global__ void execute_round_device_v_3_2_phase_2_col_portion(int *matrix, int n, int t, int start_row, int end_row);
+__global__ void execute_round_device_v_3_2_phase_3_portion(int *matrix, int n, int t, int start_row, int start_col, int end_row, int end_col);
 
 
 int main(int argc, char *argv[]) {
 
-    return handle_arguments_and_execute(argc, argv, (void(*) (int*, int, int)) &floyd_warshall_blocked_device_v_3_1);
+    return handle_arguments_and_execute(argc, argv, (void(*) (int*, int, int)) &floyd_warshall_blocked_device_v_3_2);
 }
 
 cudaKernelNodeParams cuda_graph_node_params_copy(cudaKernelNodeParams params) {
@@ -39,8 +39,70 @@ cudaKernelNodeParams cuda_graph_node_params_copy(cudaKernelNodeParams params) {
     return newParams;
 }
 
+cudaMemcpy3DParms cuda_graph_get_memcpy_params(
+    int* src, int* dst, int n, cudaMemcpyKind kind, 
+    int start_row, int start_col, 
+    int end_row, int end_col) {
+    
+    cudaMemcpy3DParms copy_params = {0};
 
-void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
+    copy_params.srcArray = NULL;
+    copy_params.srcPos = make_cudaPos(start_row, start_col, 0);
+    copy_params.srcPtr = make_cudaPitchedPtr((void*) src, n*sizeof(int), n, n);
+    copy_params.dstArray = NULL;
+    copy_params.dstPos = make_cudaPos(start_row, start_col, 0);
+    copy_params.dstPtr = make_cudaPitchedPtr((void*) dst, n*sizeof(int), n, n);
+    copy_params.extent = make_cudaExtent(end_row*sizeof(int), end_col, 1);
+    copy_params.kind = kind;
+
+    return copy_params;
+}
+
+std::vector<cudaGraphNode_t> cuda_graph_memcpy(
+
+    cudaGraph_t* graph, cudaMemcpyKind kind, 
+    int* src, int* dst, int n, 
+    int start_row, int start_col, 
+    int end_row, int end_col, 
+    std::vector<cudaGraphNode_t> dependecies) {
+    
+    // nodes i will push into graph
+    std::vector<cudaGraphNode_t> nodes = {};
+
+    if (start_row == end_row || start_col == end_col )  return nodes;
+
+    // copy one row per node
+    for (size_t row = start_row; row < end_row; row++)
+    {
+        cudaMemcpy3DParms params;
+
+        params.srcArray = NULL;
+        params.srcPtr = make_cudaPitchedPtr((void*) (src + row*n + start_col), (end_col-start_col)*sizeof(int), 1, 1);
+        params.srcPos = make_cudaPos(0, 0, 0);
+
+        params.dstArray = NULL;
+        params.dstPtr = make_cudaPitchedPtr((void*) (dst + row*n + start_col), (end_col-start_col)*sizeof(int), 1, 1);
+        params.dstPos = make_cudaPos(0, 0, 0);
+
+        params.extent = make_cudaExtent((end_col-start_col)*sizeof(int), 1, 1);
+        params.kind = kind;
+
+        cudaGraphNode_t node;
+
+        HANDLE_ERROR(cudaGraphAddMemcpyNode(
+            &node, *graph, 
+            dependecies.data(), dependecies.size(), 
+            &params
+        ));
+
+        nodes.push_back(node);
+    }
+
+    return nodes;
+}
+
+
+void floyd_warshall_blocked_device_v_3_2(int *matrix, int n, int B) {
 
     assert(n%B == 0);                       // B must divide n
     assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
@@ -55,25 +117,25 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
     // HANDLE_ERROR(cudaMemcpy(dev_matrix, matrix, n*n*sizeof(int), cudaMemcpyHostToDevice));
 
-    cudaMemcpy3DParms copy_host_to_dev_params = {0};
+    // Memcopy of first self dependent block (0,0)
+    std::vector<cudaGraphNode_t> memcpy_host_to_dev_phase_1_nodes = 
+        cuda_graph_memcpy(&graph, cudaMemcpyHostToDevice, matrix, dev_matrix, 
+        n, 0, 0, B, B, nodeDependencies);
 
-    copy_host_to_dev_params.srcArray = NULL;
-    copy_host_to_dev_params.srcPos = make_cudaPos(0, 0, 0);
-    copy_host_to_dev_params.srcPtr = make_cudaPitchedPtr((void*) matrix, n*sizeof(int), n, n);
-    copy_host_to_dev_params.dstArray = NULL;
-    copy_host_to_dev_params.dstPos = make_cudaPos(0, 0, 0);
-    copy_host_to_dev_params.dstPtr = make_cudaPitchedPtr((void*) dev_matrix, n*sizeof(int), n, n);
-    copy_host_to_dev_params.extent = make_cudaExtent(n*sizeof(int), n, 1);
-    copy_host_to_dev_params.kind = cudaMemcpyHostToDevice;
+    // Memcopy of blocks in row with first self dependent (0,*)
+    std::vector<cudaGraphNode_t> memcpy_host_to_dev_phase_2_right_nodes = 
+        cuda_graph_memcpy(&graph, cudaMemcpyHostToDevice, matrix, dev_matrix, 
+        n, 0, B, B, n, nodeDependencies);
 
-    cudaGraphNode_t copy_host_to_dev_node;
+    // Memcopy of blocks in column with first self dependent (*,0)
+    std::vector<cudaGraphNode_t> memcpy_host_to_dev_phase_2_down_nodes = 
+        cuda_graph_memcpy(&graph, cudaMemcpyHostToDevice, matrix, dev_matrix, 
+        n, B, 0, n, B, nodeDependencies);
 
-    HANDLE_ERROR(cudaGraphAddMemcpyNode(
-        &copy_host_to_dev_node, graph, 
-        nodeDependencies.data(), nodeDependencies.size(), 
-        &copy_host_to_dev_params
-        ));
-
+    // Memcopy of remaining blocks (the ones correspondent to first round phase 3)
+    std::vector<cudaGraphNode_t> memcpy_host_to_dev_phase_3_down_right_nodes = 
+        cuda_graph_memcpy(&graph, cudaMemcpyHostToDevice, matrix, dev_matrix, 
+        n, B, B, n, n, nodeDependencies);
 
     // number of rounds that will be executed
     int num_rounds = n/B;
@@ -90,9 +152,13 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
     // a variable needed for calls which requires pointer args
     int zero = 0;
 
-    // previous round nodes (so i can add them as dependency for the next)
+    // previous round nodes (so i can add them as dependency for the next one)
     cudaGraphNode_t prev_phase3_up_left_node,   prev_phase3_up_right_node, 
                     prev_phase3_down_left_node, prev_phase3_down_right_node;
+
+    // last round phase 1 and 2 nodes (used just to save last round nodes and use them as 
+    // memcpy device to host dependencies)
+    cudaGraphNode_t prev_phase1_node, prev_phase2_up_node, prev_phase2_left_node;
          
     for(int t = 0; t < num_rounds; t++) { 
 
@@ -102,7 +168,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         // ----------------------------------------------------------------------
         // phase 1: self-dependent block
 
-        // execute_round_device_v_3_1_phase_1<<<
+        // execute_round_device_v_3_2_phase_1<<<
         //     num_blocks, 
         //     threads_per_block, 
         //     ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int), 
@@ -114,7 +180,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
         cudaKernelNodeParams phase1_params;
 
-        phase1_params.func = (void*) execute_round_device_v_3_1_phase_1;
+        phase1_params.func = (void*) execute_round_device_v_3_2_phase_1;
         phase1_params.gridDim = num_blocks;
         phase1_params.blockDim = threads_per_block;
         phase1_params.sharedMemBytes = max(
@@ -127,14 +193,14 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
         nodeDependencies.clear(); 
         if (t > 0) {
-            // round after first should depend from previous
-            nodeDependencies.push_back(prev_phase3_up_left_node);
-            nodeDependencies.push_back(prev_phase3_up_right_node);
+            // round after first should depend from previous phase 3 down-right
             nodeDependencies.push_back(prev_phase3_down_right_node);
-            nodeDependencies.push_back(prev_phase3_down_left_node);
         } else {
-            // first round depends 
-            nodeDependencies.push_back(copy_host_to_dev_node);
+
+            // first round phase 1 should depend on copy of block (0,0)
+            for(cudaGraphNode_t node : memcpy_host_to_dev_phase_1_nodes) {
+                nodeDependencies.push_back(node);
+            }
         }
 
         cudaGraphNode_t phase1_node;
@@ -152,11 +218,8 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         //  -   all blocks just above or under t
         //  -   all block at left and at right of t
 
-        nodeDependencies.clear();
-        nodeDependencies.push_back(phase1_node);
-
         // up 
-        // execute_round_device_v_3_1_phase_2_col_portion<<<
+        // execute_round_device_v_3_2_phase_2_col_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, 0, t);
@@ -166,9 +229,16 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
         cudaKernelNodeParams phase2_up_params = cuda_graph_node_params_copy(phase1_params);
 
-        phase2_up_params.func = (void*) execute_round_device_v_3_1_phase_2_col_portion;
+        phase2_up_params.func = (void*) execute_round_device_v_3_2_phase_2_col_portion;
         phase2_up_params.sharedMemBytes = 2*B*B*sizeof(int);
         phase2_up_params.kernelParams = (void**) phase2_up_left_args;
+
+        nodeDependencies.clear();
+        nodeDependencies.push_back(phase1_node);
+        if (t>0) {
+            // phase 2 up of rounds after first should depend on previous phase 3 up-right
+            nodeDependencies.push_back(prev_phase3_up_right_node);
+        }
 
         cudaGraphNode_t phase2_up_node;
 
@@ -179,13 +249,20 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         ));
 
         // left
-        // execute_round_device_v_3_1_phase_2_row_portion<<<
+        // execute_round_device_v_3_2_phase_2_row_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, 0, t);
 
         cudaKernelNodeParams phase2_left_params = cuda_graph_node_params_copy(phase2_up_params);
-        phase2_left_params.func = (void*) execute_round_device_v_3_1_phase_2_row_portion;
+        phase2_left_params.func = (void*) execute_round_device_v_3_2_phase_2_row_portion;
+
+        nodeDependencies.clear();
+        nodeDependencies.push_back(phase1_node);
+        if (t>0) {
+            // phase 2 left of rounds after first should depend on previous phase 3 down-left
+            nodeDependencies.push_back(prev_phase3_down_left_node);
+        }
 
         cudaGraphNode_t phase2_left_node;
 
@@ -195,7 +272,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
             &phase2_left_params));
 
         // down
-        // execute_round_device_v_3_1_phase_2_col_portion<<<
+        // execute_round_device_v_3_2_phase_2_col_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, t+1, num_blocks);
@@ -205,6 +282,17 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
             &n, &t, &t_plus_1, &num_rounds};
         phase2_down_params.kernelParams = (void**) phase2_down_right_args;
 
+        nodeDependencies.clear();
+        nodeDependencies.push_back(phase1_node);
+
+        if (t==0) {
+
+            // first round phase 2 down should depend on copy of blocks (*,0)
+            for(cudaGraphNode_t node : memcpy_host_to_dev_phase_2_down_nodes) {
+                nodeDependencies.push_back(node);
+            }
+        }
+
         cudaGraphNode_t phase2_down_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
@@ -213,13 +301,24 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
             &phase2_down_params));
 
         // right
-        // execute_round_device_v_3_1_phase_2_row_portion<<<
+        // execute_round_device_v_3_2_phase_2_row_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, t+1, num_blocks);
 
         cudaKernelNodeParams phase2_right_params = cuda_graph_node_params_copy(phase2_down_params);
-        phase2_right_params.func = (void*) execute_round_device_v_3_1_phase_2_row_portion;
+        phase2_right_params.func = (void*) execute_round_device_v_3_2_phase_2_row_portion;
+
+        nodeDependencies.clear();
+        nodeDependencies.push_back(phase1_node);
+
+        if (t==0) {
+
+            // first round phase 2 right should depend on copy of blocks (0,*)
+            for(cudaGraphNode_t node : memcpy_host_to_dev_phase_2_right_nodes) {
+                nodeDependencies.push_back(node);
+            }
+        }
 
         cudaGraphNode_t phase2_right_node;
 
@@ -233,7 +332,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
         
         // up-left
-        // execute_round_device_v_3_1_phase_3_portion<<<
+        // execute_round_device_v_3_2_phase_3_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, 0, 0, t, t);
@@ -243,12 +342,17 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 
         cudaKernelNodeParams phase3_up_left_params = cuda_graph_node_params_copy(phase2_up_params);
 
-        phase3_up_left_params.func = (void*) execute_round_device_v_3_1_phase_3_portion;
+        phase3_up_left_params.func = (void*) execute_round_device_v_3_2_phase_3_portion;
         phase3_up_left_params.kernelParams = (void**) phase3_up_left_args;
 
         nodeDependencies.clear();
         nodeDependencies.push_back(phase2_up_node);
         nodeDependencies.push_back(phase2_left_node);
+
+        if (t>0) {
+            // phase 3 up-left of rounds after first should depend on previous phase 3 up-left
+            nodeDependencies.push_back(prev_phase3_up_left_node);
+        }
 
         cudaGraphNode_t phase3_up_left_node;
 
@@ -258,7 +362,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
             &phase3_up_left_params));
 
         // up-right
-        // execute_round_device_v_3_1_phase_3_portion<<<
+        // execute_round_device_v_3_2_phase_3_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, 0, t+1, t, num_rounds);
@@ -281,7 +385,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
             &phase3_up_right_params));
 
         // down-right
-        // execute_round_device_v_3_1_phase_3_portion<<<
+        // execute_round_device_v_3_2_phase_3_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, t+1, t+1, num_rounds, num_rounds);
@@ -296,6 +400,14 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         nodeDependencies.push_back(phase2_down_node);
         nodeDependencies.push_back(phase2_right_node);
 
+        if (t==0) {
+
+            // first round's phase 3 down right should depend on the copy of currespondent blocks
+            for(cudaGraphNode_t node : memcpy_host_to_dev_phase_3_down_right_nodes) {
+                nodeDependencies.push_back(node);
+            }
+        }
+
         cudaGraphNode_t phase3_down_right_node;
 
         HANDLE_ERROR(cudaGraphAddKernelNode(
@@ -304,7 +416,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
             &phase3_down_right_params));
 
         // down-left
-        // execute_round_device_v_3_1_phase_3_portion<<<
+        // execute_round_device_v_3_2_phase_3_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, t+1, 0, num_rounds, t);
@@ -333,35 +445,82 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
         prev_phase3_up_right_node   = phase3_up_right_node;
         prev_phase3_down_right_node = phase3_down_right_node;
         prev_phase3_down_left_node  = phase3_down_left_node;
+
+        if (t==num_rounds-1) {
+            // if this is last round, I save previous phase 1 and 2 nodes
+            // (needed as dependencies of memcpy operations)
+            prev_phase1_node        = phase1_node;
+            prev_phase2_left_node   = phase2_left_node;
+            prev_phase2_up_node     = phase2_up_node;
+        }
     }
+
 
     // Add copy of final result from device to host (as graph)
     // HANDLE_ERROR(cudaMemcpy(matrix, dev_matrix, n*n*sizeof(int), cudaMemcpyDeviceToHost));
 
-    cudaMemcpy3DParms copy_dev_to_host_params = {0};
+    // cudaMemcpy3DParms copy_dev_to_host_params = 
+    //     cuda_graph_get_memcpy_params(dev_matrix, matrix, n, 
+    //     cudaMemcpyDeviceToHost, 0, 0, n, n);
 
-    copy_dev_to_host_params.srcArray = NULL;
-    copy_dev_to_host_params.srcPos = make_cudaPos(0, 0, 0);
-    copy_dev_to_host_params.srcPtr = make_cudaPitchedPtr((void*) dev_matrix, n*sizeof(int), n, n);
-    copy_dev_to_host_params.dstArray = NULL;
-    copy_dev_to_host_params.dstPos = make_cudaPos(0, 0, 0);
-    copy_dev_to_host_params.dstPtr = make_cudaPitchedPtr((void*) matrix, n*sizeof(int), n, n);
-    copy_dev_to_host_params.extent = make_cudaExtent(n*sizeof(int), n, 1);
-    copy_dev_to_host_params.kind = cudaMemcpyDeviceToHost;
+    // nodeDependencies.clear();
+    // nodeDependencies.push_back(prev_phase3_up_left_node);
+    // nodeDependencies.push_back(prev_phase3_up_right_node);
+    // nodeDependencies.push_back(prev_phase3_down_right_node);
+    // nodeDependencies.push_back(prev_phase3_down_left_node);
 
+    // cudaGraphNode_t copy_dev_to_host_node;
+
+    // HANDLE_ERROR(cudaGraphAddMemcpyNode(
+    //     &copy_dev_to_host_node, graph, 
+    //     nodeDependencies.data(), nodeDependencies.size(), 
+    //     &copy_dev_to_host_params
+    //     ));
+
+
+    // copy results of last phase 1
+    nodeDependencies.clear();
+    nodeDependencies.push_back(prev_phase1_node);
+
+    cuda_graph_memcpy(
+        &graph, cudaMemcpyDeviceToHost, 
+        dev_matrix, matrix, n, 
+        n-B, n-B, n, n, 
+        nodeDependencies
+    );
+
+    // copy results of last phase 2 up
+    nodeDependencies.clear();
+    nodeDependencies.push_back(prev_phase2_up_node);
+
+    cuda_graph_memcpy(
+        &graph, cudaMemcpyDeviceToHost, 
+        dev_matrix, matrix, n, 
+        0, n-B, n-B, n, 
+        nodeDependencies
+    );
+
+    // copy results of last phase 2 left
+    nodeDependencies.clear();
+    nodeDependencies.push_back(prev_phase2_left_node);
+
+    cuda_graph_memcpy(
+        &graph, cudaMemcpyDeviceToHost, 
+        dev_matrix, matrix, n, 
+        n-B, 0, n, n-B,
+        nodeDependencies
+    );
+
+    // copy results of last phase 3 up-left
     nodeDependencies.clear();
     nodeDependencies.push_back(prev_phase3_up_left_node);
-    nodeDependencies.push_back(prev_phase3_up_right_node);
-    nodeDependencies.push_back(prev_phase3_down_right_node);
-    nodeDependencies.push_back(prev_phase3_down_left_node);
 
-    cudaGraphNode_t copy_dev_to_host_node;
-
-    HANDLE_ERROR(cudaGraphAddMemcpyNode(
-        &copy_dev_to_host_node, graph, 
-        nodeDependencies.data(), nodeDependencies.size(), 
-        &copy_dev_to_host_params
-        ));
+    cuda_graph_memcpy(
+        &graph, cudaMemcpyDeviceToHost, 
+        dev_matrix, matrix, n, 
+        0, 0, n-B, n-B,
+        nodeDependencies
+    );
 
     // stream used for executing graph
     cudaStream_t graph_stream;
@@ -386,7 +545,7 @@ void floyd_warshall_blocked_device_v_3_1(int *matrix, int n, int B) {
 }
 
 
-__global__ void execute_round_device_v_3_1_phase_1(int *matrix, int n, int t, bool handle_bank_conflict) {
+__global__ void execute_round_device_v_3_2_phase_1(int *matrix, int n, int t, bool handle_bank_conflict) {
 
     // Launched block and correspondent position in the matrix
 
@@ -438,7 +597,7 @@ __global__ void execute_round_device_v_3_1_phase_1(int *matrix, int n, int t, bo
 }
 
 
-__global__ void execute_round_device_v_3_1_phase_2_row_portion(int *matrix, int n, int t, int start_col, int end_col) {
+__global__ void execute_round_device_v_3_2_phase_2_row_portion(int *matrix, int n, int t, int start_col, int end_col) {
     
     if (blockIdx.x >= end_col-start_col)    return;
     
@@ -496,7 +655,7 @@ __global__ void execute_round_device_v_3_1_phase_2_row_portion(int *matrix, int 
 }
 
 
-__global__ void execute_round_device_v_3_1_phase_2_col_portion(int *matrix, int n, int t, int start_row, int end_row) {
+__global__ void execute_round_device_v_3_2_phase_2_col_portion(int *matrix, int n, int t, int start_row, int end_row) {
     
     if (blockIdx.x >= end_row-start_row)    return;
     
@@ -554,7 +713,7 @@ __global__ void execute_round_device_v_3_1_phase_2_col_portion(int *matrix, int 
 
 
 
-__global__ void execute_round_device_v_3_1_phase_3_portion(int *matrix, int n, int t, int start_row, int start_col, int end_row, int end_col) {
+__global__ void execute_round_device_v_3_2_phase_3_portion(int *matrix, int n, int t, int start_row, int start_col, int end_row, int end_col) {
 
     if (blockIdx.x >= end_row-start_row || blockIdx.y >= end_col-start_col)    return;
     
