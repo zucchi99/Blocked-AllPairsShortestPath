@@ -1,14 +1,14 @@
-==6057== NVPROF is profiling process 6057, command: ./bin/fwa_dev_v_1_1.out perf -t=1 -n=160 -b=32 -s=6497390
-==6057== Profiling application: ./bin/fwa_dev_v_1_1.out perf -t=1 -n=160 -b=32 -s=6497390
-==6057== Profiling result:
+==431== NVPROF is profiling process 431, command: ./bin/fwa_dev_v_1_1.out perf -t=1 -n=160 -b=32 -s=3381407
+==431== Profiling application: ./bin/fwa_dev_v_1_1.out perf -t=1 -n=160 -b=32 -s=3381407
+==431== Profiling result:
 "Type","Time(%)","Time","Calls","Avg","Min","Max","Name"
 ,%,us,,us,us,us,
-"GPU activities",99.743734,8831.398000,125,70.651000,68.963000,73.251000,"execute_round_device_v_1_1(int*, int, int, int, int, int)"
-"GPU activities",0.156143,13.825000,1,13.825000,13.825000,13.825000,"[CUDA memcpy HtoD]"
-"GPU activities",0.100123,8.865000,1,8.865000,8.865000,8.865000,"[CUDA memcpy DtoH]"
-"API calls",76.932825,8457.604000,15,563.840000,70.284000,1103.374000,"cudaDeviceSynchronize"
-"API calls",19.505977,2144.388000,125,17.155000,3.353000,1578.527000,"cudaLaunchKernel"
-"API calls",1.416565,155.730000,1,155.730000,155.730000,155.730000,"cudaMalloc"
-"API calls",1.226444,134.829000,1,134.829000,134.829000,134.829000,"cudaFree"
-"API calls",0.905618,99.559000,2,49.779000,49.251000,50.308000,"cudaMemcpy"
-"API calls",0.012571,1.382000,1,1.382000,1.382000,1.382000,"cuDeviceGetCount"
+"GPU activities",99.769796,8806.627000,125,70.453000,68.610000,73.026000,"execute_round_device_v_1_1(int*, int, int, int, int, int)"
+"GPU activities",0.129059,11.392000,1,11.392000,11.392000,11.392000,"[CUDA memcpy HtoD]"
+"GPU activities",0.101145,8.928000,1,8.928000,8.928000,8.928000,"[CUDA memcpy DtoH]"
+"API calls",76.725774,8394.201000,15,559.613000,72.644000,1092.183000,"cudaDeviceSynchronize"
+"API calls",19.530785,2136.770000,125,17.094000,3.363000,1514.819000,"cudaLaunchKernel"
+"API calls",1.417099,155.038000,1,155.038000,155.038000,155.038000,"cudaMalloc"
+"API calls",1.158875,126.787000,1,126.787000,126.787000,126.787000,"cudaFree"
+"API calls",1.148455,125.647000,2,62.823000,49.399000,76.248000,"cudaMemcpy"
+"API calls",0.019012,2.080000,1,2.080000,2.080000,2.080000,"cuDeviceGetCount"

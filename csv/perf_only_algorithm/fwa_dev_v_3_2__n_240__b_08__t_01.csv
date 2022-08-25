@@ -1,0 +1,24 @@
+==3228== NVPROF is profiling process 3228, command: ./bin/fwa_dev_v_3_2.out perf -t=1 -n=240 -b=8 -s=3381407
+==3228== Profiling application: ./bin/fwa_dev_v_3_2.out perf -t=1 -n=240 -b=8 -s=3381407
+==3228== Profiling result:
+"Type","Time(%)","Time","Calls","Avg","Min","Max","Name"
+,%,us,,us,us,us,
+"GPU activities",24.469205,698.160000,480,1.454000,1.376000,2.176000,"[CUDA memcpy DtoH]"
+"GPU activities",22.357169,637.899000,480,1.328000,1.248000,1.856000,"[CUDA memcpy HtoD]"
+"GPU activities",18.422981,525.648000,120,4.380000,2.752000,7.712000,"execute_round_device_v_3_2_phase_3_portion(int*, int, int, int, int, int, int)"
+"GPU activities",15.505715,442.412000,60,7.373000,2.752000,10.240000,"execute_round_device_v_3_2_phase_2_col_portion(int*, int, int, int, int)"
+"GPU activities",15.168061,432.778000,60,7.212000,2.720000,11.008000,"execute_round_device_v_3_2_phase_2_row_portion(int*, int, int, int, int)"
+"GPU activities",4.076869,116.322000,30,3.877000,3.360000,4.640000,"execute_round_device_v_3_2_phase_1(int*, int, int, bool)"
+"API calls",52.452563,24012.323000,1,24012.323000,24012.323000,24012.323000,"cudaGraphInstantiate"
+"API calls",26.681372,12214.498000,1,12214.498000,12214.498000,12214.498000,"cudaGraphLaunch"
+"API calls",12.275257,5619.505000,1,5619.505000,5619.505000,5619.505000,"cudaGraphExecDestroy"
+"API calls",5.231505,2394.937000,960,2.494000,1.128000,17.787000,"cudaGraphAddMemcpyNode"
+"API calls",1.562013,715.076000,270,2.648000,0.746000,75.330000,"cudaGraphAddKernelNode"
+"API calls",1.021745,467.746000,1,467.746000,467.746000,467.746000,"cudaGraphDestroy"
+"API calls",0.336776,154.173000,1,154.173000,154.173000,154.173000,"cudaMalloc"
+"API calls",0.330072,151.104000,1,151.104000,151.104000,151.104000,"cudaFree"
+"API calls",0.058629,26.840000,1,26.840000,26.840000,26.840000,"cudaStreamCreate"
+"API calls",0.021892,10.022000,1,10.022000,10.022000,10.022000,"cudaStreamDestroy"
+"API calls",0.014657,6.710000,1,6.710000,6.710000,6.710000,"cudaStreamSynchronize"
+"API calls",0.008949,4.097000,1,4.097000,4.097000,4.097000,"cudaGraphCreate"
+"API calls",0.004568,2.091000,1,2.091000,2.091000,2.091000,"cuDeviceGetCount"

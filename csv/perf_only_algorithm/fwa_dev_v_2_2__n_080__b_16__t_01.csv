@@ -1,17 +1,17 @@
-==7573== NVPROF is profiling process 7573, command: ./bin/fwa_dev_v_2_2.out perf -t=1 -n=80 -b=16 -s=4002093
-==7573== Profiling application: ./bin/fwa_dev_v_2_2.out perf -t=1 -n=80 -b=16 -s=4002093
-==7573== Profiling result:
+==2815== NVPROF is profiling process 2815, command: ./bin/fwa_dev_v_2_2.out perf -t=1 -n=80 -b=16 -s=3381407
+==2815== Profiling application: ./bin/fwa_dev_v_2_2.out perf -t=1 -n=80 -b=16 -s=3381407
+==2815== Profiling result:
 "Type","Time(%)","Time","Calls","Avg","Min","Max","Name"
 ,%,us,,us,us,us,
-"GPU activities",26.396137,32.420000,5,6.484000,6.209000,7.584000,"execute_round_device_v_2_2_phase_2_row(int*, int, int)"
-"GPU activities",23.423519,28.769000,5,5.753000,5.536000,6.401000,"execute_round_device_v_2_2_phase_2_col(int*, int, int)"
-"GPU activities",23.214271,28.512000,5,5.702000,5.472000,6.496000,"execute_round_device_v_2_2_phase_1(int*, int, int, bool)"
-"GPU activities",21.208100,26.048000,5,5.209000,4.992000,5.984000,"execute_round_device_v_2_2_phase_3(int*, int, int)"
-"GPU activities",3.413097,4.192000,1,4.192000,4.192000,4.192000,"[CUDA memcpy HtoD]"
-"GPU activities",2.344876,2.880000,1,2.880000,2.880000,2.880000,"[CUDA memcpy DtoH]"
-"API calls",76.958458,1671.166000,20,83.558000,3.758000,1580.092000,"cudaLaunchKernel"
-"API calls",7.477538,162.376000,1,162.376000,162.376000,162.376000,"cudaMalloc"
-"API calls",6.846596,148.675000,15,9.911000,6.204000,11.958000,"cudaDeviceSynchronize"
-"API calls",6.107159,132.618000,1,132.618000,132.618000,132.618000,"cudaFree"
-"API calls",2.508385,54.470000,2,27.235000,24.155000,30.315000,"cudaMemcpy"
-"API calls",0.101864,2.212000,1,2.212000,2.212000,2.212000,"cuDeviceGetCount"
+"GPU activities",26.198713,32.035000,5,6.407000,6.113000,7.457000,"execute_round_device_v_2_2_phase_2_row(int*, int, int)"
+"GPU activities",23.396060,28.608000,5,5.721000,5.440000,6.688000,"execute_round_device_v_2_2_phase_1(int*, int, int, bool)"
+"GPU activities",23.396060,28.608000,5,5.721000,5.536000,6.400000,"execute_round_device_v_2_2_phase_2_col(int*, int, int)"
+"GPU activities",21.147068,25.858000,5,5.171000,4.960000,5.889000,"execute_round_device_v_2_2_phase_3(int*, int, int)"
+"GPU activities",3.480622,4.256000,1,4.256000,4.256000,4.256000,"[CUDA memcpy HtoD]"
+"GPU activities",2.381478,2.912000,1,2.912000,2.912000,2.912000,"[CUDA memcpy DtoH]"
+"API calls",80.382001,2351.401000,20,117.570000,6.208000,2202.179000,"cudaLaunchKernel"
+"API calls",6.227910,182.184000,1,182.184000,182.184000,182.184000,"cudaMalloc"
+"API calls",5.653402,165.378000,15,11.025000,8.390000,26.322000,"cudaDeviceSynchronize"
+"API calls",5.275490,154.323000,1,154.323000,154.323000,154.323000,"cudaFree"
+"API calls",2.392999,70.002000,2,35.001000,33.881000,36.121000,"cudaMemcpy"
+"API calls",0.068199,1.995000,1,1.995000,1.995000,1.995000,"cuDeviceGetCount"
