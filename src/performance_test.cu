@@ -1,11 +1,19 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <cuda_profiler_api.h>
+#include <string>
 
 #include "../include/adj_matrix_utils.hpp"
+#include "../include/performance_chrono_helper.hpp"
 #include "../include/performance_test.cuh"
+
+// for nvidia profiler
+#include <cuda_profiler_api.h>
+
+#define RELATIVE_ERROR 0.01
+
+using namespace std;
+using namespace chrono;
 
 void do_nvprof_performance_test(void (*floyd_warshall_arr_algorithm)(int* matrix, int n, int B), int input_size, int blocking_factor, int number_of_tests, int seed) {
 
@@ -23,4 +31,88 @@ void do_nvprof_performance_test(void (*floyd_warshall_arr_algorithm)(int* matrix
     }
 
     free(arr_matrix);
+}
+
+void do_chrono_performance_test(void (*floyd_warshall_arr_algorithm)(int * matrix, int n, int B), int input_size, int blocking_factor, int number_of_tests, int seed, string version, string output_file) {
+
+    // calculate machine resolution
+    duration<double> res = resolution();
+    
+    // allocate matrix
+    int* arr_matrix = allocate_arr_matrix(input_size, input_size);
+
+    // initialize with any negative number
+    double measured_error = -1;
+    // calculate relative error
+    double relative_error = res.count() / RELATIVE_ERROR + res.count();
+
+    // calculate time needed to populate matrix
+    duration<double> time_init = initialization_time(input_size, 200, seed);
+
+    // obtain a vector of 20 time_exec values
+    int mse_repetitions = 20;
+    vector<duration<double>> time_exec_vec (mse_repetitions);
+    duration<double> time_exec;
+
+    // after execution check if measured_error is greater than relative_error
+    // (the first time measured_error = -1 to be sure to execute while loop)
+    while (measured_error < relative_error) {
+        
+        steady_clock::time_point start, end;
+        
+        // repeat many times to obtain a vector of times and calculate mse
+        for (int i = 0; i < mse_repetitions; i++) {
+            
+            start = steady_clock::now();
+            // execute many times to be sure time_exec is big enough to respect error
+            for (int j = 0; j < number_of_tests; j++) {
+                populate_arr_adj_matrix(arr_matrix, input_size, seed*(j+1), false);
+                floyd_warshall_arr_algorithm(arr_matrix, input_size, blocking_factor);
+            }
+            end = steady_clock::now();
+
+            // store i-th time_exec
+            time_exec_vec[i] = ((end - start - time_init) / number_of_tests); 
+        }
+
+        // obtain time_exec mean
+        time_exec = (duration<double>) mean(time_exec_vec);
+
+        // measure error
+        measured_error = time_exec.count() * number_of_tests;
+        
+        if (measured_error < relative_error) {            
+            // re-execute using bigger number of tests
+            number_of_tests++;
+        }
+
+    }
+    
+    double mse = mean_squared_error(time_exec_vec);
+    double mse_perc = 100 * mse / mean(time_exec_vec);
+
+    FILE *fp;
+    fp = fopen(output_file.c_str(), "a");
+    if (fp == NULL) {
+        printf("failed opening file!\n");
+    } else {
+        fprintf(fp, "%s,%d,%d,%d,%f,%f,%f%%\n", version.c_str(), input_size, blocking_factor, number_of_tests, time_exec.count(), mse, mse_perc);
+        fclose(fp);
+    }
+    printf("time_exec: %f, mse: %f, mse_perc: %f%%\n", time_exec.count(), mse, mse_perc);
+
+    free(arr_matrix);
+
+}
+
+// measure medium time needed to allocate a n*n matrix vector randomly, repetitions times
+duration<double> initialization_time(int input_size, int repetitions, int seed) {
+    steady_clock::time_point start, end;
+    int* arr_matrix = allocate_arr_matrix(input_size, input_size);
+    start = steady_clock::now();
+    for (int i = 0; i < repetitions; i++) {
+        populate_arr_adj_matrix(arr_matrix, input_size, seed*(i+1), false);
+    }
+    end = steady_clock::now();
+    return (duration<double>)((end - start) / repetitions);
 }

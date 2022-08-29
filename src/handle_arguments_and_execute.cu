@@ -24,11 +24,13 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
 
     std::vector<std::string> str_args(argv, argv + argc);
 
+    std::string version = str_args[0];
+
     std::string exec_option;
     if (argc > 1) exec_option = str_args[1];
 
     if (argc == 1 || exec_option == "--help") {
-        printf("Usage: %s <exec_option> [-n=<n>, -b=<b>, -t=<t> [-s=<s>]]:\n", argv[0]);
+        printf("Usage: %s <exec_option> [--version=<version>] [--analyzer=<nvprof|chrono>  --output-file=<file>, -n=<n>, -b=<b>, -t=<t> [-s=<s>]]:\n", argv[0]);
         printf(" where <exec_option>=test for statistical testing or <exec_option>=perf for nvprof profiling\n");
         printf("If <exec_option>=perf then specify n (matrix dimension), b (blocking factor), t (number of tests), [ s (seed), by default is random ]\n");
         return 1;
@@ -51,28 +53,46 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
 
     } else if (exec_option == "perf") {
         
+        //default values
+        std::string version = "";
+        std::string output_file = "csv/all_performances.csv";
+        std::string analyzer = "chrono";
         int n = -1, b = -1, t = -1, s = -1;
+        
         if (str_args.size() < 5) {
             printf("Missing n,t,b parameters\n");
             return 2;
         }
         for (int i = 2; i < argc; i++) {
-            if(str_args[i].size() < 4) {
-                //mmin size for n,b,t parameters is 4 (ex. -n=5)
-                printf("Uncorrect syntax parameter, use -<param>=<value>\n");
-                return 3;
-            }
-            if(str_args[i][0] == '-' && str_args[i][2] == '=') {
-                int val = std::stoi((str_args[i]).substr(3));
-                if(     str_args[i][1] == 'n') n = val; // mandatory: matrix size
-                else if(str_args[i][1] == 'b') b = val; // mandatory: blocking factor size
-                else if(str_args[i][1] == 't') t = val; // mandatory: number of tests to execute
-                else if(str_args[i][1] == 's') s = val; // optional:  seed
-                else {
-                    printf("Parameter not recognised\n");
-                    return 4;
+
+            std::string param = str_args[i];
+            int index_of_equal = param.find('=');
+            std::string param_name = param.substr(0, param.size() - index_of_equal + 1);
+            std::string param_val = param.substr(index_of_equal + 1);
+
+            if(param[0] == '-' && param[2] == '=') {
+                int val = std::stoi(param.substr(3));
+                if(     param[1] == 'n') n = val; // mandatory: matrix size
+                else if(param[1] == 'b') b = val; // mandatory: blocking factor size
+                else if(param[1] == 't') t = val; // mandatory: number of tests to execute
+                else if(param[1] == 's') s = val; // optional:  seed
+
+            } else if(param_name == "--output-file=") {
+                output_file = param_val;
+                
+            } else if(param_name == "--analyzer=") {
+                if (param_val == "chrono" || param_val == "nvprof" ) {
+                    analyzer = param_val;
                 }
-            } 
+                  
+            } else if(param_name == "--version=") {
+                version = param_val;
+                
+            } else {
+                printf("Parameter not recognised\n");
+                return 4;
+            }
+
         }
         if (n <= 0 || b <= 0 || t <= 0) {
             printf("n, b, t must all be specified and must be positive integers\n");
@@ -82,9 +102,15 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             printf("b must be a divisor of n\n");
             return 6;
         }
+
         if (s == -1) s = time(NULL);
         printf("seed: %d\n", s);
-        do_nvprof_performance_test(f, n, b, t, s);
+
+        if (analyzer == "chrono") {
+            do_chrono_performance_test(f, n, b, t, s, version, output_file);
+        } else {
+            do_nvprof_performance_test(f, n, b, t, s);
+        }
 
     } else {
         printf("<exec_option>=%s not recognised, try run: %s --help\n", argv[1], argv[0]);
