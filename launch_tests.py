@@ -96,7 +96,7 @@ for file in cuda_files :
             csv_output = 'csv/fwa_dev_v_' + version + '__n_' + str(n).zfill(3) + '__b_' + str(b).zfill(2) + "__t_" + str(t).zfill(2) + ".csv"
             print(f"out file {i:02}: {csv_output}")
 
-            launch_cmd = fw_bin + " " + exec_option + " -t=" + str(t) + " -n=" + str(n) + " -b=" + str(b) + " -s=" + str(rand_seed) + "--output-file=" + output_file + "--version=" + version
+            launch_cmd = fw_bin + " " + exec_option + " -t=" + str(t) + " -n=" + str(n) + " -b=" + str(b) + " -s=" + str(rand_seed) + " --output-file=" + output_file + " --version=" + version
             #nvprof = "nvprof --csv --log-file " + csv_output + " --normalized-time-unit us --profile-from-start off"
             #launch_nvprof = nvprof + " " + launch_cmd
             

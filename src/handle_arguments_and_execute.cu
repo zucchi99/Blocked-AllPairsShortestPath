@@ -67,7 +67,7 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
 
             std::string param = str_args[i];
             int index_of_equal = param.find('=');
-            std::string param_name = param.substr(0, param.size() - index_of_equal + 1);
+            std::string param_name = param.substr(0, index_of_equal + 1);
             std::string param_val = param.substr(index_of_equal + 1);
 
             if(param[0] == '-' && param[2] == '=') {
@@ -89,6 +89,7 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
                 version = param_val;
                 
             } else {
+                printf("%s,%s\n", param_name.c_str(), param_val.c_str());
                 printf("Parameter not recognised\n");
                 return 4;
             }

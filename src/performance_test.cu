@@ -99,6 +99,7 @@ void do_chrono_performance_test(void (*floyd_warshall_arr_algorithm)(int * matri
         fprintf(fp, "%s,%d,%d,%d,%f,%f,%f%%\n", version.c_str(), input_size, blocking_factor, number_of_tests, time_exec.count(), mse, mse_perc);
         fclose(fp);
     }
+    printf("%s,%d,%d,%d,%f,%f,%f%%\n", version.c_str(), input_size, blocking_factor, number_of_tests, time_exec.count(), mse, mse_perc);
     printf("time_exec: %f, mse: %f, mse_perc: %f%%\n", time_exec.count(), mse, mse_perc);
 
     free(arr_matrix);
