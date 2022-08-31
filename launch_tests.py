@@ -4,6 +4,17 @@ import pandas as pd
 import random
 import sys
 
+analyzers = [ "chrono", "nvprof" ]
+
+#default
+analyzer=analyzers[0]
+
+if len(sys.argv) > 1 :
+    analyzer = sys.argv[1]
+    if analyzer not in analyzers :
+        print("analyzer non recognised, use chrono or nvprof")
+        exit(1)
+
 # INPUT TEST DIMENSIONS
 
 # define and print command for compiling test dimension cpp file
@@ -48,7 +59,7 @@ output_file = "csv/all_performances.csv"
 original_stdout = sys.stdout  
 with open(output_file, 'w') as f :
     sys.stdout = f
-    print("version,n,b,t,Time(s),mse,mse_perc")
+    print("version,n,b,t,Time(ms),Mean Squared Error(ms),Mean Squared Error (%)")
     sys.stdout = original_stdout
 
 # test each version
@@ -97,8 +108,10 @@ for file in cuda_files :
             print(f"out file {i:02}: {csv_output}")
 
             launch_cmd = fw_bin + " " + exec_option + " -t=" + str(t) + " -n=" + str(n) + " -b=" + str(b) + " -s=" + str(rand_seed) + " --output-file=" + output_file + " --version=" + version
-            #nvprof = "nvprof --csv --log-file " + csv_output + " --normalized-time-unit us --profile-from-start off"
-            #launch_nvprof = nvprof + " " + launch_cmd
+            
+            if (analyzer == "nvprof") :
+                nvprof_cmd = "nvprof --csv --log-file " + csv_output + " --normalized-time-unit ms --profile-from-start off"
+                launch_cmd = nvprof_cmd + " " + launch_cmd
             
             print(launch_cmd)
             os.system(launch_cmd)            
