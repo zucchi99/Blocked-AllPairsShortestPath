@@ -25,7 +25,6 @@ void do_nvprof_performance_test(void (*floyd_warshall_arr_algorithm)(int* matrix
         floyd_warshall_arr_algorithm(arr_matrix, input_size, blocking_factor);
         cudaProfilerStop();
 
-        printf("Performed test number %d\n", i);
     }
 
     free(arr_matrix);
@@ -76,11 +75,10 @@ void do_chrono_performance_test(void (*floyd_warshall_arr_algorithm)(int * matri
     if (fp == NULL) {
         printf("failed opening file!\n");
     } else {
-        fprintf(fp, "%s,%d,%d,%d,%f,%f,%f%%\n", version.c_str(), input_size, blocking_factor, number_of_tests, time_exec, mse, mse_perc);
+        fprintf(fp, "%s,%d,%d,%d,%d,%f,%f,%f%%\n", version.c_str(), seed, input_size, blocking_factor, number_of_tests, time_exec, mse, mse_perc);
         fclose(fp);
     }
-    printf("%s,%d,%d,%d,%f,%f,%f%%\n", version.c_str(), input_size, blocking_factor, number_of_tests, time_exec, mse, mse_perc);
-    printf("time_exec: %fms, mse: %fms, mse_perc: %f%%\n", time_exec, mse, mse_perc);
+    printf("seed: %d, time_exec: %fms, mse: %fms, mse_perc: %f%%\n", time_exec, mse, mse_perc);
 
     free(arr_matrix);
 
