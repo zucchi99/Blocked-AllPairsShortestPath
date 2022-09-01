@@ -112,9 +112,11 @@ for file in cuda_files :
 
         launch_cmd = fw_bin + " " + exec_option
         launch_cmd += " -t=" + str(t) + " -n=" + str(n) + " -b=" + str(b) + " -s=" + str(rand_seed)
-        launch_cmd += " --output-file=" + output_file
         launch_cmd += " --version=" + version
         launch_cmd += " --analyzer=" + analyzer
+        
+        if (analyzer == "chrono") :        
+            launch_cmd += " --output-file=" + output_file
         
         if (analyzer == "nvprof") :
             nvprof_cmd = "nvprof --csv --log-file " + csv_output + " --normalized-time-unit ms --profile-from-start off"
