@@ -30,6 +30,7 @@ print()
 
 # store test dimensions to csv and print them
 test_dimensions = pd.read_csv('csv/list_of_n_b.csv')
+test_dim_size = len(test_dimensions)
 print("test_dimensions:")
 print(test_dimensions)
 print()
@@ -76,9 +77,8 @@ for file in cuda_files :
     version = re.sub("^device_floyd_warshall_v_", "", file)
     version = re.sub("\.cu$", "", version)
 
-    
     # define floyd warshall bin file
-    fw_bin = 'bin/fwa_dev_v_' + version + '.out'
+    fw_bin = 'bin/fwb_dev_v_' + version + '.out'
     
     # print version, cuda file name, bin file name
     print(f"file:      {file_i} of {num_files}")
@@ -106,7 +106,7 @@ for file in cuda_files :
         #print(n, b)
         
         csv_output = 'csv/fwa_dev_v_' + version + '__n_' + str(n).zfill(3) + '__b_' + str(b).zfill(2) + "__t_" + str(t).zfill(2) + ".csv"
-        print(f"out file {i:02}: {csv_output}")
+        print(f"out file {i:2} of {test_dim_size:2}: {csv_output}")
 
         launch_cmd = fw_bin + " " + exec_option
         launch_cmd += " -t=" + str(t) + " -n=" + str(n) + " -b=" + str(b) + " -s=" + str(rand_seed)

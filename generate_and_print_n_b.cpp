@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     print_list_to_file(list_of_all_n_b, out_filename);
 
     // print file name
-    printf("\noutput file:\t\t%s\n", out_filename.c_str());
+    printf("output file:\t\t%s\n", out_filename.c_str());
 
     return 0;
     

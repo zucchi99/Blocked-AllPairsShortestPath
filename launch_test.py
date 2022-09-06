@@ -23,7 +23,7 @@ for file in cuda_files :
     if (versions_to_test == []) or (version in versions_to_test) :
 
         # define floyd warshall bin file
-        fw_bin = 'bin/fwa_dev_v_' + version + '.out'
+        fw_bin = 'bin/fwb_dev_v_' + version + '.out'
         
         # print version, cuda file name, bin file name
         print(f"file:      {file_i} of {num_files}")

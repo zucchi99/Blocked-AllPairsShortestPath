@@ -1,5 +1,4 @@
 #include "include/include_needed_libraries.cuh"
-#include "include/host_floyd_warshall.hpp"
 
 int main(int argc, char *argv[]) {
 

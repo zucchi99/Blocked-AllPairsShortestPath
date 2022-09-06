@@ -102,8 +102,8 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             return 6;
         }
 
-        if (s == -1) s = time(NULL);
-        printf("seed: %d\n", s);
+        //if (s == -1) s = time(NULL);
+        //printf("seed: %d\n", s);
 
         if (analyzer == "chrono") {
             do_chrono_performance_test(f, n, b, t, s, version, output_file);
