@@ -30,7 +30,7 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
     if (argc > 1) exec_option = str_args[1];
 
     if (argc == 1 || exec_option == "--help") {
-        printf("Usage: %s <exec_option> [--version=<version>] [--analyzer=<nvprof|chrono>  --output-file=<file>, -n=<n>, -b=<b>, -t=<t> [-s=<s>]]:\n", argv[0]);
+        printf("Usage: %s <exec_option> [--version=<version>] [--analyzer=<nvprof|chrono> --output-file=<file>, -n=<n>, -b=<b>, -t=<t> [-s=<s>]]:\n", argv[0]);
         printf(" where <exec_option>=test for statistical testing or <exec_option>=perf for nvprof profiling\n");
         printf("If <exec_option>=perf then specify n (matrix dimension), b (blocking factor), t (number of tests), [ s (seed), by default is random ]\n");
         return 1;

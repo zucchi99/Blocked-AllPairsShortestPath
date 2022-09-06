@@ -9,11 +9,11 @@ GXX=g++
 src_path=src
 header_path=include
 
-dev:
+# floyd warshall blocked - cuda parallelism
+fwb_dev:
 	@echo "version:" $(VERSION)
 	nvcc -rdc=true -o bin/fwa_dev_v_$(VERSION).out \
 		device_floyd_warshall_v_$(VERSION).cu \
-		src/adj_matrix_utils.cu \
 		src/adj_matrix_utils.cpp \
 		src/cuda_errors_utils.cu \
 		src/generate_n_b_couples.cpp \
@@ -23,29 +23,14 @@ dev:
 		src/performance_test.cu \
 		src/statistical_test.cpp
 
-read_matrix :	
-	nvcc -rdc=true -o bin/read_matrix.out \
-		main.cpp \
-		src/adj_matrix_reader.cpp \
-		src/adj_matrix_utils.cpp
-
-fwm:
-	g++ -o bin/fwm.out \
-		host_floyd_warshall_matrix.cpp \
-		src/adj_matrix_utils.cpp  \
-		src/host_floyd_warshall.cpp \
-
-fwa:
+# floyd warshall blocked - sequential
+fwb_host:
 	g++ -o bin/fwa.out \
 		host_floyd_warshall_array.cpp \
 		src/adj_matrix_utils.cpp \
 		src/host_floyd_warshall.cpp
 
-dev_test:
-	nvcc -rdc=true -o bin/dev_test.out \
-		device_test.cu \
-		src/cuda_errors_utils.cu
-
+# generates list of (n,B), for testing purposes
 generate_n_b:
 	g++ -o bin/generate_and_print_n_b.out \
 		generate_and_print_n_b.cpp \
