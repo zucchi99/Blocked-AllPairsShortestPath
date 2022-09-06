@@ -204,7 +204,7 @@ __global__ void execute_round_device_v_1_3_phase_3(int *matrix, int n, int t, in
             matrix[i*n + j] = using_k_path;
         }
 
-        __syncthreads();
+        //__syncthreads();
     }
 }
 

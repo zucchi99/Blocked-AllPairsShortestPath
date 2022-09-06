@@ -8,6 +8,8 @@
 #include <utility>
 // for std::string
 #include <string>
+// for std::sort
+#include <algorithm>
 
 // generate the list of couples (n,b)
 std::vector<std::pair<int, int>> generate_list_of_all_n_b(int min_input_size, int max_input_size, int max_num_of_b_per_n, double to_multiply, int to_sum, int min_blocking_factor, int max_num_tests, int seed);

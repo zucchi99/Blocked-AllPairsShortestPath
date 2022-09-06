@@ -42,12 +42,11 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
         my_params.f = f;
         my_params.g = &host_array_floyd_warshall_blocked;
         my_params.start_input_size = 30;
-        my_params.end_input_size = 150;
+        my_params.end_input_size = 1000;
         my_params.to_multiply = RANDOM_CONSTANT;
         my_params.to_sum      = RANDOM_CONSTANT;
         my_params.min_blocking_factor = 2;
 
-        print_multi_size_test_parameters(my_params);
         multi_size_statistical_test(my_params);
         
 
@@ -89,8 +88,7 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
                 version = param_val;
                 
             } else {
-                printf("%s,%s\n", param_name.c_str(), param_val.c_str());
-                printf("Parameter not recognised\n");
+                printf("Parameter %s not recognised\n", param_name.c_str());
                 return 4;
             }
 

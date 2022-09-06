@@ -94,9 +94,7 @@ for file in cuda_files :
     print()
 
     # define parameters
-    #  - exec option: {'perf', 'test'}
     exec_option='perf'
-    #  - number of tests for each couple (n,b)
     t=10
 
     for row in test_dimensions.iterrows() :

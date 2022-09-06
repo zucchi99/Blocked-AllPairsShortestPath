@@ -34,17 +34,8 @@ bool exec_single_single_statistical_test(ExecSingleSizeTestParameters params) {
 
 int call_single_size_statistical_test(CallSingleSizeTestParameters params) {
 
-    /*
-    printf("Performing statistical test with:\n");
-    printf("\t%d executions\n", n_tests);
-    if (use_always_seed==RANDOM_SEED) {
-        printf("\tseed=RANDOM\n");
-    } else {
-        printf("\tseed=%d\n", use_always_seed);
-    }
 
-    printf("\tinput_size=%d\n\tblocking_factor=%d\n\n", input_size, blocking_factor);
-    */
+    printf("Test started. Number of tests: %d, matrix size: %d, blocking factor: %d\n", params.n_tests, params.input_size, params.blocking_factor);
 
     int n_wrong = 0;
 
@@ -111,23 +102,31 @@ int multi_size_statistical_test(MultiSizeTestParameters params) {
     // in case is used the parameter value, check if it is non-negative
     assert(params.to_multiply >= 0);
     assert(params.to_sum      >= 0);
-
-    printf("Performing Multi-size statistical test:\n");
-    printf("- Input sizes between %d and %d, increase is linear, using %f as costant multiplier\n", params.start_input_size, params.end_input_size, params.to_multiply);
-    printf("- Blocking factor are generated randomly between [1, n/2] U {n}\n");
-    printf("- Number of executions for each couple (n,B) used: %d\n\n", params.n_tests_per_round);
-
+    
     int n_err_tot = 0;
 
     std::vector<std::pair<int, int>> list_of_all_n_b;
     list_of_all_n_b = generate_list_of_all_n_b(params.start_input_size, params.end_input_size, 5, params.to_multiply, params.to_sum, params.min_blocking_factor, 50, seed);
+
+    // ------------------------- START PRINTING
+
+    print_multi_size_test_parameters(params);
+
+    printf("List of all (n,B) couples:\n");
+    printf("  n\t  B\n");
+    for (int i = 0; i < list_of_all_n_b.size(); i++) {  
+        printf("%3d\t%3d\n", list_of_all_n_b[i].first, list_of_all_n_b[i].second);
+    }
+    printf("\n");
+
+    // ------------------------- END PRINTING
 
     for (int i = 0; i < list_of_all_n_b.size(); i++) {
 
         int n = list_of_all_n_b[i].first;
         int B = list_of_all_n_b[i].second;
 
-        printf("n: %d, B: %d\n", n, B);
+        //printf("n: %d, B: %d\n", n, B);
 
         //define exec single test params
         CallSingleSizeTestParameters single_test_params;
@@ -152,7 +151,7 @@ int multi_size_statistical_test(MultiSizeTestParameters params) {
             return n_err_tot;
         }
         
-        printf("Cumulative errors at size=%d, blocking_factor=%d: %d (%d new ones)\n\n", n, B, n_err_tot, n_err);
+        printf("Total number of errors until now: %d (%d new ones)\n\n", n_err_tot, n_err);
         
     }
 
@@ -161,16 +160,23 @@ int multi_size_statistical_test(MultiSizeTestParameters params) {
 
 void print_multi_size_test_parameters(MultiSizeTestParameters params) {
     printf("MultiSizeTestParameters:\n");
-    printf("- pointer to test func:\t%p\n", &params.f);
-    printf("- pointer to comp func:\t%p\n", &params.g);
+    //printf("- pointer to test func:\t%p\n", &params.f);
+    //printf("- pointer to comp func:\t%p\n", &params.g);
     printf("- start input size:\t%d\n", params.start_input_size);
     printf("- end input size:\t%d\n", params.end_input_size);
+
+    printf("- costant adder:\t");
+    if (params.seed == RANDOM_CONSTANT) printf("RANDOM\n");
+    else                                printf("%d\n", params.to_sum);
+
     printf("- costant multiplier:\t");
     if (params.seed == RANDOM_CONSTANT) printf("RANDOM\n");
     else                                printf("%f\n", params.to_multiply);
+
     printf("- seed:\t\t\t");
     if (params.seed == RANDOM_SEED)     printf("RANDOM\n");
     else                                printf("%d\n", params.seed);
+
     printf("- n tests per round:\t%d\n", params.n_tests_per_round);
     printf("- print progress perc:\t%d%%\n", (100 / params.print_progress_perc));
     printf("- stop current if fail:\t%s\n", bool_to_string(params.stop_current_if_fail));
@@ -182,8 +188,8 @@ void print_multi_size_test_parameters(MultiSizeTestParameters params) {
 
 void print_call_single_size_statistical_test_parameters(CallSingleSizeTestParameters params) {
     printf("CallSingleSizeTestParameters:\n");
-    printf("- pointer to test func:\t%p\n", &params.f);
-    printf("- pointer to comp func:\t%p\n", &params.g);
+    //printf("- pointer to test func:\t%p\n", &params.f);
+    //printf("- pointer to comp func:\t%p\n", &params.g);
     printf("- input size:\t%d\n", params.input_size);
     printf("- blocking factor:\t%d\n", params.blocking_factor);
     printf("- seed:\t\t\t");
@@ -198,11 +204,11 @@ void print_call_single_size_statistical_test_parameters(CallSingleSizeTestParame
 
 void print_exec_single_size_statistical_test_parameters(ExecSingleSizeTestParameters params) {
     printf("ExecSingleSizeTestParameters:\n");
-    printf("- pointer to test func:\t%p\n", &params.f);
-    printf("- pointer to comp func:\t%p\n", &params.g);
+    //printf("- pointer to test func:\t%p\n", &params.f);
+    //printf("- pointer to comp func:\t%p\n", &params.g);
     printf("- input size:\t%d\n", params.input_size);
     printf("- blocking factor:\t%d\n", params.blocking_factor);
-    printf("- pointer to input data:\t%p\n", &params.input_instance);
+    //printf("- pointer to input data:\t%p\n", &params.input_instance);
     printf("\n");
 }
 

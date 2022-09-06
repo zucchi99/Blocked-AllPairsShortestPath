@@ -47,6 +47,8 @@ std::vector<std::pair<int, int>> generate_list_of_all_n_b(int min_input_size, in
         }
     }
 
+    std::sort(list_of_all_n_b.begin(), list_of_all_n_b.end());
+
     return list_of_all_n_b;
 }
 

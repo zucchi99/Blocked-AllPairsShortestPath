@@ -336,7 +336,6 @@ __global__ void execute_round_device_v_3_0_phase_3_portion(int *matrix, int n, i
             cell_i_j = using_k_path;
         }
 
-        __syncthreads();
     }
 
     // copy result in global memory

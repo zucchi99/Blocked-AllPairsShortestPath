@@ -225,8 +225,6 @@ __global__ void execute_round_device_v_1_4_phase_3(int *matrix, int n, int t, in
         if (using_k_path < matrix[i*n + j]) {
             matrix[i*n + j] = using_k_path;
         }
-
-        __syncthreads();
     }
 }
 
