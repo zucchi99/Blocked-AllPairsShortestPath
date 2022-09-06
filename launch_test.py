@@ -1,7 +1,5 @@
 import re #regex
 import os #operating system
-import pandas as pd
-import random
 import sys
 
 #default all
@@ -9,15 +7,15 @@ versions_to_test = []
 for i in range(1, len(sys.argv)) :
     versions_to_test.append(sys.argv[i])
         
-files = os.listdir()
-cuda_files = [ file for file in files if re.match("device_floyd_warshall_v_.*\.cu", file) and (not re.match("device_floyd_warshall_v_.*_ERROR\.cu", file)) ]
+files = os.listdir('main')
+cuda_files = [ file for file in files if re.match("floyd_warshall_device_v_.*\.cu", file) and (not re.match("floyd_warshall_device_v_.*_ERROR\.cu", file)) ]
 file_i = 1
 num_files = len(cuda_files)
 
 for file in cuda_files :
 
     # obtain cuda file version
-    version = re.sub("^device_floyd_warshall_v_", "", file)
+    version = re.sub("^floyd_warshall_device_v_", "", file)
     version = re.sub("\.cu$", "", version)
     
     if (versions_to_test == []) or (version in versions_to_test) :

@@ -1,4 +1,4 @@
-#include "include/include_needed_libraries.cuh"
+#include "../include/include_needed_libraries.cuh"
 
 
 //main device code

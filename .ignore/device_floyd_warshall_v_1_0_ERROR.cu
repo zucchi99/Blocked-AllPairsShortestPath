@@ -1,5 +1,5 @@
 
-#include "include/include_needed_libraries.cuh"
+#include "../include/include_needed_libraries.cuh"
 
 //main device code
 void floyd_warshall_blocked_device_v_1_0(int *matrix, int n, int B);

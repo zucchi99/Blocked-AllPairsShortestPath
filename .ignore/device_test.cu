@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "include/cuda_errors_utils.cuh"
+#include "../include/cuda_errors_utils.cuh"
 
 int main( void ) {
     cudaDeviceProp prop;

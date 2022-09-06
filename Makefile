@@ -10,6 +10,7 @@ CXX=g++
 dir_src=src
 dir_header=include
 dir_bin=bin
+dir_main=main
 
 #flags
 NVCC_FLAGS = -rdc=true
@@ -34,15 +35,15 @@ OBJ_GEN = $(dir_bin)/generate_n_b_couples.o
 # compile with --> make fwb_dev VERSION=1_1
 # @echo "version:" $(VERSION)
 fwb_dev: $(OBJS)
-	$(NVCC) $(NVCC_FLAGS) device_floyd_warshall_v_$(VERSION).cu $(OBJS) -o $(dir_bin)/fwb_dev_v_$(VERSION).out
+	$(NVCC) $(NVCC_FLAGS) $(dir_main)/floyd_warshall_device_v_$(VERSION).cu $(OBJS) -o $(dir_bin)/fwb_dev_v_$(VERSION).out
 	
 # floyd warshall blocked - sequential
 fwb_host: $(OBJS)
-	$(NVCC) $(NVCC_FLAGS) host_floyd_warshall_array_blocked.cu $(OBJS) -o $(dir_bin)/fwb_host.out
+	$(NVCC) $(NVCC_FLAGS) $(dir_main)/floyd_warshall_host.cu $(OBJS) -o $(dir_bin)/fwb_host.out
 
 # generates list of (n,B), for testing purposes
 generate_n_b: $(OBJ_GEN)
-	$(CXX) generate_and_print_n_b.cpp $(OBJ_GEN) -o bin/generate_and_print_n_b.out
+	$(CXX) $(dir_main)/generate_and_print_n_b.cpp $(OBJ_GEN) -o bin/generate_and_print_n_b.out
 
 # --------------------------------------------------------------------
 # OBJECTS

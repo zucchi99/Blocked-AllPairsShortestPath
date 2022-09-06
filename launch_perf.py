@@ -39,7 +39,7 @@ print()
 
 # ALGORITHM EXECUTION
 
-files = os.listdir()
+files = os.listdir('main')
 #print(files)
 
 # calculate and print the list of all random seeds
@@ -56,7 +56,7 @@ rand_seed = random.randint(0,9999999)
 
 # chrono output file
 if analyzer == "chrono" :
-    output_file = "csv/all_performances.csv"
+    output_file = "csv/chrono_performances.csv"
     original_stdout = sys.stdout  
     with open(output_file, 'w') as f :
         sys.stdout = f
@@ -65,16 +65,16 @@ if analyzer == "chrono" :
 
 # test each version
 
-cuda_files = [ file for file in files if re.match("device_floyd_warshall_v_.*\.cu", file) and (not re.match("device_floyd_warshall_v_.*_ERROR\.cu", file)) ]
+src_files = [ file for file in files if (re.match("floyd_warshall_device_v_.*\.cu", file) or re.match("floyd_warshall_device_v_.*\.cu", file)) ]
 file_i = 1
-num_files = len(cuda_files)
+num_files = len(src_files)
 
-for file in cuda_files :
+for file in src_files :
 
     # is a floyd_warshall cuda file
 
     # obtain cuda file version
-    version = re.sub("^device_floyd_warshall_v_", "", file)
+    version = re.sub("^floyd_warshall_device_v_", "", file)
     version = re.sub("\.cu$", "", version)
 
     # define floyd warshall bin file
@@ -105,7 +105,7 @@ for file in cuda_files :
         b = row[1][1]
         #print(n, b)
         
-        csv_output = 'csv/fwa_dev_v_' + version + '__n_' + str(n).zfill(3) + '__b_' + str(b).zfill(2) + "__t_" + str(t).zfill(2) + ".csv"
+        csv_output = 'csv/fwb_dev_v_' + version + '__n_' + str(n).zfill(3) + '__b_' + str(b).zfill(2) + "__t_" + str(t).zfill(2) + ".csv"
         print(f"out file {i:2} of {test_dim_size:2}: {csv_output}")
 
         launch_cmd = fw_bin + " " + exec_option

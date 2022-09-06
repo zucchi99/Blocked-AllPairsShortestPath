@@ -1,0 +1,24 @@
+==4069== NVPROF is profiling process 4069, command: bin/fwa_dev_v_3_1.out perf -t=10 -n=640 -b=16 -s=735774 --version=3_1 --analyzer=nvprof
+==4069== Profiling application: bin/fwa_dev_v_3_1.out perf -t=10 -n=640 -b=16 -s=735774 --version=3_1 --analyzer=nvprof
+==4069== Profiling result:
+"Type","Time(%)","Time","Calls","Avg","Min","Max","Name"
+,%,ms,,ms,ms,ms,
+"GPU activities",32.297303,31.571288,800,0.039464,0.003904,0.066563,"execute_round_device_v_3_1_phase_2_row_portion(int*, int, int, int, int)"
+"GPU activities",31.121909,30.422316,800,0.038027,0.003840,0.058559,"execute_round_device_v_3_1_phase_2_col_portion(int*, int, int, int, int)"
+"GPU activities",30.572320,29.885081,1600,0.018678,0.003776,0.046050,"execute_round_device_v_3_1_phase_3_portion(int*, int, int, int, int, int, int)"
+"GPU activities",2.472890,2.417302,400,0.006043,0.005824,0.006561,"execute_round_device_v_3_1_phase_1(int*, int, int, bool)"
+"GPU activities",1.922336,1.879124,10,0.187912,0.171720,0.240896,"[CUDA memcpy HtoD]"
+"GPU activities",1.613240,1.576976,10,0.157697,0.153446,0.162856,"[CUDA memcpy DtoH]"
+"API calls",49.072613,83.917019,10,8.391701,8.110376,9.769107,"cudaGraphLaunch"
+"API calls",27.483678,46.998686,10,4.699868,3.055719,9.601304,"cudaGraphInstantiate"
+"API calls",10.780373,18.435064,10,1.843506,1.263231,2.850965,"cudaGraphExecDestroy"
+"API calls",3.948977,6.752980,3600,0.001875,0.000754,0.044551,"cudaGraphAddKernelNode"
+"API calls",3.894305,6.659487,10,0.665948,0.004709,0.902552,"cudaGraphCreate"
+"API calls",1.609638,2.752575,10,0.275257,0.160078,0.429561,"cudaGraphDestroy"
+"API calls",1.520880,2.600793,10,0.260079,0.157304,0.347212,"cudaMalloc"
+"API calls",1.319979,2.257240,10,0.225724,0.162565,0.270715,"cudaFree"
+"API calls",0.135787,0.232204,10,0.023220,0.015236,0.041627,"cudaStreamCreate"
+"API calls",0.109078,0.186530,20,0.009326,0.004863,0.015023,"cudaGraphAddMemcpyNode"
+"API calls",0.068550,0.117225,10,0.011722,0.008165,0.017977,"cudaStreamDestroy"
+"API calls",0.054718,0.093571,10,0.009357,0.006491,0.013208,"cudaStreamSynchronize"
+"API calls",0.001425,0.002436,1,0.002436,0.002436,0.002436,"cuDeviceGetCount"
