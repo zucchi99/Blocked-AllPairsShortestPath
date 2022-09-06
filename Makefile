@@ -1,5 +1,5 @@
 #compilare con:
-#make dev VERSION=1_1
+#make fwb_dev VERSION=1_1
 
 #compilers
 NVCC=nvcc

@@ -32,7 +32,7 @@ for file in cuda_files :
         print(f"bin  file: {fw_bin}\n")
 
         # define and print command for compiling cuda file to bin file
-        make_algorithm_cmd = "make dev VERSION=" + version
+        make_algorithm_cmd = "make fwb_dev VERSION=" + version
         print(make_algorithm_cmd)
         # compile test dimension cpp file to bin file
         os.system(make_algorithm_cmd)
