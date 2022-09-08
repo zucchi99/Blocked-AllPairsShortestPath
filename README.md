@@ -1,18 +1,8 @@
 # Blocked-AllPairsShortestPath
 
-## Note varie
+## TODO: scrivere un buon readme che spiega come compilare le cose :)
 
-Comando per compilare tutto:    <code>make fwa fwm fwa_dev read_matrix</code>
 
-## Todo
-
-* F.W. classico <-- Zuccato
-* v. naive paper non parallela in C <-- Zuccato (inizia, se hai problemi parliamone così ci prendo confidenza anche io; pusha spesso così resto aggiornato)
-
-* generazione grafi casuali di prova e mecc. per lettura input <-- Lena
-
-* v. naive con mem. globale
-* provare ad usare la shared memory
 
 ## 15/07 - Stato della situazione
 
