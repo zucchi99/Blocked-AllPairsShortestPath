@@ -1,14 +1,16 @@
-==2667== NVPROF is profiling process 2667, command: bin/fwb_dev_v_1_1.out perf -t=10 -n=1200 -b=8 -s=8543799 --version=1_1 --analyzer=nvprof
-==2667== Profiling application: bin/fwb_dev_v_1_1.out perf -t=10 -n=1200 -b=8 -s=8543799 --version=1_1 --analyzer=nvprof
-==2667== Profiling result:
+==882== NVPROF is profiling process 882, command: bin/fwb_dev_v_1_1.out perf -t=10 -n=1200 -b=8 -s=8543799 --version=1_2 --analyzer=nvprof
+==882== Profiling application: bin/fwb_dev_v_1_1.out perf -t=10 -n=1200 -b=8 -s=8543799 --version=1_2 --analyzer=nvprof
+==882== Profiling result:
 "Type","Time(%)","Time","Calls","Avg","Min","Max","Name"
 ,%,ms,,ms,ms,ms,
-"GPU activities",99.985216,151492.152965,33750000,0.004488,0.003455,0.017792,"execute_round_device_v_1_1(int*, int, int, int, int, int)"
-"GPU activities",0.007859,11.907553,10,1.190755,1.126714,1.237050,"[CUDA memcpy DtoH]"
-"GPU activities",0.006925,10.491631,10,1.049163,1.009691,1.121402,"[CUDA memcpy HtoD]"
-"API calls",99.698201,242276.265427,33750000,0.007178,0.003218,42.109899,"cudaLaunchKernel"
-"API calls",0.287293,698.150116,4500,0.155144,0.003752,6.119971,"cudaDeviceSynchronize"
-"API calls",0.011721,28.484314,20,1.424215,1.236796,1.606679,"cudaMemcpy"
-"API calls",0.001726,4.193202,10,0.419320,0.202107,0.484151,"cudaMalloc"
-"API calls",0.001058,2.571791,10,0.257179,0.235545,0.274172,"cudaFree"
-"API calls",0.000001,0.001750,1,0.001750,0.001750,0.001750,"cuDeviceGetCount"
+"GPU activities",49.001480,297.885056,1500,0.198590,0.193248,0.256199,"execute_round_device_v_1_1_phase_2(int*, int, int, int)"
+"GPU activities",46.858054,284.854948,1500,0.189903,0.187109,0.195590,"execute_round_device_v_1_1_phase_3(int*, int, int, int)"
+"GPU activities",1.697285,10.317973,10,1.031797,0.997083,1.114494,"[CUDA memcpy HtoD]"
+"GPU activities",1.402731,8.527345,10,0.852734,0.740669,1.076893,"[CUDA memcpy DtoH]"
+"GPU activities",1.040450,6.325005,1500,0.004216,0.004000,0.008352,"execute_round_device_v_1_1_phase_1(int*, int, int, int)"
+"API calls",91.052958,610.317686,4500,0.135626,0.002454,0.776292,"cudaDeviceSynchronize"
+"API calls",3.819229,25.599857,4500,0.005688,0.003467,2.164591,"cudaLaunchKernel"
+"API calls",3.519650,23.591819,20,1.179590,0.968159,1.396301,"cudaMemcpy"
+"API calls",1.319118,8.841901,10,0.884190,0.219217,1.081862,"cudaMalloc"
+"API calls",0.288726,1.935298,10,0.193529,0.171861,0.229383,"cudaFree"
+"API calls",0.000318,0.002133,1,0.002133,0.002133,0.002133,"cuDeviceGetCount"

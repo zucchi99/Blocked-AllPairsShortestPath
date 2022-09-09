@@ -14,7 +14,6 @@ int main(int argc, char *argv[]) {
 
 }
 
-
 void floyd_warshall_blocked_device_v_1_2(int *matrix, int n, int B) {
 
     assert(n%B == 0);                       // B must divide n
@@ -41,15 +40,16 @@ void floyd_warshall_blocked_device_v_1_2(int *matrix, int n, int B) {
         //  -   all blocks just above or under t
         //  -   all block at left and at right of t
 
-        // Phase 2/3 thread matrix is made by n*n threads, divided in num_rounds*num_rounds blocks
-        dim3 num_blocks_phase_2_3(num_rounds, num_rounds);  
+        dim3 num_blocks_phase_2(2, num_rounds-1);  
 
-        execute_round_device_v_1_2_phase_2<<<num_blocks_phase_2_3, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
+        execute_round_device_v_1_2_phase_2<<<num_blocks_phase_2, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
         HANDLE_ERROR(cudaDeviceSynchronize());
 
         // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
 
-        execute_round_device_v_1_2_phase_3<<<num_blocks_phase_2_3, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
+        dim3 num_blocks_phase_3(num_rounds-1, num_rounds-1); 
+
+        execute_round_device_v_1_2_phase_3<<<num_blocks_phase_3, threads_per_block_phase_1>>>(dev_rand_matrix, n, t, B);
         HANDLE_ERROR(cudaDeviceSynchronize()); 
     }
 
@@ -58,6 +58,7 @@ void floyd_warshall_blocked_device_v_1_2(int *matrix, int n, int B) {
     HANDLE_ERROR(cudaMemcpy(matrix, dev_rand_matrix, n*n*sizeof(int), cudaMemcpyDeviceToHost));
     HANDLE_ERROR(cudaFree(dev_rand_matrix));
 }
+
 
 __global__ void execute_round_device_v_1_2_phase_1(int *matrix, int n, int t, int B) {
 
@@ -93,8 +94,13 @@ __global__ void execute_round_device_v_1_2_phase_1(int *matrix, int n, int t, in
 
 __global__ void execute_round_device_v_1_2_phase_2(int *matrix, int n, int t, int B) {
 
-    // Launched blocks and correspondent position in the matrix 
-    // ("-" and "." blocks are just kept inactive using IF statement)
+    // Launched blocks and correspondent position in the matrix
+    //  -   blockIdx.x says if I am iterating row or cols, 
+    //  -   blockIdx.y says something about which row or col)
+    //  -   threadIdx.x and threadIdx.y are relative position of cell in block
+
+    //  L1  L2  L3  R1  R2
+    //  U1  U2  U3  D1  D2
 
     //  .   .   .   U1  .   .
     //  .   .   .   U2  .   .
@@ -103,9 +109,39 @@ __global__ void execute_round_device_v_1_2_phase_2(int *matrix, int n, int t, in
     //  .   .   .   D1  .   .
     //  .   .   .   D2  .   .
 
+    int i, j;
 
-    int i = threadIdx.x + blockIdx.x * blockDim.x;
-    int j = threadIdx.y + blockIdx.y * blockDim.y;
+    if (blockIdx.x == 0) {  
+
+        // it's a row ...
+        i = BLOCK_START(t, B) + threadIdx.x;
+
+        if (blockIdx.y < t) {
+
+            // ... and it's the left one
+            j = BLOCK_START(blockIdx.y, B) + threadIdx.y;
+
+        } else {
+            
+            // ... and it's the right one
+            j = BLOCK_START(blockIdx.y, B) + B + threadIdx.y;
+        }
+    } else {
+
+        // it's a column ...
+        j = BLOCK_START(t, B) + threadIdx.y;
+
+        if (blockIdx.y < t) {
+
+            // ... and it's the up one
+            i = BLOCK_START(blockIdx.y, B) + threadIdx.x;
+
+        } else {
+
+            // ... and it's the down one
+            i = BLOCK_START(blockIdx.y, B) + B + threadIdx.x;
+        }
+    }
 
     //foreach k: t*B <= t < t+B
     for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
@@ -125,14 +161,23 @@ __global__ void execute_round_device_v_1_2_phase_2(int *matrix, int n, int t, in
             }
         }
 
+        //printf("i:%d, j:%d, k:%d\n", i, j, k);
+
         __syncthreads();
+
     }
 }
 
+
 __global__ void execute_round_device_v_1_2_phase_3(int *matrix, int n, int t, int B) {
 
-    // Launched blocks and correspondent position in the matrix 
-    // ("-" blocks are just kept inactive using IF statement)
+    // Launched blocks and correspondent position in the matrix
+
+    //  UL  UL  UL  UR  UR
+    //  UL  UL  UL  UR  UR
+    //  UL  UL  UL  UR  UR
+    //  DL  DL  DL  DR  DR
+    //  DL  DL  DL  DR  DR
 
     //  UL  UL  UL  -   UR  UR
     //  UL  UL  UL  -   UR  UR
@@ -143,24 +188,23 @@ __global__ void execute_round_device_v_1_2_phase_3(int *matrix, int n, int t, in
 
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     int j = threadIdx.y + blockIdx.y * blockDim.y;
+           
+    // if a thread is under t, add B as row offset to get right position in matrix
+    if (blockIdx.x >= t)    i += B; 
+
+    // if a thread is ar right of t, add B as col offset to get right position in matrix
+    if (blockIdx.y >= t)    j += B;
 
     //foreach k: t*B <= t < t+B
     for (int k = BLOCK_START(t,B); k < BLOCK_END(t,B); k++) {
 
-        if (
-            /* above and right or left */
-            ( i>=BLOCK_END(t,B) && (j<BLOCK_START(t,B) || j>=BLOCK_END(t,B)) )   ||  
+        int using_k_path = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
 
-            /* under and right or left */
-            ( i<BLOCK_START(t,B) && (j<BLOCK_START(t,B) || j>=BLOCK_END(t,B)) ) 
-            ) {
-
-            int using_k_path = sum_if_not_infinite(matrix[i*n + k], matrix[k*n + j], INF); 
-
-            if (using_k_path < matrix[i*n + j]) {
-                matrix[i*n + j] = using_k_path;
-            }
+        if (using_k_path < matrix[i*n + j]) {
+            matrix[i*n + j] = using_k_path;
         }
+
+        //__syncthreads();
     }
 }
 
