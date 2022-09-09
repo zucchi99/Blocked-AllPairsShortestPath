@@ -1,0 +1,19 @@
+==3511== NVPROF is profiling process 3511, command: bin/fwb_dev_v_3_0.out perf -t=10 -n=160 -b=8 -s=8543799 --version=3_0 --analyzer=nvprof
+==3511== Profiling application: bin/fwb_dev_v_3_0.out perf -t=10 -n=160 -b=8 -s=8543799 --version=3_0 --analyzer=nvprof
+==3511== Profiling result:
+"Type","Time(%)","Time","Calls","Avg","Min","Max","Name"
+,%,ms,,ms,ms,ms,
+"GPU activities",33.690707,1.637898,740,0.002213,0.001824,0.004960,"execute_round_device_v_3_0_phase_3_portion(int*, int, int, int, int)"
+"GPU activities",24.553951,1.193708,380,0.003141,0.002944,0.004224,"execute_round_device_v_3_0_phase_2_row_portion(int*, int, int, int)"
+"GPU activities",24.093729,1.171334,380,0.003082,0.002944,0.004160,"execute_round_device_v_3_0_phase_2_col_portion(int*, int, int, int)"
+"GPU activities",13.201471,0.641799,200,0.003208,0.003168,0.004128,"execute_round_device_v_3_0_phase_1(int*, int, int, bool)"
+"GPU activities",2.655931,0.129120,10,0.012912,0.011968,0.013408,"[CUDA memcpy HtoD]"
+"GPU activities",1.804211,0.087713,10,0.008771,0.008704,0.008961,"[CUDA memcpy DtoH]"
+"API calls",36.209086,9.665616,1800,0.005369,0.000183,1.631643,"cudaLaunchKernel"
+"API calls",24.773798,6.613092,40,0.165327,0.002469,0.740154,"cudaStreamCreate"
+"API calls",18.783870,5.014147,600,0.008356,0.002709,0.028121,"cudaDeviceSynchronize"
+"API calls",9.238711,2.466172,10,0.246617,0.158374,0.276423,"cudaMalloc"
+"API calls",5.883262,1.570472,10,0.157047,0.136788,0.188147,"cudaFree"
+"API calls",4.424307,1.181020,20,0.059051,0.053190,0.064947,"cudaMemcpy"
+"API calls",0.680901,0.181759,40,0.004543,0.002594,0.012672,"cudaStreamDestroy"
+"API calls",0.006065,0.001619,1,0.001619,0.001619,0.001619,"cuDeviceGetCount"
