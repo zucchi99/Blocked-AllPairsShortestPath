@@ -1,0 +1,14 @@
+==2463== NVPROF is profiling process 2463, command: bin/fwb_dev_v_1_0.out perf -t=10 -n=640 -b=32 -s=8543799 --version=1_1 --analyzer=nvprof
+==2463== Profiling application: bin/fwb_dev_v_1_0.out perf -t=10 -n=640 -b=32 -s=8543799 --version=1_1 --analyzer=nvprof
+==2463== Profiling result:
+"Type","Time(%)","Time","Calls","Avg","Min","Max","Name"
+,%,ms,,ms,ms,ms,
+"GPU activities",99.929654,5007.183471,80000,0.062589,0.060481,0.072416,"execute_round_device_v_1_0(int*, int, int, int, int, int)"
+"GPU activities",0.035358,1.771675,10,0.177167,0.173185,0.182079,"[CUDA memcpy DtoH]"
+"GPU activities",0.034989,1.753181,10,0.175318,0.168544,0.188159,"[CUDA memcpy HtoD]"
+"API calls",92.286078,4677.075374,600,7.795125,0.057248,24.381554,"cudaDeviceSynchronize"
+"API calls",7.318494,370.902606,80000,0.004636,0.003249,1.645982,"cudaLaunchKernel"
+"API calls",0.180209,9.133043,20,0.456652,0.375605,0.550382,"cudaMemcpy"
+"API calls",0.171637,8.698602,10,0.869860,0.188521,1.113712,"cudaMalloc"
+"API calls",0.043552,2.207205,10,0.220720,0.204435,0.233920,"cudaFree"
+"API calls",0.000030,0.001532,1,0.001532,0.001532,0.001532,"cuDeviceGetCount"
