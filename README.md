@@ -105,4 +105,4 @@ Examples:
 ## Data Analysis with Python Notebook
 To analyse the execution timings obtained during the performances we used a python notebook.
 It automatically generates the dataframe reading the output csv both for chrono and nvprof and prints the plots both in the notebook and to image files in the png folder.
-It is easily possible to filter the df to see a detail of some specific versions or matrix sizes, inside the notebook there are two cells where can be specified two lists: <code>versions_to_remove<code> and <code>sizes_to_remove</code>.
+It is easily possible to filter the df to see a detail of some specific versions or matrix sizes, inside the notebook there are two cells where can be specified two lists: <code>versions_to_remove</code> and <code>sizes_to_remove</code>.
