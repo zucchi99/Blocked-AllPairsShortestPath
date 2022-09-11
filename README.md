@@ -13,6 +13,9 @@ Inside the Makefile is possible to compile:
 * <code>make fwb_dev VERSION=\<version\></code>
     - Floyd Warshall parallel on GPU. Since we developed many difference versions with difference performance, is mandatory to specify which version you want to compile. The first compilation will take some time since it has to compile all the objects of the various cpp files. The compilation of the remaining, if desired, is fast since only the cpp of the version still needs to be compiled.
 
+    NOTE: Use underscore instead of poin between version digits, as we did on file names. Example (to compile version 2.1):
+    <code>make fwb_dev VERSION=2_1</code>
+
 * <code>make generate_n_b</code>
     - Generates a list of couples (n,B) accordingly the parameters. Useful for correctness and efficiency testing purposes. 
 
