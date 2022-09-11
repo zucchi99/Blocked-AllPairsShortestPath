@@ -42,7 +42,7 @@ void do_chrono_performance_test(void (*floyd_warshall_arr_algorithm)(int *matrix
     int* arr_matrix = allocate_arr_matrix(input_size, input_size);
 
     // calculate time needed to populate matrix
-    duration<double> time_init = initialization_time(input_size, 200, seed);
+    duration<double> time_init = initialization_time(input_size, 200, seed, in_matrix, rand_matrix);
 
     // obtain a vector of 20 time_exec values
     int mse_repetitions = 20;

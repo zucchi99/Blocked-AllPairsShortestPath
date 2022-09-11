@@ -54,12 +54,12 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
     } 
     
     //default values
-    int *matrix = NULL;
+    int *matrix;
+    matrix = NULL;
     bool rand_matrix = true;
     std::string input_file = "csv/input_matrix.csv";
     std::string output_file = "csv/chrono_performances.csv";
     std::string analyzer = "chrono";
-    std::string version = "";
     int n = -1, b = -1, t = -1, s = -1;
 
     for (int i = 2; i < argc; i++) {
@@ -84,7 +84,7 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             matrix = allocate_arr_matrix(n, n);
 
             // read matrix from csv
-            int *realN; // (not used)
+            int *realN = NULL; // (not used)
 
             read_arr_matrix(matrix, realN, input_file, ',');
 
@@ -103,8 +103,8 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             return 4;
         }
     }
-
-    rand_matrix = (*matrix == NULL);
+    
+    rand_matrix = (matrix == NULL);
     
     if (exec_option == "perf") {
 

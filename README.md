@@ -16,7 +16,7 @@ Inside the Makefile is possible to compile:
 * <code>make generate_n_b</code>
     - Generates a list of couples (n,B) accordingly the parameters. Useful for correctness and efficiency testing purposes. 
 
-## Execution
+## Binary Execution
 
 The binaries are generated inside the <code>bin</code> directory.
 
@@ -34,5 +34,6 @@ The parameters are the following:
 
     - <code>test</code>: will execute automatically 500 different tests per each random couple (n,B), comparing the version compiled and the host function. If the two matrixes are not equal, a counter of the number errors is increased and the seed used as input is printed. At the end of each couple the number of errors (new and total) is printed. Since this was designed to check the correctness during the developments part, the parameters used cannot be passed through the terminal. If you desire to see or change their values you can set defaults in the <code>statistical_test.hpp</code> file or customize them inside the <code>handle_arguments_and_execute.cpp</code>.
 
+## Python Compilation and Execution
 
-
+Instead of launching a single binary we developed two python scripts, one for testing and one for performance, which automatically 
