@@ -52,13 +52,16 @@ The parameters are the following:
         
     Example: <code>bin/fwb_dev_v_2_1.out perf -n=20 -b=2 -t=10</code>
 
-    - <code>test</code>: will execute automatically 500 different tests per each random couple (n,B), comparing the version compiled and the host function. If the two matrixes are not equal, a counter of the number errors is increased and the seed used as input is printed. At the end of each couple the number of errors (new and total) is printed. Since this was designed to check the correctness during the developments part, the parameters used cannot be passed through the terminal. If you desire to see or change their values you can set defaults in the <code>statistical_test.hpp</code> file or customize them inside the <code>handle_arguments_and_execute.cpp</code>.
+    - <code>test</code>: will execute automatically 500 different tests per each random couple (n,B), comparing the version compiled and the host function. If the two matrixes are not equal, a counter of the number errors is increased and the seed used as input is printed. At the end of each couple the number of errors (new and total) is printed. Since this was designed to check the correctness during the developments part, the parameters used cannot be passed through the terminal. If you desire to see or change their values you can set defaults in the <code>statistical_test.hpp</code> file or customize them inside the <code>handle_arguments_and_execute.cpp</code>. The values for (n,b) are generated in this way: n_0=min_n max_n
         
     Example: <code>bin/fwb_dev_v_2_1.out test</code>
 
 ## Python Compilation and Execution
 
 Instead of launching a single binary we developed two python scripts, one for testing and one for performance, which automatically compile and execute all the versions using random matrixes. For the python tests no parameters are needed, for the one of perfomances only the analyzer (chrono, default, or nvprof).
+
+The pythons use a lot of different values for n and b, generated with <code>generate_and_print_n_b.cpp</code> file.
+ 
 
 Examples:
 <code>python launch_test.py</code>,
