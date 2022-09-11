@@ -23,16 +23,21 @@ Inside the Makefile is possible to compile:
 
 The binaries are generated inside the <code>bin</code> directory.
 
-Both host and device Floyd Warshall binaries share the same parameters, which are handled in the file <code>host_floyd_warshall.cpp</code>.
+Both host and device Floyd Warshall binaries share the same parameters, which are handled in the file <code>handle_arguments_and_execute.cu</code>.
 It is possible also to pass "--help" to read the guide.
 The parameters are the following:
 
-* <code>exec_option</code> which can be <code>test</code> or <code>perf</code>.
+* <code>exec_option</code> which can be <code>test</code>, <code>perf</code> or <code>launch</code>.
 
-    - <code>launch</code>: executes the matrix given as input
+    - <code>launch</code>: just executes the matrix given as input. Additional params:
+        - (mandatory) <code>--input-file=\<file\></code>: matrix csv input file
+        - (mandatory) -b=\<b\>: blocking factor
 
-
-    - <code>perf</code>: executes the algorithm performances, in s
+    - <code>perf</code>: executes the algorithm and calculates the performances. It is possible to pass the matrix in input or to generate randomly the matrixes.
+        - (mandatory) -b=\<b\>: blocking factor
+        - (mandatory) -t=\<t\>: number of tests (mandatory to generate random matrix)
+        - (optional)  -n=\<n\>: matrix size (mandatory to generate random matrix)
+        - (optional)  --input-file=\<file\>: matrix csv input file (mandatory for use a csv matrix) 
 
 
     - <code>test</code>: will execute automatically 500 different tests per each random couple (n,B), comparing the version compiled and the host function. If the two matrixes are not equal, a counter of the number errors is increased and the seed used as input is printed. At the end of each couple the number of errors (new and total) is printed. Since this was designed to check the correctness during the developments part, the parameters used cannot be passed through the terminal. If you desire to see or change their values you can set defaults in the <code>statistical_test.hpp</code> file or customize them inside the <code>handle_arguments_and_execute.cpp</code>.
