@@ -34,6 +34,6 @@ int* allocate_arr_matrix(int m, int n);
 void populate_arr_adj_matrix(int* arr_matrix, int n, int seed, bool oriented_graph);
 bool same_arr_matrixes(int *matrix_1, int *matrix_2, int m, int n, bool oriented_graph);
 
-void read_arr_matrix(int* matrix, int* numberOfNodes, std::string filename, const char delim);
+int* read_arr_matrix(int* numberOfNodes, std::string filename, const char delim);
 
 #endif // ADJ_MATRIX_UTILS_H

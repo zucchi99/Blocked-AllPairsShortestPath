@@ -91,11 +91,9 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             matrix = allocate_arr_matrix(n, n);
 
             // read matrix from csv
-            int *realN; // (not used)
+            matrix = read_arr_matrix(&n, input_file, ' ');
 
-            read_arr_matrix(matrix, realN, input_file, ' ');
-
-            print_arr_matrix(matrix, *realN, *realN);
+            // print_arr_matrix(matrix, n, n);
 
             // matrix = read_csv(input_file);
             

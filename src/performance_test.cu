@@ -65,6 +65,7 @@ void do_chrono_performance_test(void (*floyd_warshall_arr_algorithm)(int *matrix
                 //random population
                 populate_arr_adj_matrix(arr_matrix, input_size, seed*(i+1), false);
             } else {
+
                 //copy from input data
                 copy_arr_matrix(arr_matrix, in_matrix, input_size, input_size);
             }

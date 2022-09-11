@@ -83,7 +83,7 @@ void populate_adj_matrix(int **matrix, int n, int seed, bool oriented_graph) {
 // ARRAY MATRIX FUNCTIONS VARIANTS
 
 void copy_arr_matrix(int *dest_matrix, int *source_matrix, int m, int n) {
-    dest_matrix = allocate_arr_matrix(m, n);
+    // dest_matrix = allocate_arr_matrix(m, n);
     for (int i = 0; i < m; i++) {
         for (int j = 0; j < n; j++) {
             dest_matrix[i*n + j] = source_matrix[i*n + j];
@@ -141,7 +141,6 @@ int _getNumberOfNodes(std::string adjMatrixLine, const char delim) {
 	std::string s;
 	while (std::getline(ss, s, delim)) {
 		nodesCounter++;
-        printf("node ");
 	}
 
 	return nodesCounter;
@@ -167,7 +166,7 @@ int _parseLine(std::string lineAsStr, const char delim, int lineNumber, int* mat
 }
 
 
-void read_arr_matrix(int* matrix, int* numberOfNodes, std::string filename, const char delim) {
+int* read_arr_matrix(int* numberOfNodes, std::string filename, const char delim) {
 
 	std::ifstream fs(filename);
 	
@@ -187,11 +186,15 @@ void read_arr_matrix(int* matrix, int* numberOfNodes, std::string filename, cons
 	// get number of nodes
 	*numberOfNodes = _getNumberOfNodes(line, delim);
 
-    printf("Detected n nodes:\t%d", *numberOfNodes);
+    int* matrix = allocate_arr_matrix(*numberOfNodes, *numberOfNodes);
+
+    printf("Detected %d nodes reading matrix.\n", *numberOfNodes);
 
 	// parse all lines and fill adjMatrix
 	do {
 		_parseLine(line, delim, lineNumber, matrix, *numberOfNodes);
 		lineNumber++;
 	} while (std::getline(fs, line));
+
+    return matrix;
 }
