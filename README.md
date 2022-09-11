@@ -3,6 +3,18 @@
 In this repository we propose our implementation for the Blocked Floyd Warshall APSP algorithm. The code is parallel and is designed for CUDA GPUs.
 It has been tested only on linux machines, the portability on Windows or MacOS is not guaranteed.
 
+## Repository structure:
+
+Folders:
+* .: contains the python launchers, our report, the original paper, the make file, the python notebook for data analysis, html file which links to the overleaf of the report, .gitignore, changelog.md
+* bin: the binaries and the objects compiled (files *.o and *.out)
+* csv: contains all csv output (from chrono, nvprof or generate_and_print_n_b)
+* input_graphs: instances of csv graphs to import (actually the code works with any folder)
+* main: contains the *.cu, *.cpp containing the <code>main</code> function. Which are: the floyd warshall versions and the <code>generate_and_print_n_b.cpp</code> file
+* include: contains all the headers *.hpp and *.cuh
+* src: contains all the file *.cpp and *cu of the headers specified in the include folder 
+* png: contains the images of the plots exported after the data analysis
+
 ## Compilation with MakeFile
 
 Inside the Makefile is possible to compile:
@@ -20,7 +32,7 @@ Inside the Makefile is possible to compile:
     - Generates a list of couples (n,B) accordingly the parameters. Useful for correctness and efficiency testing purposes. 
     - Binary path file name: <code>bin/generate_and_print_n_b.out</code>
 
-## Binary Execution
+## Floyd Warshall Binary Execution
 
 The binaries are generated inside the <code>bin</code> directory.
 
@@ -45,6 +57,8 @@ The parameters are the following:
         - (optional)  <code>--output-file=\<file\></code>: csv of all outputs (only in case of analyzer is chrono, with nvprof every couple (n,B) will produce its output csv) (default is csv/chrono_performances.csv)
         - (optional)  <code>--analyzer=\<chrono\|nvprof\></code>: the analyzer to use (default is chrono)
         - (optional)  <code>-s=\<s\></code>: the seed of the matrix to generate randomly (default is RANDOM, only in case of matrix random generation)
+
+    Main file: <code>src/performance_test.cu</code>
         
     Example: <code>bin/fwb_dev_v_2_1.out perf --input-file="input_graphs/example_1.csv" -b=2 -t=10</code>
         
@@ -52,16 +66,26 @@ The parameters are the following:
         
     Example: <code>bin/fwb_dev_v_2_1.out perf -n=20 -b=2 -t=10</code>
 
-    - <code>test</code>: will execute automatically 500 different tests per each random couple (n,B), comparing the version compiled and the host function. If the two matrixes are not equal, a counter of the number errors is increased and the seed used as input is printed. At the end of each couple the number of errors (new and total) is printed. Since this was designed to check the correctness during the developments part, the parameters used cannot be passed through the terminal. If you desire to see or change their values you can set defaults in the <code>statistical_test.hpp</code> file or customize them inside the <code>handle_arguments_and_execute.cpp</code>. The values for (n,b) are generated in this way: n_0=min_n max_n
+    - <code>test</code>: will execute automatically 500 different tests per each random couple (n,B), comparing the version compiled and the host function. If the two matrixes are not equal, a counter of the number errors is increased and the seed used as input is printed. At the end of each couple the number of errors (new and total) is printed. Since this was designed to check the correctness during the developments part, the parameters used cannot be passed through the terminal. If you desire to see or change their values you can set defaults in the <code>statistical_test.hpp</code> file or customize them inside the <code>handle_arguments_and_execute.cpp</code>. The values for (n,b) are generated in this way: the <code>next(n) = to_mul * n + to_sum</code>. The b are taken randomly between its divisors. There is no control if n obtained is a prime number, in case no b are found the current n is discarded. the to_mul value is a random double between 1.3 and 1.6, the to_sum value is a random integer between 0 and 100.
         
+    Main file: <code>src/statistical_test.cpp</code>
+
     Example: <code>bin/fwb_dev_v_2_1.out test</code>
+
+## Generate and Print (n,b) Binary Execution
+Binary file name: <code>bin/generate_and_print_n_b.out</code>
+
+
+
 
 ## Python Compilation and Execution
 
 Instead of launching a single binary we developed two python scripts, one for testing and one for performance, which automatically compile and execute all the versions using random matrixes. For the python tests no parameters are needed, for the one of perfomances only the analyzer (chrono, default, or nvprof).
 
-The pythons use a lot of different values for n and b, generated with <code>generate_and_print_n_b.cpp</code> file.
- 
+The python for the tests don't generates itself all the values for n and b since they already randomly obtained at the start of the <code>multi_size_statistical_test</code> function in the file <code>statistical_test.cpp</code>.
+
+The python for the performance analysis instead calls the itself use a lot of different values for n and b, generated with <code>generate_and_print_n_b.cpp</code> file.
+
 
 Examples:
 <code>python launch_test.py</code>,
