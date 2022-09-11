@@ -27,7 +27,7 @@ Both host and device Floyd Warshall binaries share the same parameters, which ar
 It is possible also to pass "--help" to read the guide.
 The parameters are the following:
 
-* <code>exec_option</code> which can be <code>test</code>, <code>perf</code> or <code>launch</code>.
+* <code>exec_option=\<test\|perf\|\launch></code>.
 
     - <code>launch</code>: just executes the matrix given as input. Additional params:
         - (mandatory) <code>--input-file=\<file\></code>: matrix csv input file
