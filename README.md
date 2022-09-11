@@ -27,13 +27,13 @@ Both host and device Floyd Warshall binaries share the same parameters, which ar
 It is possible also to pass "--help" to read the guide.
 The parameters are the following:
 
-* <code>exec_option=\<test\|perf\|\launch></code>.
+* <code>exec_option=\<test\|perf\|launch></code>.
 
     - <code>launch</code>: just executes the matrix given as input. Additional params:
         - (mandatory) <code>--input-file=\<file\></code>: matrix csv input file
         - (mandatory) <code>-b=\<b\></code>: blocking factor
 
-    - <code>perf</code>: executes the algorithm and calculates the performances. It is possible to pass the matrix in input or to generate randomly the matrixes.
+    - <code>perf</code>: executes the algorithm and calculates the performances. It is possible to pass the matrix in input or to generate randomly the matrixes. Numbers of tests is useful to execute many different times. If random matrixes are used then each test will use a different input matrix otherwise always the input csv one. Is suggested to use t >= 10 to have consistency in the data. Also, in case of chrono, The execution is repeated 20*t times. 20 timings are saved. The execution time returned is the mean of the 20 values. These 20 different times allows to calculate the variancy of the timings.
 
         - (mandatory) <code>-b=\<b\></code>: blocking factor
         - (mandatory) <code>-t=\<t\></code>: number of tests
@@ -48,4 +48,9 @@ The parameters are the following:
 
 ## Python Compilation and Execution
 
-Instead of launching a single binary we developed two python scripts, one for testing and one for performance, which automatically 
+Instead of launching a single binary we developed two python scripts, one for testing and one for performance, which automatically compile and execute all the versions using random matrixes. For the python tests no parameters are needed, for the one of perfomances only the analyzer (chrono, default, or nvprof).
+
+Examples:
+<code>python launch_test.py</code>
+<code>python launch_perf.py chrono</code>.
+<code>python launch_perf.py nvprof</code>.
