@@ -2,7 +2,7 @@
 #define MACROS_HPP
 
 /// Big M, value that should be threated as "infinity"
-#define INF __INT16_MAX__
+#define INF (__INT16_MAX__/2-1)
 
 /// Get minimum or maximum of two values
 // renamed from min and max to avoid overload with std::min and std::max
