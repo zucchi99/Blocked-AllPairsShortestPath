@@ -34,8 +34,8 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
         printf(" where <exec_option>=test for statistical testing or <exec_option>=perf for performance analysis, <exec_option>=launch for basic execution\n");
         printf("If <exec_option>=perf and matrix must be randomly generated then specify n (matrix dimension), b (blocking factor), t (number of tests), [ s (seed), by default is random ]\n");
         printf("If <exec_option>=perf and matrix must be imported from csv then specify input-file (of matrix), n (matrix dimension), b (blocking factor), t (number of tests)\n");
-        printf("If <exec_option>=launch and matrix must be randomly generated then specify input-file (of matrix), n (matrix dimension), b (blocking factor)\n");
-        printf("If <exec_option>=launch and matrix must be imported from csv then specify input-file (of matrix), n (matrix dimension), b (blocking factor)\n");
+        printf("If <exec_option>=launch and matrix must be randomly generated then specify input-file (of matrix), b (blocking factor)\n");
+        printf("If <exec_option>=launch and matrix must be imported from csv then specify input-file (of matrix), b (blocking factor)\n");
         return 1;
     }
 
