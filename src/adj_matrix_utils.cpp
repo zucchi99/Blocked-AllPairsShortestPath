@@ -76,6 +76,15 @@ void populate_adj_matrix(int **matrix, int n, int seed, bool oriented_graph) {
 // ---------------------------------------------------------------
 // ARRAY MATRIX FUNCTIONS VARIANTS
 
+void copy_arr_matrix(int *dest_matrix, int *source_matrix, int m, int n) {
+    dest_matrix = allocate_arr_matrix(m, n);
+    for (int i = 0; i < m; i++) {
+        for (int j = 0; j < n; j++) {
+            dest_matrix[i*n + j] = source_matrix[i*n + j];
+        }
+    }
+}
+
 void print_arr_matrix(int *matrix, int m, int n) {
     printf("[\n");
     for (int i = 0; i < m; i++) {
