@@ -1,5 +1,4 @@
 
-#include "../include/adj_matrix_utils.cuh"
 #include "../include/adj_matrix_utils.hpp"
 #include "../include/cuda_errors_utils.cuh"
 #include "../include/host_floyd_warshall.hpp"
