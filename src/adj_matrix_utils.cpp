@@ -156,8 +156,12 @@ int _parseLine(std::string lineAsStr, const char delim, int lineNumber, int* mat
 	int i = 0;
 	while (std::getline(ss, itemStr, delim)) {
 
-		int value = std::stoi(itemStr);
-		matrix[lineNumber*nNodes+i] = value;
+        if (itemStr == "INF" || itemStr == "inf" || itemStr == "Inf" || itemStr == "--") {
+            matrix[lineNumber*nNodes+i] = INF;
+        } else {
+            int value = std::stoi(itemStr);
+		    matrix[lineNumber*nNodes+i] = value;
+        }
 
 		i++;
 	}

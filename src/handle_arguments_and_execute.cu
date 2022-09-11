@@ -162,7 +162,8 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
         printf("input matrix:\n");
         print_arr_matrix(matrix, n, n);
 
-        printf("%d\n", INF);
+        printf("Executing algorithm...\n");
+        printf("WARNING: All weights =>%d will be considered infinite.\n", INF);
 
         // launch f
         f(matrix, n, b);
