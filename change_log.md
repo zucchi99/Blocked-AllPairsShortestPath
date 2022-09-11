@@ -1,16 +1,8 @@
 # Blocked-AllPairsShortestPath
 
-In this repository we propose our implementation for the Blocked Floyd Warshall APSP algorithm. The code is parallel and is designed for CUDA GPUs.
-It has been tested only on linux machines, the portability on Windows or MacOS is not guaranteed.
+## TODO: scrivere un buon readme che spiega come compilare le cose :)
 
-## MakeFile
 
-Inside the Makefile is possible to compile:
-
-* make fwb_host
-    - Floyd Warshall sequential on host, both classic and blocked versions
-
-* make fwb_dev VERSION=<version>
 
 ## 15/07 - Stato della situazione
 
