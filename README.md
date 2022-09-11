@@ -34,8 +34,6 @@ With the Makefile command is possible to compile:
 
 ## Floyd Warshall Binary Execution
 
-The binaries are generated inside the <code>bin</code> directory.
-
 Both host and device Floyd Warshall binaries share the same parameters, which are handled in the file <code>handle_arguments_and_execute.cu</code>.
 It is possible also to pass "--help" to read the guide.
 The parameters are the following:
