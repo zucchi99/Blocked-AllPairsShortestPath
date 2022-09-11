@@ -74,8 +74,8 @@ The parameters are the following:
 Binary file name: <code>bin/generate_and_print_n_b.out</code>
 Since this was designed to generate random values during the developments part, not all the parameters can be passed through the terminal. 
 Actually all parameters regarding the random generation must be setted in the cpp file.
-As default behaviour, the code generates the random couples of (n,b) in this way: <code>next(n) = to_mul * n + to_sum</code>, using a <code>min_n</code> as first n and <code>max_n</code> as upper bound. 
-The b are taken randomly between its divisors. There is no control if n obtained is a prime number, in case no b are found the current n is discarded. the to_mul value is a random double between 1.3 and 1.6, the to_sum value is a random integer between 0 and 100.
+As default behaviour, the code generates the random couples of (n,b) in this way: <code>next(n) = to_mul * n + to_sum</code>, using <code>min_n</code> as first n and <code>max_n</code> as upper bound. 
+The b are taken randomly between its divisors. There is no control if n obtained is a prime number, in case no b are found the current n is discarded. The to_mul value is a random double between 1.3 and 1.6, the to_sum value is a random integer between 0 and 100.
 
 Example: <code>bin/generate_and_print_n_b.out</code>
 
