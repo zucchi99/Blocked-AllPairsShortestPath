@@ -36,11 +36,12 @@ The parameters are the following:
     - <code>perf</code>: executes the algorithm and calculates the performances. It is possible to pass the matrix in input or to generate randomly the matrixes.
 
         - (mandatory) <code>-b=\<b\></code>: blocking factor
-        - (mandatory) <code>-t=\<t\></code>: number of tests (mandatory to generate random matrix)
+        - (mandatory) <code>-t=\<t\></code>: number of tests
         - (optional)  <code>-n=\<n\></code>: matrix size (mandatory to generate random matrix)
         - (optional)  <code>--input-file=\<file\></code>: matrix csv input file (mandatory for use a csv matrix) 
         - (optional) <code>--output-file=\<file\></code>: csv of all outputs (only in case of analyzer is chrono, with nvprof every couple (n,B) will produce its output csv) (default is csv/chrono_performances.csv)
-        - (optional) <code>--analyzer=\<chrono\|nvprof\>: the analyzer to use (default is chrono)
+        - (optional) <code>--analyzer=\<chrono\|nvprof\></code>: the analyzer to use (default is chrono)
+        - (optional) <code>-s=\<s\></code>: the seed of the matrix to generate randomly (default is RANDOM, only in case of matrix random generation)
 
 
     - <code>test</code>: will execute automatically 500 different tests per each random couple (n,B), comparing the version compiled and the host function. If the two matrixes are not equal, a counter of the number errors is increased and the seed used as input is printed. At the end of each couple the number of errors (new and total) is printed. Since this was designed to check the correctness during the developments part, the parameters used cannot be passed through the terminal. If you desire to see or change their values you can set defaults in the <code>statistical_test.hpp</code> file or customize them inside the <code>handle_arguments_and_execute.cpp</code>.
