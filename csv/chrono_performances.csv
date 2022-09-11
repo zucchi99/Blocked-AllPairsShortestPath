@@ -228,3 +228,4 @@ version,seed,n,b,t,Time(ms),Mean Squared Error(ms),Mean Squared Error(%)
 ./bin/fwb_dev_v_2_1.out,-1,4,2,1,63.437195,267.199266,421.202838%
 ./bin/fwb_dev_v_2_0.out,-1,4,2,1,77.146499,326.768986,423.569430%
 ./bin/fwb_dev_v_1_2.out,-1,4,2,1,70.095058,297.351108,424.211231%
+./bin/fwb_dev_v_1_2.out,-1,4,2,1,57.210861,245.748147,429.548065%
