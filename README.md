@@ -17,20 +17,20 @@ Folders:
 
 ## Compilation with MakeFile
 
-Inside the Makefile is possible to compile:
+With the Makefile command is possible to compile:
 
 * <code>make fwb_host</code>
-    - Floyd Warshall sequential on CPU, both classic and blocked versions.
     - Binary path file name: <code>bin/fwb_host.out</code>
+    - Floyd Warshall sequential on CPU, both classic and blocked versions.
 
 * <code>make fwb_dev VERSION=\<version\></code>
-    - Floyd Warshall parallel on GPU. Since we developed many difference versions with difference performance, is mandatory to specify which version you want to compile. The first compilation will take some time since it has to compile all the objects of the various cpp files. The compilation of the remaining, if desired, is fast since only the cpp of the version still needs to be compiled. NB: The version parameter must be equal to one of the files of floyd warshall inside the <code>main</code> directory, for example 2_1.
     - Binary path file name: <code>bin/fwb_dev_v_\<version\>.out</code>
+    - Floyd Warshall parallel on GPU. Since we developed many difference versions with difference performance, is mandatory to specify which version you want to compile. The first compilation will take some time since it has to compile all the objects of the various cpp files. The compilation of the remaining, if desired, is fast since only the cpp of the version still needs to be compiled. NB: The version parameter must be equal to one of the files of floyd warshall inside the <code>main</code> directory, for example 2_1.
     - Example: <code>make fwb_dev VERSION=2_1</code> will produce <code>bin/fwb_dev_v_2_1.out</code>.
 
 * <code>make generate_n_b</code>
-    - Generates a list of couples (n,B). Useful for correctness and efficiency testing purposes. 
     - Binary path file name: <code>bin/generate_and_print_n_b.out</code>
+    - Generates a list of couples (n,B). Useful for correctness and efficiency testing purposes. 
 
 ## Floyd Warshall Binary Execution
 
