@@ -34,7 +34,7 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
         printf(" where <exec_option>=test for statistical testing or <exec_option>=perf for performance analysis, <exec_option>=launch for basic execution\n");
         printf("If <exec_option>=perf and matrix must be randomly generated then specify n (matrix dimension), b (blocking factor), t (number of tests), [ s (seed), by default is random ]\n");
         printf("If <exec_option>=perf and matrix must be imported from csv then specify input-file (of matrix), n (matrix dimension), b (blocking factor), t (number of tests)\n");
-        printf("If <exec_option>=launch and matrix must be randomly generated then specify input-file (of matrix), n (matrix dimension), b (blocking factor), t (number of tests)\n");
+        printf("If <exec_option>=launch and matrix must be randomly generated then specify input-file (of matrix), n (matrix dimension), b (blocking factor)\n");
         printf("If <exec_option>=launch and matrix must be imported from csv then specify input-file (of matrix), n (matrix dimension), b (blocking factor)\n");
         return 1;
     }
@@ -108,22 +108,30 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
     }
     
     rand_matrix = (matrix == NULL);
-    
-    if (exec_option == "perf") {
 
-        // performances
-        
-        if (str_args.size() < 5) {
-            printf("Missing n,t,b parameters\n");
-            return 2;
-        }
-        if (n <= 0 || b <= 0 || t <= 0) {
-            printf("n, b, t must all be specified and must be positive integers\n");
+    bool is_perf   = (exec_option == "perf");
+    bool is_launch = (exec_option == "launch");
+
+    if (n <= 0) {
+        printf("n must be specified and must be positive integers\n");
+        return 5;
+
+    } 
+    if(b <= 0) {
+        printf("b must be specified and must be positive integers\n");
+        return 5;
+
+    } 
+    if ((b > n) || (n % b > 0)) {
+        printf("b must be a divisor of n\n");
+        return 6;
+    }
+    
+    if (is_perf) {
+
+        if (t <= 0) {
+            printf("t must be specified and must be positive integers\n");
             return 5;
-        }
-        if ((b > n) || (n % b > 0)) {
-            printf("b must be a divisor of n\n");
-            return 6;
         }
 
         //if (s == -1) s = time(NULL);
@@ -135,13 +143,17 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             do_nvprof_performance_test(f, n, b, t, s, matrix, rand_matrix);
         }
 
-    } else if (exec_option == "launch") {
+    } else if (is_launch) {
+
+        // just launch
 
         if (rand_matrix) {
-            printf("Missing input matrix\n");
+            printf("missing matrix, with <exec_option>=launch an input csv matrix is needed\n");
             return 7;
         }
-        // just launch
+
+        printf("input_file: %s\n", input_file.c_str());
+        printf("input_size: %d, blocking_factor: %d, number_of_executions: 1\n", n, b);
 
         // print input
         printf("input matrix:\n");
@@ -156,7 +168,7 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
 
     } else {
         printf("<exec_option>=%s not recognised, try run: %s --help\n", argv[1], argv[0]);
-        return 7;
+        return 8;
     }
 
     return 0;
