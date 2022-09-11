@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
+#include <string>
 
 #include "../include/adj_matrix_utils.hpp"
 
@@ -161,7 +161,7 @@ int _parseLine(std::string lineAsStr, const char delim, int lineNumber, int* mat
 }
 
 
-void read_arr_matrix(int* matrix, int* numberOfNodes, std::string filename, const char delim);
+void read_arr_matrix(int* matrix, int* numberOfNodes, std::string filename, const char delim) {
 
 	std::ifstream fs(filename);
 	
@@ -183,7 +183,7 @@ void read_arr_matrix(int* matrix, int* numberOfNodes, std::string filename, cons
 
 	// parse all lines and fill adjMatrix
 	do {
-		_parseLine(line, delim, lineNumber, adjMatrix, *numberOfNodes);
+		_parseLine(line, delim, lineNumber, matrix, *numberOfNodes);
 		lineNumber++;
 	} while (std::getline(fs, line));
 }

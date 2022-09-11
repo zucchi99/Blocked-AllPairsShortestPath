@@ -81,11 +81,10 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             
         } else if(param_name == "--input-file=") {
             input_file = param_val;
-            int* matrix = allocate_arr_matrix(n, n);
+            matrix = allocate_arr_matrix(n, n);
 
             // read matrix from csv
-
-            int *realN;
+            int *realN; // (not used)
 
             read_arr_matrix(matrix, realN, input_file, ',');
 

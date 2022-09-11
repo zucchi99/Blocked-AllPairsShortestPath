@@ -2,6 +2,7 @@
 #define ADJ_MATRIX_UTILS_HPP
 
 #include <stdbool.h>
+#include <string>
 
 #include "macros.hpp"
 
@@ -32,5 +33,7 @@ void copy_arr_matrix(int *dest_matrix, int *source_matrix, int m, int n);
 int* allocate_arr_matrix(int m, int n);
 void populate_arr_adj_matrix(int* arr_matrix, int n, int seed, bool oriented_graph);
 bool same_arr_matrixes(int *matrix_1, int *matrix_2, int m, int n, bool oriented_graph);
+
+void read_arr_matrix(int* matrix, int* numberOfNodes, std::string filename, const char delim);
 
 #endif // ADJ_MATRIX_UTILS_H
