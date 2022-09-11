@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../include/adj_matrix_utils.hpp"
 
@@ -122,4 +123,67 @@ void populate_arr_adj_matrix(int* arr_matrix, int n, int seed, bool oriented_gra
             }
         }
     }
+}
+
+int _getNumberOfNodes(std::string adjMatrixLine, const char delim) {
+
+	// insipired to: https://java2blog.com/split-string-space-cpp/#Using_getline_Method
+
+	std::istringstream ss(adjMatrixLine);
+
+	int nodesCounter = 0;
+
+	std::string s;
+	while (std::getline(ss, s, delim)) {
+		nodesCounter++;
+	}
+
+	return nodesCounter;
+}
+
+int _parseLine(std::string lineAsStr, const char delim, int lineNumber, int* matrix, int nNodes) {
+
+	// insipired to: https://java2blog.com/split-string-space-cpp/#Using_getline_Method
+
+	std::istringstream ss(lineAsStr);
+	std::string itemStr;
+
+	int i = 0;
+	while (std::getline(ss, itemStr, delim)) {
+
+		int value = std::stoi(itemStr);
+		matrix[lineNumber*nNodes+i] = value;
+
+		i++;
+	}
+
+	return 0;
+}
+
+
+void read_arr_matrix(int* matrix, int* numberOfNodes, std::string filename, const char delim);
+
+	std::ifstream fs(filename);
+	
+	if (!fs.is_open()) {
+		// todo: add error
+	}
+	
+	if (fs.eof()) {
+		// todo: add error
+	}
+
+	// read first line
+	std::string line;
+	std::getline(fs, line);
+	int lineNumber = 0;
+	
+	// get number of nodes
+	*numberOfNodes = _getNumberOfNodes(line, delim);
+
+	// parse all lines and fill adjMatrix
+	do {
+		_parseLine(line, delim, lineNumber, adjMatrix, *numberOfNodes);
+		lineNumber++;
+	} while (std::getline(fs, line));
 }
