@@ -83,8 +83,11 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             output_file = param_val;
             
         } else if(param_name == "--input-file=") {
+            
             input_file = param_val;
+
             printf("input_file: %s\n", input_file.c_str());
+
             matrix = allocate_arr_matrix(n, n);
 
             // read matrix from csv
@@ -155,7 +158,6 @@ int handle_arguments_and_execute(int argc, char *argv[], void (*f) (int* arr_mat
             return 7;
         }
 
-        printf("input_file: %s\n", input_file.c_str());
         printf("input_size: %d, blocking_factor: %d, number_of_executions: 1\n", n, b);
 
         // print input
