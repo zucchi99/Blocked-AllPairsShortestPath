@@ -24,6 +24,7 @@ void print_arr_matrix(int *matrix, int m, int n);
 int** allocate_matrix(int m, int n);
 void populate_adj_matrix(int **matrix, int n, int seed, bool oriented_graph);
 bool same_matrixes(int **matrix_1, int **matrix_2, int m, int n, bool oriented_graph);
+void copy_arr_matrix(int *dest_matrix, int *source_matrix, int m, int n);
 
 // ---------------------------------------------------------------
 // ARRAY MATRIX FUNCTIONS VARIANTS
