@@ -10,7 +10,7 @@ Inside the Makefile is possible to compile:
 * make fwb_host
     - Floyd Warshall sequential on host, both classic and blocked versions
 
-* make fwb_dev VERSION=<version>
+* make fwb_dev VERSION=\<version\>
 
 ## 15/07 - Stato della situazione
 
