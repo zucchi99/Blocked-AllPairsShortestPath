@@ -141,6 +141,7 @@ int _getNumberOfNodes(std::string adjMatrixLine, const char delim) {
 	std::string s;
 	while (std::getline(ss, s, delim)) {
 		nodesCounter++;
+        printf("node ");
 	}
 
 	return nodesCounter;
@@ -185,6 +186,8 @@ void read_arr_matrix(int* matrix, int* numberOfNodes, std::string filename, cons
 	
 	// get number of nodes
 	*numberOfNodes = _getNumberOfNodes(line, delim);
+
+    printf("Detected n nodes:\t%d", *numberOfNodes);
 
 	// parse all lines and fill adjMatrix
 	do {
