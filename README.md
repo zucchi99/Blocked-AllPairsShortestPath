@@ -1,6 +1,6 @@
 # Blocked-AllPairsShortestPath
 
-In this repository we propose our implementation for the Blocked Floyd Warshall APSP algorithm. The code is parallel and is designed for CUDA GPUs.
+In this repository we propose our C++ implementation for the Blocked Floyd Warshall APSP algorithm. The code is parallel and is designed for CUDA GPUs.
 It has been tested only on linux machines, the portability on Windows or MacOS is not guaranteed.
 
 ## Repository structure:
