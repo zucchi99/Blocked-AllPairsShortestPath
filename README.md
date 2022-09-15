@@ -46,7 +46,7 @@ The parameters are the following:
         
     Example: <code>bin/fwb_dev_v_2_1.out launch --input-file="input_graphs/example_1.csv" -b=2</code>
 
-    - <code>perf</code>: executes the algorithm and calculates the performances. It is possible to pass the matrix in input or to generate randomly the matrixes. Numbers of tests is useful to execute many different times. If random matrixes are used then each test will use a different input matrix otherwise always the input csv one. Is suggested to use t >= 10 to have consistency in the data. Also, in case of chrono, The execution is repeated 20*t times. 20 timings are saved. The execution time returned is the mean of the 20 values. These 20 different times allows to calculate the variancy of the timings.
+    - <code>perf</code>: executes the algorithm and calculates the performances. It is possible to pass the matrix in input or to generate randomly the matrixes. Numbers of tests is useful to execute many different times. If random matrixes are used then each test will use a different input matrix otherwise always the input csv one. Is suggested to use t >= 10 to have consistency in the data. Also, in case of chrono, The execution is repeated 20*t times. 20 timings are saved. The execution time returned is the mean of the 20 values. These 20 different times allows to calculate the variancy of the timings. Note that if you to use nvprof as analyzer is not sufficient to specify it in the command line but also to launch nvprof passing the binary.
 
         - (mandatory) <code>-b=\<b\></code>: blocking factor
         - (mandatory) <code>-t=\<t\></code>: number of tests
@@ -63,6 +63,8 @@ The parameters are the following:
     Example: <code>bin/fwb_dev_v_2_1.out perf -n=20 -b=2 -t=10 -s=16362 --output_file="csv/chrono_performances.out" --analyzer=chrono</code>
         
     Example: <code>bin/fwb_dev_v_2_1.out perf -n=20 -b=2 -t=10</code>
+    
+    Example: <code>nvprof bin/fwb_dev_v_2_1.out perf -n=20 -b=2 -t=10 --analyzer=nvprof</code>
 
     - <code>test</code>: will execute automatically 500 different tests per each random couple (n,B), comparing the version compiled and the host function. If the two matrixes are not equal, a counter of the number errors is increased and the seed used as input is printed. At the end of each couple the number of errors (new and total) is printed. Since this was designed to check the correctness during the developments part, the parameters used cannot be passed through the terminal. If you desire to see or change their values you can set defaults in the <code>statistical_test.hpp</code> file or customize them inside the <code>handle_arguments_and_execute.cpp</code>. 
         
