@@ -72,19 +72,17 @@ The parameters are the following:
 
 ## Generate and Print (n,b) Binary Execution
 Binary file name: <code>bin/generate_and_print_n_b.out</code>
-Since this was designed to generate random values during the developments part, not all the parameters can be passed through the terminal. 
-Actually all parameters regarding the random generation must be setted in the cpp file.
-As default behaviour, the code generates the random couples of (n,b) in this way: <code>next(n) = to_mul * n + to_sum</code>, using <code>min_n</code> as first n and <code>max_n</code> as upper bound. 
-The b are taken randomly between its divisors. There is no control if n obtained is a prime number, in case no b are found the current n is discarded. The to_mul value is a random double between 1.3 and 1.6, the to_sum value is a random integer between 0 and 100.
+Since this was designed to generate random values during the developments part, not all the parameters can be passed through the terminal. There are two ways to generate the couples:
+* **randomly**: the code generates the random couples of (n,b) in this way: <code>next(n) = to_mul * n + to_sum</code>, using <code>min_n</code> as first n and <code>max_n</code> as upper bound. The b are taken randomly between its divisors. There is no control if n obtained is a prime number, in case no b are found the current n is discarded. The to_mul value is a random double between 1.3 and 1.6, the to_sum value is a random integer between 0 and 100. Note that the parameters regarding the random generation (such as min_n, max_n, to_mul, to_sum ecc.) must be setted in the cpp file. 
+   
+    Example: <code>bin/generate_and_print_n_b.out</code>
 
-Example: <code>bin/generate_and_print_n_b.out</code>
-
-It is possible to generate all the possible couples of (n,b) given two lists, one for all n and one for all b.
-In this case all couples of (n,b) s.t. b is a divisor of n are kept.
-
-The list of n,b generated is printed to a csv default file: <code>csv/list_of_n_b.csv</code>
-
-Example: <code>bin/generate_and_print_n_b.out 80,160,240,320,480,640,720,1200 8,16,24,32</code>
+* **as parameter**: the code generates all the possible couples of (n,b) given two lists, the first one for all n and the second one for all b.
+In this case all couples of (n,b) s.t. b is a divisor of n are printed to the output file.
+    
+    Example: <code>bin/generate_and_print_n_b.out 80,160,240,320,480,640,720,1200 8,16,24,32</code>
+    
+In both cases the output is printed to a default csv output file: <code>csv/list_of_n_b.csv</code>
 
 ## Python Launchers Execution
 
