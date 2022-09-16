@@ -44,37 +44,11 @@ void floyd_warshall_blocked_device_v_4_0(int *matrix, int n, int B) {
 
     assert(n%B == 0);                       // B must divide n
     assert(B*B<=MAX_BLOCK_SIZE);            // B*B cannot exceed max block size
-
-    // init the graph i will use to do all rounds
-    cudaGraph_t graph;
-    cudaGraphCreate(&graph, 0);
-    std::vector<cudaGraphNode_t> nodeDependencies = {}; // Dependency vector 
-
+    
+    // matrix data, malloc matrix to device
     int *dev_matrix;
     HANDLE_ERROR(cudaMalloc( (void**) &dev_matrix, n*n*sizeof(int)));
-
-    // HANDLE_ERROR(cudaMemcpy(dev_matrix, matrix, n*n*sizeof(int), cudaMemcpyHostToDevice));
-
-    cudaMemcpy3DParms copy_host_to_dev_params = {0};
-
-    copy_host_to_dev_params.srcArray = NULL;
-    copy_host_to_dev_params.srcPos = make_cudaPos(0, 0, 0);
-    copy_host_to_dev_params.srcPtr = make_cudaPitchedPtr((void*) matrix, n*sizeof(int), n, n);
-    copy_host_to_dev_params.dstArray = NULL;
-    copy_host_to_dev_params.dstPos = make_cudaPos(0, 0, 0);
-    copy_host_to_dev_params.dstPtr = make_cudaPitchedPtr((void*) dev_matrix, n*sizeof(int), n, n);
-    copy_host_to_dev_params.extent = make_cudaExtent(n*sizeof(int), n, 1);
-    copy_host_to_dev_params.kind = cudaMemcpyHostToDevice;
-
-    cudaGraphNode_t copy_host_to_dev_node;
-
-    HANDLE_ERROR(cudaGraphAddMemcpyNode(
-        &copy_host_to_dev_node, graph, 
-        nodeDependencies.data(), nodeDependencies.size(), 
-        &copy_host_to_dev_params
-        ));
-
-
+    
     // number of rounds that will be executed
     int num_rounds = n/B;
 
@@ -83,23 +57,59 @@ void floyd_warshall_blocked_device_v_4_0(int *matrix, int n, int B) {
 
     // number of threads launched at each kernel 
     // (it has to be the same number because of the cuda graphs, 
-    // the exceeding threads will end as firtst instruction)
+    // the exceeding threads will end as first instruction)
     dim3 num_blocks(max(num_rounds-1, 1), max(num_rounds-1, 1));
     dim3 threads_per_block(B, B);
+    
+    // --------------------------------------------------------------------------------------------
 
-    // a variable needed for calls which requires pointer args
-    int zero = 0;
+    // START GRAPH DEFINITION
+    
+    // START MEMCPY HOST->DEVICE NODE & DEPENDENCIES DEFINITION
+
+    // init the graph i will use to do all rounds
+    cudaGraph_t graph;
+    cudaGraphCreate(&graph, 0);
+    // vector of nodes dependencies, used as temp vector per each node
+    std::vector<cudaGraphNode_t> nodeDependencies = {}; 
+    
+    // first node: start with memcpy host -> device
+    cudaGraphNode_t copy_host_to_dev_node;
+    // node parameters
+    cudaMemcpy3DParms copy_host_to_dev_params = {0};
+    copy_host_to_dev_params.srcArray = NULL;
+    copy_host_to_dev_params.srcPos = make_cudaPos(0, 0, 0);
+    copy_host_to_dev_params.srcPtr = make_cudaPitchedPtr((void*) matrix, n*sizeof(int), n, n);
+    copy_host_to_dev_params.dstArray = NULL;
+    copy_host_to_dev_params.dstPos = make_cudaPos(0, 0, 0);
+    copy_host_to_dev_params.dstPtr = make_cudaPitchedPtr((void*) dev_matrix, n*sizeof(int), n, n);
+    copy_host_to_dev_params.extent = make_cudaExtent(n*sizeof(int), n, 1);
+    copy_host_to_dev_params.kind = cudaMemcpyHostToDevice;
+    // add node to graph with its dependencies
+    HANDLE_ERROR(cudaGraphAddMemcpyNode(
+        &copy_host_to_dev_node, graph, 
+        nodeDependencies.data(), nodeDependencies.size(), 
+        &copy_host_to_dev_params
+    ));
+
+    // END MEMCPY HOST->DEVICE NODE & DEPENDENCIES DEFINITION
+
+    // -------------------------------------------------------------------------------
 
     // previous round nodes (so i can add them as dependency for the next)
     cudaGraphNode_t prev_phase3_up_left_node,   prev_phase3_up_right_node, 
                     prev_phase3_down_left_node, prev_phase3_down_right_node;
          
-    for(int t = 0; t < num_rounds; t++) { 
+    for(int t = 0; t < num_rounds; t++) {
+        
+        // variables needed as function phases args
+        int zero = 0;
+        int next_t = t+1;
 
-        // a variable needed for calls which requires pointer args
-        int t_plus_1 = t+1;
+        // --------------------------------------------------------------------------------------------
 
-        // ----------------------------------------------------------------------
+        // START PHASE 1 NODE & DEPENDENCIES DEFINITION
+
         // phase 1: self-dependent block
 
         // execute_round_device_v_4_0_phase_1<<<
@@ -110,10 +120,15 @@ void floyd_warshall_blocked_device_v_4_0(int *matrix, int n, int B) {
 
         // HANDLE_ERROR(cudaDeviceSynchronize());
 
+        // clear temp dependencies vector
+        nodeDependencies.clear(); 
+
+        // phase 1 node of block (t,t)
+        cudaGraphNode_t phase1_node;
+        // function parameters
         void* phase1_args[4] = { (void*) &dev_matrix, (void*) &n, (void*) &t, (void*) &bank_conflict_phase_1 };
-
+        // node parameters
         cudaKernelNodeParams phase1_params;
-
         phase1_params.func = (void*) execute_round_device_v_4_0_phase_1;
         phase1_params.gridDim = num_blocks;
         phase1_params.blockDim = threads_per_block;
@@ -124,8 +139,7 @@ void floyd_warshall_blocked_device_v_4_0(int *matrix, int n, int B) {
         phase1_params.sharedMemBytes = ARR_MATRIX_SIZE_BANK_CONFICT(B, bank_conflict_phase_1)*sizeof(int);
         phase1_params.kernelParams = (void**) phase1_args;
         phase1_params.extra = NULL;
-
-        nodeDependencies.clear(); 
+        // assign dependencies of phase 1
         if (t > 0) {
             // round after first should depend from previous
             nodeDependencies.push_back(prev_phase3_up_left_node);
@@ -136,210 +150,245 @@ void floyd_warshall_blocked_device_v_4_0(int *matrix, int n, int B) {
             // first round depends 
             nodeDependencies.push_back(copy_host_to_dev_node);
         }
-
-        cudaGraphNode_t phase1_node;
-
+        // add node to graph with its dependencies
         HANDLE_ERROR(cudaGraphAddKernelNode(
             &phase1_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
-            &phase1_params));
+            &phase1_params
+        ));
+        
+        // END PHASE 1 NODE & DEPENDENCIES DEFINITION
 
-        // HANDLE_ERROR(cudaDeviceSynchronize());
+        // -------------------------------------------------------------------------------------------_____
+        
+        // START PHASE 2 NODE & DEPENDENCIES DEFINITION
 
-        // ----------------------------------------------------------------------
         // phase 2: row and cols
         // all blocks that share a row or a column with the self dependent, so
         //  -   all blocks just above or under t
         //  -   all block at left and at right of t
 
+        // clear temp dependencies vector
         nodeDependencies.clear();
+
+        // assign dependencies of phase 2 for all zones (up, down, right, left)
         nodeDependencies.push_back(phase1_node);
 
-        // up 
+        // --------------- UP ZONE 
         // execute_round_device_v_4_0_phase_2_col_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, 0, t);
 
-        void* phase2_up_left_args[5] = { (void*) &dev_matrix, 
-            &n, &t, &zero, &t };
-
+        // phase 2 up: node of blocks (i,t) with i < t
+        cudaGraphNode_t phase2_up_node;
+        // function parameters, shared also with left zone
+        void* phase2_up_left_args[5] = { (void*) &dev_matrix, &n, &t, &zero, &t };
+        // node parameters (copy from phase 1 and edit the different ones)
         cudaKernelNodeParams phase2_up_params = cuda_graph_node_params_copy(phase1_params);
-
         phase2_up_params.func = (void*) execute_round_device_v_4_0_phase_2_col_portion;
         phase2_up_params.sharedMemBytes = 2*B*B*sizeof(int);
         phase2_up_params.kernelParams = (void**) phase2_up_left_args;
-
-        cudaGraphNode_t phase2_up_node;
-
+        // add node to graph with its dependencies
         HANDLE_ERROR(cudaGraphAddKernelNode(
             &phase2_up_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
             &phase2_up_params
         ));
 
-        // left
+        // ----------------- LEFT ZONE
         // execute_round_device_v_4_0_phase_2_row_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, 0, t);
 
+        // phase 2 left: node of blocks (t,j) with j < t
+        cudaGraphNode_t phase2_left_node;
+        // function parameters are reused from up: phase2_up_left_args
+        // (all as up zone)
+        // node parameters (same as phase 2 UP, except for the function pointer)
         cudaKernelNodeParams phase2_left_params = cuda_graph_node_params_copy(phase2_up_params);
         phase2_left_params.func = (void*) execute_round_device_v_4_0_phase_2_row_portion;
-
-        cudaGraphNode_t phase2_left_node;
-
+        // add node to graph with its dependencies
         HANDLE_ERROR(cudaGraphAddKernelNode(
             &phase2_left_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
-            &phase2_left_params));
+            &phase2_left_params
+        ));
 
-        // down
+        // ------------------ DOWN ZONE
         // execute_round_device_v_4_0_phase_2_col_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, t+1, num_blocks);
 
-        cudaKernelNodeParams phase2_down_params = cuda_graph_node_params_copy(phase2_up_params);
-        void* phase2_down_right_args[5] = { (void*) &dev_matrix, 
-            &n, &t, &t_plus_1, &num_rounds};
-        phase2_down_params.kernelParams = (void**) phase2_down_right_args;
-
+        // phase 2 down: node of blocks (i,t) with i > t
         cudaGraphNode_t phase2_down_node;
-
+        // function parameters
+        void* phase2_down_right_args[5] = { (void*) &dev_matrix, &n, &t, &next_t, &num_rounds};
+        // node parameters (same as phase 2 UP, except for function parameters)
+        cudaKernelNodeParams phase2_down_params = cuda_graph_node_params_copy(phase2_up_params);
+        phase2_down_params.kernelParams = (void**) phase2_down_right_args;
+        // add node to graph with its dependencies
         HANDLE_ERROR(cudaGraphAddKernelNode(
             &phase2_down_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
-            &phase2_down_params));
+            &phase2_down_params
+        ));
 
-        // right
+        // ----------------- RIGHT ZONE
         // execute_round_device_v_4_0_phase_2_row_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, t+1, num_blocks);
-
+        
+        // phase 2 right: node of blocks (t,j) with j > t
+        cudaGraphNode_t phase2_right_node;
+        // function parameters are reused from down: phase2_down_right_args
+        // (all as down zone)
+        // node parameters (same as phase 2 DOWN, except for function pointer)
         cudaKernelNodeParams phase2_right_params = cuda_graph_node_params_copy(phase2_down_params);
         phase2_right_params.func = (void*) execute_round_device_v_4_0_phase_2_row_portion;
-
-        cudaGraphNode_t phase2_right_node;
-
+        // add node to graph with its dependencies
         HANDLE_ERROR(cudaGraphAddKernelNode(
             &phase2_right_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
-            &phase2_right_params));
+            &phase2_right_params
+        ));
 
-        // HANDLE_ERROR(cudaDeviceSynchronize());
+        // END PHASE 2 NODE & DEPENDENCIES DEFINITION
+
+        // -------------------------------------------------------------------------
+
+        // START PHASE 3 NODE & DEPENDENCIES DEFINITION
         
         // phase 3: all the remaining blocks, so all the blocks that don't share a row or a col with t
         
-        // up-left
+        // UP-LEFT ZONE
         // execute_round_device_v_4_0_phase_3_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, 0, 0, t, t);
 
-        void* phase3_up_left_args[7] = {(void*) &dev_matrix, 
-            &n, &t, &zero, &zero, &t, &t};
-
-        cudaKernelNodeParams phase3_up_left_params = cuda_graph_node_params_copy(phase2_up_params);
-
-        phase3_up_left_params.func = (void*) execute_round_device_v_4_0_phase_3_portion;
-        phase3_up_left_params.kernelParams = (void**) phase3_up_left_args;
-
+        // clear temp dependencies vector
         nodeDependencies.clear();
+        // assign dependencies of phase 3 only for up-left zone
         nodeDependencies.push_back(phase2_up_node);
         nodeDependencies.push_back(phase2_left_node);
 
+        // phase 3 up-left: node of blocks (i,j) with i < t and j < t
         cudaGraphNode_t phase3_up_left_node;
-
+        // function parameters
+        void* phase3_up_left_args[7] = { (void*) &dev_matrix, &n, &t, &zero, &zero, &t, &t };
+        // node parameters (function pointer is shared for all phase 3 zones)
+        // NB: copy from phase 2 and edit the different ones
+        cudaKernelNodeParams phase3_up_left_params = cuda_graph_node_params_copy(phase2_up_params);
+        phase3_up_left_params.func = (void*) execute_round_device_v_4_0_phase_3_portion;
+        phase3_up_left_params.kernelParams = (void**) phase3_up_left_args;
+        // add node to graph with its dependencies
         HANDLE_ERROR(cudaGraphAddKernelNode(
             &phase3_up_left_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
-            &phase3_up_left_params));
+            &phase3_up_left_params
+        ));
 
-        // up-right
+        // UP-RIGHT ZONE
         // execute_round_device_v_4_0_phase_3_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, 0, t+1, t, num_rounds);
-
-        void* phase3_up_right_args[7] = {(void*) &dev_matrix, 
-            &n, &t, &zero, &t_plus_1, &t, &num_rounds};
-
-        cudaKernelNodeParams phase3_up_right_params = cuda_graph_node_params_copy(phase3_up_left_params);
-        phase3_up_right_params.kernelParams = (void**) phase3_up_right_args;
-
+        
+        // clear temp dependencies vector
         nodeDependencies.clear();
+        // assign dependencies of phase 3 only for up-right zone
         nodeDependencies.push_back(phase2_up_node);
         nodeDependencies.push_back(phase2_right_node);
 
+        // phase 3 up-right: node of blocks (i,j) with i < t and j > t
         cudaGraphNode_t phase3_up_right_node;
-
+        // function parameters 
+        void* phase3_up_right_args[7] = {(void*) &dev_matrix, &n, &t, &zero, &next_t, &t, &num_rounds};
+        // node parameters (function pointer is shared for all phase 3 zones)
+        cudaKernelNodeParams phase3_up_right_params = cuda_graph_node_params_copy(phase3_up_left_params);
+        phase3_up_right_params.kernelParams = (void**) phase3_up_right_args;
+        // add node to graph with its dependencies
         HANDLE_ERROR(cudaGraphAddKernelNode(
             &phase3_up_right_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
-            &phase3_up_right_params));
+            &phase3_up_right_params
+        ));
 
-        // down-right
+        // DOWN-RIGHT ZONE
         // execute_round_device_v_4_0_phase_3_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, t+1, t+1, num_rounds, num_rounds);
 
-        void* phase3_down_right_args[7] = {(void*) &dev_matrix, 
-            &n, &t, &t_plus_1, &t_plus_1, &num_rounds, &num_rounds};
-
-        cudaKernelNodeParams phase3_down_right_params = cuda_graph_node_params_copy(phase3_up_left_params);
-        phase3_down_right_params.kernelParams = (void**) phase3_down_right_args;
-
+        // clear temp dependencies vector
         nodeDependencies.clear();
+        // assign dependencies of phase 3 only for down-right zone
         nodeDependencies.push_back(phase2_down_node);
         nodeDependencies.push_back(phase2_right_node);
 
+        // phase 3 down-right: node of blocks (i,j) with i > t and j > t
         cudaGraphNode_t phase3_down_right_node;
-
+        // function parameters 
+        void* phase3_down_right_args[7] = {(void*) &dev_matrix, &n, &t, &next_t, &next_t, &num_rounds, &num_rounds};
+        // node parameters (function pointer is shared for all phase 3 zones)
+        cudaKernelNodeParams phase3_down_right_params = cuda_graph_node_params_copy(phase3_up_left_params);
+        phase3_down_right_params.kernelParams = (void**) phase3_down_right_args;
+        // add node to graph with its dependencies
         HANDLE_ERROR(cudaGraphAddKernelNode(
             &phase3_down_right_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
-            &phase3_down_right_params));
+            &phase3_down_right_params
+        ));
 
-        // down-left
+        // DOWN-LEFT ZONE
         // execute_round_device_v_4_0_phase_3_portion<<<
         //     num_blocks, threads_per_block, 
         //     2*B*B*sizeof(int), 
         //     graph_stream>>>(dev_matrix, n, t, t+1, 0, num_rounds, t);
         
-        void* phase3_down_left_args[7] = {(void*) &dev_matrix, 
-            &n, &t, &t_plus_1, &zero, &num_rounds, &t};
-
-        cudaKernelNodeParams phase3_down_left_params = cuda_graph_node_params_copy(phase3_up_left_params);
-        phase3_down_left_params.kernelParams = (void**) phase3_down_left_args;
-
+        // clear temp dependencies vector
         nodeDependencies.clear();
+        // assign dependencies of phase 3 only for down-left zone
         nodeDependencies.push_back(phase2_down_node);
         nodeDependencies.push_back(phase2_left_node);
 
+        // phase 3 down-left: node of blocks (i,j) with i > t and j < t
         cudaGraphNode_t phase3_down_left_node;
-
+        // function parameters 
+        void* phase3_down_left_args[7] = {(void*) &dev_matrix, &n, &t, &next_t, &zero, &num_rounds, &t};
+        // node parameters (function pointer is shared for all phase 3 zones)
+        cudaKernelNodeParams phase3_down_left_params = cuda_graph_node_params_copy(phase3_up_left_params);
+        phase3_down_left_params.kernelParams = (void**) phase3_down_left_args;
+        // add node to graph with its dependencies
         HANDLE_ERROR(cudaGraphAddKernelNode(
             &phase3_down_left_node, graph, 
             nodeDependencies.data(), nodeDependencies.size(), 
-            &phase3_down_left_params));
+            &phase3_down_left_params
+        ));
 
-        // HANDLE_ERROR(cudaDeviceSynchronize());   
+        // END PHASE 3 NODE & DEPENDENCIES DEFINITION
 
-        // save phase 3 nodes
+        // -------------------------------------------------------------------------------
+
+        // save phase 3 nodes to previous nodes
         prev_phase3_up_left_node    = phase3_up_left_node;
         prev_phase3_up_right_node   = phase3_up_right_node;
         prev_phase3_down_right_node = phase3_down_right_node;
         prev_phase3_down_left_node  = phase3_down_left_node;
     }
 
-    // Add copy of final result from device to host (as graph)
-    // HANDLE_ERROR(cudaMemcpy(matrix, dev_matrix, n*n*sizeof(int), cudaMemcpyDeviceToHost));
+    // -------------------------------------------------------------------------------------
 
+    // START MEMCPY DEVICE->HOST NODE & DEPENDENCIES DEFINITION
+
+    // last node: end with memcpy device -> host
+    cudaGraphNode_t copy_dev_to_host_node;
+    // node parameters
     cudaMemcpy3DParms copy_dev_to_host_params = {0};
-
     copy_dev_to_host_params.srcArray = NULL;
     copy_dev_to_host_params.srcPos = make_cudaPos(0, 0, 0);
     copy_dev_to_host_params.srcPtr = make_cudaPitchedPtr((void*) dev_matrix, n*sizeof(int), n, n);
@@ -349,19 +398,28 @@ void floyd_warshall_blocked_device_v_4_0(int *matrix, int n, int B) {
     copy_dev_to_host_params.extent = make_cudaExtent(n*sizeof(int), n, 1);
     copy_dev_to_host_params.kind = cudaMemcpyDeviceToHost;
 
+    // clear temp dependencies vector
     nodeDependencies.clear();
+    // assign dependencies for final memcpy (all phase 3 zones)
     nodeDependencies.push_back(prev_phase3_up_left_node);
     nodeDependencies.push_back(prev_phase3_up_right_node);
     nodeDependencies.push_back(prev_phase3_down_right_node);
     nodeDependencies.push_back(prev_phase3_down_left_node);
 
-    cudaGraphNode_t copy_dev_to_host_node;
-
+    // add node to graph with its dependencies
     HANDLE_ERROR(cudaGraphAddMemcpyNode(
         &copy_dev_to_host_node, graph, 
         nodeDependencies.data(), nodeDependencies.size(), 
         &copy_dev_to_host_params
-        ));
+    ));
+    
+    // END MEMCPY DEVICE->HOST NODE & DEPENDENCIES DEFINITION
+
+    // END GRAPH DEFINITION
+
+    // ------------------------------------------------------------------------------------------
+
+    // START GRAPH EXECUTION
 
     // stream used for executing graph
     cudaStream_t graph_stream;
@@ -372,16 +430,25 @@ void floyd_warshall_blocked_device_v_4_0(int *matrix, int n, int B) {
     HANDLE_ERROR(cudaGraphInstantiate(&instance, graph, NULL, NULL, 0));
     HANDLE_ERROR(cudaGraphLaunch(instance, graph_stream));
     HANDLE_ERROR(cudaStreamSynchronize(graph_stream));
+    
+    // END GRAPH EXECUTION
+    
+    // ------------------------------------------------------------------------------------------
 
-    // Clean up
+    // START MEMORY CLEANING
+
+    // destroy graph execution instance
     HANDLE_ERROR(cudaGraphExecDestroy(instance));
+    // destroy graph structure
     HANDLE_ERROR(cudaGraphDestroy(graph));
 
-    // HANDLE_ERROR(cudaDeviceSynchronize());  
-
+    // free device matrix
     HANDLE_ERROR(cudaFree(dev_matrix));
 
+    // destroy streams
     HANDLE_ERROR(cudaStreamDestroy(graph_stream));
+
+    // END MEMORY CLEANING
 
 }
 
