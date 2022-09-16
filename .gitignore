@@ -13,9 +13,11 @@ x64/
 *.vcxproj.user
 
 # istanze di input (matr. di adj di grafi)
-graphs_istances/
+# graphs_istances/
 
 # impostazioni di vs-code
 .vscode/
 
+png/to_upload/
 
+.ignore

@@ -13,13 +13,19 @@
 using namespace std;
 using namespace chrono;
 
-void do_nvprof_performance_test(void (*floyd_warshall_arr_algorithm)(int* matrix, int n, int B), int input_size, int blocking_factor, int number_of_tests, int seed) {
+void do_nvprof_performance_test(void (*floyd_warshall_arr_algorithm)(int* matrix, int n, int B), int input_size, int blocking_factor, int number_of_tests, int seed, int *in_matrix, bool rand_matrix) {
 
-    int* arr_matrix = allocate_arr_matrix(input_size, input_size);
+    int *arr_matrix = allocate_arr_matrix(input_size, input_size);
 
     for (int i=0; i < number_of_tests; i++) {
 
-        populate_arr_adj_matrix(arr_matrix, input_size, seed*(i+1), false);
+        if (rand_matrix) {
+            //random population
+            populate_arr_adj_matrix(arr_matrix, input_size, seed*(i+1), false);
+        } else {
+            //copy from input data
+            copy_arr_matrix(arr_matrix, in_matrix, input_size, input_size);
+        }
 
         cudaProfilerStart();
         floyd_warshall_arr_algorithm(arr_matrix, input_size, blocking_factor);
@@ -30,13 +36,13 @@ void do_nvprof_performance_test(void (*floyd_warshall_arr_algorithm)(int* matrix
     free(arr_matrix);
 }
 
-void do_chrono_performance_test(void (*floyd_warshall_arr_algorithm)(int * matrix, int n, int B), int input_size, int blocking_factor, int number_of_tests, int seed, string version, string output_file) {
+void do_chrono_performance_test(void (*floyd_warshall_arr_algorithm)(int *matrix, int n, int B), int input_size, int blocking_factor, int number_of_tests, int seed, string version, string output_file, int *in_matrix, bool rand_matrix) {
     
     // allocate matrix
     int* arr_matrix = allocate_arr_matrix(input_size, input_size);
 
-       // calculate time needed to populate matrix
-    duration<double> time_init = initialization_time(input_size, 200, seed);
+    // calculate time needed to populate matrix
+    duration<double> time_init = initialization_time(input_size, 200, seed, in_matrix, rand_matrix);
 
     // obtain a vector of 20 time_exec values
     int mse_repetitions = 20;
@@ -54,7 +60,16 @@ void do_chrono_performance_test(void (*floyd_warshall_arr_algorithm)(int * matri
         start = steady_clock::now();
         // execute many times to be sure time_exec is big enough to respect error
         for (int j = 0; j < number_of_tests; j++) {
-            populate_arr_adj_matrix(arr_matrix, input_size, seed*(j+1), false);
+
+            if (rand_matrix) {
+                //random population
+                populate_arr_adj_matrix(arr_matrix, input_size, seed*(i+1), false);
+            } else {
+
+                //copy from input data
+                copy_arr_matrix(arr_matrix, in_matrix, input_size, input_size);
+            }
+        
             floyd_warshall_arr_algorithm(arr_matrix, input_size, blocking_factor);
         }
         end = steady_clock::now();
@@ -86,12 +101,18 @@ void do_chrono_performance_test(void (*floyd_warshall_arr_algorithm)(int * matri
 }
 
 // measure medium time needed to allocate a n*n matrix vector randomly, repetitions times
-duration<double> initialization_time(int input_size, int repetitions, int seed) {
+duration<double> initialization_time(int input_size, int repetitions, int seed, int *in_matrix, bool rand_matrix) {
     steady_clock::time_point start, end;
     int* arr_matrix = allocate_arr_matrix(input_size, input_size);
     start = steady_clock::now();
     for (int i = 0; i < repetitions; i++) {
-        populate_arr_adj_matrix(arr_matrix, input_size, seed*(i+1), false);
+        if (rand_matrix) {
+            //random population
+            populate_arr_adj_matrix(arr_matrix, input_size, seed*(i+1), false);
+        } else {
+            //copy from input data
+            copy_arr_matrix(arr_matrix, in_matrix, input_size, input_size);
+        }
     }
     end = steady_clock::now();
     return (duration<double>)((end - start) / repetitions);
